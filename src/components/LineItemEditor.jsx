@@ -64,8 +64,6 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
     onChange(lineItems.map((li) => (li.section || "") === name ? { ...li, section: prev } : li));
   };
 
-  const hasSections = sectionOrder.length > 1 || sectionOrder.some((s) => s);
-
   return (
     <div className="space-y-4">
       <div className="hidden sm:grid grid-cols-12 gap-2 px-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -77,32 +75,25 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
         <div className="col-span-3 text-right">Amount</div>
       </div>
 
-      {sectionOrder.map((sectionName) => {
+      {sectionOrder.map((sectionName, groupIndex) => {
         const indices = lineItems.map((li, i) => i).filter((i) => (lineItems[i].section || "") === sectionName);
         const isNamed = sectionName !== "";
         return (
-          <div key={sectionName || "__untitled"} className="space-y-2">
-            {hasSections && (
-              <div className="flex items-center gap-2 pt-1">
-                {isNamed ? (
-                  <>
-                    <Input
-                      className="font-medium h-8 max-w-xs"
-                      value={sectionName}
-                      onChange={(e) => setSectionName(sectionName, e.target.value)}
-                      disabled={!editable}
-                    />
-                    {editable && (
-                      <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => removeSection(sectionName)}>
-                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Remove section
-                      </Button>
-                    )}
-                  </>
-                ) : (
-                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Unsectioned items</span>
-                )}
-              </div>
-            )}
+          <div key={groupIndex} className="space-y-2">
+            <div className="flex items-center gap-2 pt-1">
+              <Input
+                className="font-medium h-8 max-w-xs"
+                value={sectionName}
+                placeholder={isNamed ? "" : "Section name (optional)"}
+                onChange={(e) => setSectionName(sectionName, e.target.value)}
+                disabled={!editable}
+              />
+              {isNamed && editable && (
+                <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => removeSection(sectionName)}>
+                  <Trash2 className="w-3.5 h-3.5 mr-1" /> Remove section
+                </Button>
+              )}
+            </div>
             {indices.map((i) => (
               <LineItemRow
                 key={i}
