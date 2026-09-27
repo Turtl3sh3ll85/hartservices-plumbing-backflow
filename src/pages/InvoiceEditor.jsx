@@ -50,6 +50,7 @@ export default function InvoiceEditor() {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState(id || null);
   const [copied, setCopied] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [googleOpen, setGoogleOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
@@ -162,6 +163,33 @@ export default function InvoiceEditor() {
         resultId = created.id;
         setSavedId(resultId);
       }
+      if (pendingAttachments.length) {
+        const flushed = [];
+        for (const p of pendingAttachments) {
+          try {
+            const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file: p.file });
+            const res = await base44.functions.invoke("uploadInvoiceAttachment", {
+              file_uri,
+              file_name: p.file.name,
+              mime_type: p.file.type || "application/octet-stream",
+            });
+            const d = res.data || {};
+            await base44.entities.InvoiceAttachment.create({
+              invoice_id: resultId,
+              file_name: p.file.name,
+              drive_file_id: d.drive_file_id,
+              drive_link: d.drive_link,
+              thumbnail_url: d.thumbnail_url || "",
+              mime_type: p.file.type || "",
+              type: p.type,
+            });
+          } catch (e) {
+            flushed.push(p.file_name);
+          }
+        }
+        setPendingAttachments([]);
+      }
+
       if (send) {
         try {
           const res = await base44.functions.invoke("sendDocumentEmail", { type: isEstimate ? "estimate" : "invoice", id: resultId });
@@ -272,7 +300,22 @@ export default function InvoiceEditor() {
       </Card>
 
       <Card className="p-5">
-        <InvoiceAttachments invoiceId={savedId} disabled={!savedId} docLabel={docLabel} />
+        <InvoiceAttachments
+          invoiceId={savedId}
+          docLabel={docLabel}
+          pending={pendingAttachments}
+          onAddPending={(files) => {
+            const items = Array.from(files).map((file) => ({
+              id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              file,
+              file_name: file.name,
+              previewUrl: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
+              type: file.type.startsWith("image/") ? "photo" : "document",
+            }));
+            setPendingAttachments((prev) => [...prev, ...items]);
+          }}
+          onRemovePending={(pid) => setPendingAttachments((prev) => prev.filter((p) => p.id !== pid))}
+        />
       </Card>
 
       {payLink && (

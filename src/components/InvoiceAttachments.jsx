@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Paperclip, Upload, Trash2, FileText, Loader2, ExternalLink } from "lucide-react";
+import { Paperclip, Upload, Trash2, FileText, Loader2, ExternalLink, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Image } from "@/components/ui/image";
 
-export default function InvoiceAttachments({ invoiceId, disabled = false, docLabel = "document" }) {
+export default function InvoiceAttachments({ invoiceId, pending = [], onAddPending, onRemovePending, docLabel = "document" }) {
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -23,31 +23,35 @@ export default function InvoiceAttachments({ invoiceId, disabled = false, docLab
   const handleFiles = async (fileList) => {
     const files = Array.from(fileList || []);
     if (!files.length) return;
-    setUploading(true);
-    for (const file of files) {
-      try {
-        const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-        const res = await base44.functions.invoke("uploadInvoiceAttachment", {
-          file_uri,
-          file_name: file.name,
-          mime_type: file.type || "application/octet-stream",
-        });
-        const d = res.data || {};
-        await base44.entities.InvoiceAttachment.create({
-          invoice_id: invoiceId,
-          file_name: file.name,
-          drive_file_id: d.drive_file_id,
-          drive_link: d.drive_link,
-          thumbnail_url: d.thumbnail_url || "",
-          mime_type: file.type || "",
-          type: (file.type || "").startsWith("image/") ? "photo" : "document",
-        });
-      } catch (e) {
-        /* skip individual failures */
+    if (invoiceId) {
+      setUploading(true);
+      for (const file of files) {
+        try {
+          const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+          const res = await base44.functions.invoke("uploadInvoiceAttachment", {
+            file_uri,
+            file_name: file.name,
+            mime_type: file.type || "application/octet-stream",
+          });
+          const d = res.data || {};
+          await base44.entities.InvoiceAttachment.create({
+            invoice_id: invoiceId,
+            file_name: file.name,
+            drive_file_id: d.drive_file_id,
+            drive_link: d.drive_link,
+            thumbnail_url: d.thumbnail_url || "",
+            mime_type: file.type || "",
+            type: (file.type || "").startsWith("image/") ? "photo" : "document",
+          });
+        } catch (e) {
+          /* skip individual failures */
+        }
       }
+      setUploading(false);
+      load();
+    } else if (onAddPending) {
+      onAddPending(files);
     }
-    setUploading(false);
-    load();
   };
 
   const remove = async (att) => {
@@ -67,28 +71,27 @@ export default function InvoiceAttachments({ invoiceId, disabled = false, docLab
           accept="application/pdf,image/*"
           multiple
           className="hidden"
-          disabled={disabled}
           onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }}
         />
-        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading || disabled}>
+        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
           {uploading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Upload className="w-4 h-4 mr-1.5" />}
           {uploading ? "Uploading…" : "Add files"}
         </Button>
       </div>
 
       <div
-        onDragOver={(e) => { if (disabled) return; e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => { e.preventDefault(); setDragOver(false); if (!disabled) handleFiles(e.dataTransfer.files); }}
-        onClick={() => { if (!disabled) inputRef.current?.click(); }}
-        className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors ${disabled ? "border-border cursor-not-allowed opacity-60" : dragOver ? "border-primary bg-primary/5 cursor-pointer" : "border-border hover:border-primary/40 cursor-pointer"}`}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+        onClick={() => inputRef.current?.click()}
+        className={`rounded-lg border-2 border-dashed p-4 text-center cursor-pointer transition-colors ${dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
       >
         <p className="text-xs text-muted-foreground">
-          {disabled ? `Save the ${docLabel} first to add attachments` : "Drag & drop PDFs or images here, or click to browse"}
+          {invoiceId ? "Drag & drop PDFs or images here, or click to browse" : `Drag & drop files here — they'll upload to Drive when you save the ${docLabel}`}
         </p>
       </div>
 
-      {attachments.length > 0 && (
+      {(attachments.length > 0 || pending.length > 0) && (
         <div className="grid sm:grid-cols-2 gap-2">
           {attachments.map((att) => (
             <div key={att.id} className="flex items-center gap-3 rounded-lg border bg-card p-2.5">
@@ -108,6 +111,26 @@ export default function InvoiceAttachments({ invoiceId, disabled = false, docLab
                 </a>
               </div>
               <Button type="button" variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => remove(att)}>
+                <Trash2 className="w-4 h-4 text-muted-foreground" />
+              </Button>
+            </div>
+          ))}
+          {pending.map((p) => (
+            <div key={p.id} className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/30 p-2.5">
+              {p.type === "photo" && p.previewUrl ? (
+                <div className="w-12 h-12 rounded-md overflow-hidden border bg-muted shrink-0">
+                  <img src={p.previewUrl} alt={p.file_name} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium truncate">{p.file_name}</div>
+                <div className="text-xs text-muted-foreground inline-flex items-center gap-1"><Clock className="w-3 h-3" /> Uploads on save</div>
+              </div>
+              <Button type="button" variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => onRemovePending?.(p.id)}>
                 <Trash2 className="w-4 h-4 text-muted-foreground" />
               </Button>
             </div>
