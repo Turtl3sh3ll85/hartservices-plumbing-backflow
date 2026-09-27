@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Image } from "@/components/ui/image";
 
-export default function InvoiceAttachments({ invoiceId }) {
+export default function InvoiceAttachments({ invoiceId, disabled = false, docLabel = "document" }) {
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -67,22 +67,25 @@ export default function InvoiceAttachments({ invoiceId }) {
           accept="application/pdf,image/*"
           multiple
           className="hidden"
+          disabled={disabled}
           onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }}
         />
-        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
+        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading || disabled}>
           {uploading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Upload className="w-4 h-4 mr-1.5" />}
           {uploading ? "Uploading…" : "Add files"}
         </Button>
       </div>
 
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => { if (disabled) return; e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
-        onClick={() => inputRef.current?.click()}
-        className={`rounded-lg border-2 border-dashed p-4 text-center cursor-pointer transition-colors ${dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); if (!disabled) handleFiles(e.dataTransfer.files); }}
+        onClick={() => { if (!disabled) inputRef.current?.click(); }}
+        className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors ${disabled ? "border-border cursor-not-allowed opacity-60" : dragOver ? "border-primary bg-primary/5 cursor-pointer" : "border-border hover:border-primary/40 cursor-pointer"}`}
       >
-        <p className="text-xs text-muted-foreground">Drag &amp; drop PDFs or images here, or click to browse</p>
+        <p className="text-xs text-muted-foreground">
+          {disabled ? `Save the ${docLabel} first to add attachments` : "Drag & drop PDFs or images here, or click to browse"}
+        </p>
       </div>
 
       {attachments.length > 0 && (

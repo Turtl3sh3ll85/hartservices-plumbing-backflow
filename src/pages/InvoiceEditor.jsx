@@ -271,11 +271,9 @@ export default function InvoiceEditor() {
         <PaymentScheduleEditor total={totals.total} schedule={form.payment_schedule} onChange={(s) => setForm({ ...form, payment_schedule: s })} />
       </Card>
 
-      {savedId && !isEstimate && (
-        <Card className="p-5">
-          <InvoiceAttachments invoiceId={savedId} />
-        </Card>
-      )}
+      <Card className="p-5">
+        <InvoiceAttachments invoiceId={savedId} disabled={!savedId} docLabel={docLabel} />
+      </Card>
 
       {payLink && (
         <Card className="p-4 bg-primary/5 border-primary/20">
