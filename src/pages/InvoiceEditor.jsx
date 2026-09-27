@@ -13,6 +13,7 @@ import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 import CustomerFormDialog from "@/components/CustomerFormDialog";
 import SheetItemsDialog from "@/components/SheetItemsDialog";
 import StatusBadge from "@/components/StatusBadge";
+import { useToast } from "@/components/ui/use-toast";
 import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
 
 export default function InvoiceEditor() {
@@ -54,6 +55,7 @@ export default function InvoiceEditor() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [catalog, setCatalog] = useState([]);
   const [modifiersCatalog, setModifiersCatalog] = useState([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     (async () => {
@@ -161,8 +163,21 @@ export default function InvoiceEditor() {
       }
       if (send) {
         try {
-          await base44.functions.invoke("sendDocumentEmail", { type: isEstimate ? "estimate" : "invoice", id: resultId });
-        } catch (e) { /* email delivery is best-effort */ }
+          const res = await base44.functions.invoke("sendDocumentEmail", { type: isEstimate ? "estimate" : "invoice", id: resultId });
+          const sent = (res.data?.sent || []).filter((s) => s.ok).map((s) => s.to);
+          const failed = (res.data?.sent || []).filter((s) => !s.ok);
+          if (failed.length) {
+            toast({
+              title: "Email not delivered to some recipients",
+              description: `${failed.map((f) => f.to).join(", ")} — ${failed[0].error || "delivery failed"}. Connect a verified custom domain to email customers who aren't app users.`,
+              variant: "destructive",
+            });
+          } else if (sent.length) {
+            toast({ title: "Email sent", description: `Delivered to ${sent.join(", ")}` });
+          }
+        } catch (e) {
+          toast({ title: "Email failed", description: e.message, variant: "destructive" });
+        }
       }
       navigate(`/${isEstimate ? "estimates" : "invoices"}/${resultId}`);
     } catch (e) { alert(e.message); }
