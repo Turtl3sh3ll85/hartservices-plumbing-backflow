@@ -49,7 +49,12 @@ export default function Layout() {
   const isChildRoute = !activeItem || location.pathname !== activeItem.to;
 
   useEffect(() => {
-    if (activeItem) tabRoutes.current[activeItem.to] = location.pathname;
+    if (activeItem) {
+      const stack = tabRoutes.current[activeItem.to] || [];
+      if (stack[stack.length - 1] !== location.pathname) {
+        tabRoutes.current[activeItem.to] = [...stack, location.pathname];
+      }
+    }
   }, [location.pathname]);
 
   return (
@@ -138,12 +143,14 @@ export default function Layout() {
               const isActive = Boolean(activeItem && activeItem.to === item.to);
               if (isActive) {
                 e.preventDefault();
+                tabRoutes.current[item.to] = [item.to];
                 navigate(item.to, { replace: true, state: { t: Date.now() } });
               } else {
-                const restore = tabRoutes.current[item.to];
-                if (restore && restore !== item.to) {
+                const stack = tabRoutes.current[item.to];
+                const top = stack && stack.length ? stack[stack.length - 1] : item.to;
+                if (top !== item.to) {
                   e.preventDefault();
-                  navigate(restore);
+                  navigate(top);
                 }
               }
             }}

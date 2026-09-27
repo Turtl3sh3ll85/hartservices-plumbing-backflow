@@ -1,7 +1,7 @@
 import { RotateCcw, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MobileSelect } from "@/components/ui/mobile-select";
 import { formatMoney, lineTotal } from "@/lib/invoice";
 import LineItemThumbnail from "@/components/LineItemThumbnail";
 
@@ -36,7 +36,7 @@ export default function LineItemRow({
         </div>
         <div className="col-span-12 sm:col-span-3 space-y-1">
           {catalog.length > 0 && (
-            <Select
+            <MobileSelect
               value=""
               onValueChange={(v) => {
                 const item = catalog[Number(v)];
@@ -47,19 +47,14 @@ export default function LineItemRow({
                   image_url: item.image_url || li.image_url || "",
                 });
               }}
-            >
-              <SelectTrigger className="h-9 w-full"><SelectValue placeholder="Pick from catalog…" /></SelectTrigger>
-              <SelectContent>
-                {grouped.map(([cat, entries]) => (
-                  <SelectGroup key={cat}>
-                    <SelectLabel>{cat}</SelectLabel>
-                    {entries.map(({ c, idx }) => (
-                      <SelectItem key={idx} value={String(idx)}>{c.description} — {formatMoney(c.unit_price)}</SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Pick from catalog…"
+              triggerClassName="h-9 w-full"
+              ariaLabel="Pick from catalog"
+              groups={grouped.map(([cat, entries]) => ({
+                label: cat,
+                options: entries.map(({ c, idx }) => ({ value: String(idx), label: `${c.description} — ${formatMoney(c.unit_price)}` })),
+              }))}
+            />
           )}
           <Input
             placeholder="e.g. Replace kitchen sink faucet"
@@ -110,21 +105,22 @@ export default function LineItemRow({
               )}
             </>
           ) : (
-            <Select
+            <MobileSelect
               value={String(li.markup || 0)}
               onValueChange={(v) => {
                 if (v === "custom") onMerge({ markup_mode: "custom" });
                 else onMerge({ markup: parseFloat(v) || 0, markup_mode: "preset" });
               }}
-            >
-              <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">None</SelectItem>
-                <SelectItem value="15">15%</SelectItem>
-                <SelectItem value="25">25%</SelectItem>
-                <SelectItem value="custom">Custom…</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Markup"
+              triggerClassName="h-9 w-full"
+              ariaLabel="Markup"
+              options={[
+                { value: "0", label: "None" },
+                { value: "15", label: "15%" },
+                { value: "25", label: "25%" },
+                { value: "custom", label: "Custom…" },
+              ]}
+            />
           )}
         </div>
         <div className="col-span-12 sm:col-span-3 flex items-center justify-end gap-1">
@@ -149,14 +145,14 @@ export default function LineItemRow({
             </span>
           ))}
           {modifiersCatalog.length > 0 && editable && (
-            <Select value="" onValueChange={(v) => onAddModifier(v)}>
-              <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue placeholder="+ Add modifier…" /></SelectTrigger>
-              <SelectContent>
-                {modifiersCatalog.map((m, mi) => (
-                  <SelectItem key={mi} value={String(mi)}>{m.name} ({m.price_adjustment >= 0 ? "+" : ""}{formatMoney(m.price_adjustment)})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MobileSelect
+              value=""
+              onValueChange={(v) => onAddModifier(v)}
+              placeholder="+ Add modifier…"
+              triggerClassName="h-8 w-[180px] text-xs"
+              ariaLabel="Add modifier"
+              options={modifiersCatalog.map((m, mi) => ({ value: String(mi), label: `${m.name} (${m.price_adjustment >= 0 ? "+" : ""}${formatMoney(m.price_adjustment)})` }))}
+            />
           )}
         </div>
       )}

@@ -18,7 +18,7 @@ export default function InvoicesSection({ job, invoices, reload }) {
         <div className="space-y-2">
           {invoices.map((i) => (
             <Link key={i.id} to={`/invoices/${i.id}`}>
-              <Card className="p-4 flex flex-wrap items-center justify-between gap-3 hover:bg-accent transition-colors">
+              <Card className="p-4 min-h-11 flex flex-wrap items-center justify-between gap-3 hover:bg-accent transition-colors">
                 <div className="min-w-0">
                   <div className="font-medium truncate">{i.name || "Untitled"}</div>
                   <div className="text-xs text-muted-foreground">{i.number}</div>

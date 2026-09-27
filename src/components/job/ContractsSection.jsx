@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MobileSelect } from "@/components/ui/mobile-select";
 import FileUpload from "@/components/FileUpload";
 import StatusBadge from "@/components/StatusBadge";
 import EmptyState from "@/components/EmptyState";
@@ -63,10 +63,14 @@ export default function ContractsSection({ job, contracts, reload }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select value={c.status} onValueChange={(v) => setStatus(c, v)}>
-                    <SelectTrigger className="h-8 w-[120px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <MobileSelect
+                    value={c.status}
+                    onValueChange={(v) => setStatus(c, v)}
+                    placeholder="Status"
+                    triggerClassName="h-8 w-[120px]"
+                    ariaLabel="Contract status"
+                    options={statuses.map((s) => ({ value: s, label: s }))}
+                  />
                   <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => viewFile(c)} aria-label="Download contract"><Download className="w-4 h-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(c)} aria-label="Delete contract"><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
@@ -84,7 +88,7 @@ export default function ContractsSection({ job, contracts, reload }) {
             <div className="space-y-1.5"><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5"><Label>Amount</Label><Input type="number" min="0" step="0.01" value={form.amount ?? 0} onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })} /></div>
-              <div className="space-y-1.5"><Label>Status</Label><Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-1.5"><Label>Status</Label><MobileSelect value={form.status} onValueChange={(v) => setForm({ ...form, status: v })} placeholder="Status" ariaLabel="Contract status" options={statuses.map((s) => ({ value: s, label: s }))} /></div>
             </div>
           </div>
           <DialogFooter>

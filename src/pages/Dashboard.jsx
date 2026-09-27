@@ -83,7 +83,7 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-2">
               {invoices.slice(0, 6).map((i) => (
-                <Link key={i.id} to={`/invoices/${i.id}`} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-accent transition-colors">
+                <Link key={i.id} to={`/invoices/${i.id}`} className="flex items-center justify-between p-2.5 min-h-11 rounded-lg hover:bg-accent transition-colors">
                   <div className="min-w-0">
                     <div className="font-medium text-sm truncate">{i.name || i.number}</div>
                     <div className="text-xs text-muted-foreground">{i.number}</div>
@@ -110,7 +110,7 @@ export default function Dashboard() {
                 const jb = jobs.find((j) => j.id === f.job_id);
                 const overdue = f.due_date && new Date(f.due_date) < new Date(new Date().toDateString());
                 return (
-                  <Link key={f.id} to={jb ? `/jobs/${jb.id}` : "/jobs"} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-accent transition-colors">
+                  <Link key={f.id} to={jb ? `/jobs/${jb.id}` : "/jobs"} className="flex items-center justify-between p-2.5 min-h-11 rounded-lg hover:bg-accent transition-colors">
                     <div className="min-w-0">
                       <div className="font-medium text-sm truncate">{f.title}</div>
                       <div className="text-xs text-muted-foreground truncate">{jb?.title || "—"}</div>

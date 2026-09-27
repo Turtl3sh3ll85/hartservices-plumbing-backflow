@@ -75,7 +75,7 @@ export default function MyDocuments() {
               {myInvoices.map((i) => {
                 const j = jobMap[i.job_id];
                 return (
-                  <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                  <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
                     <div className="min-w-0">
                       <div className="font-medium truncate">{j?.title || i.name || "Invoice"}</div>
                       <div className="text-sm text-muted-foreground truncate">
@@ -109,7 +109,7 @@ export default function MyDocuments() {
               {myEstimates.map((e) => {
                 const j = jobMap[e.job_id];
                 return (
-                  <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                  <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
                     <div className="min-w-0">
                       <div className="font-medium truncate">{j?.title || e.name || "Estimate"}</div>
                       <div className="text-sm text-muted-foreground truncate">{e.name || e.number}</div>

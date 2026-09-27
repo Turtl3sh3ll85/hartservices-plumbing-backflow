@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MobileSelect } from "@/components/ui/mobile-select";
 import LineItemEditor from "@/components/LineItemEditor";
 import StatusBadge from "@/components/StatusBadge";
 import EmptyState from "@/components/EmptyState";
@@ -74,10 +74,14 @@ export default function EstimatesSection({ job, estimates, reload }) {
                   <div className="text-sm text-muted-foreground tabular-nums">{formatMoney(e.total)}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select value={e.status} onValueChange={(v) => setStatus(e, v)}>
-                    <SelectTrigger className="h-8 w-[130px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <MobileSelect
+                    value={e.status}
+                    onValueChange={(v) => setStatus(e, v)}
+                    placeholder="Status"
+                    triggerClassName="h-8 w-[130px]"
+                    ariaLabel="Estimate status"
+                    options={statuses.map((s) => ({ value: s, label: s }))}
+                  />
                   <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => startEdit(e)} aria-label="Edit estimate"><Pencil className="w-4 h-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(e)} aria-label="Delete estimate"><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
@@ -96,7 +100,7 @@ export default function EstimatesSection({ job, estimates, reload }) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5"><Label>Tax rate %</Label><Input type="number" min="0" step="0.01" value={form.tax_rate ?? 0} onChange={(e) => setForm({ ...form, tax_rate: parseFloat(e.target.value) || 0 })} /></div>
               <div className="space-y-1.5"><Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+                <MobileSelect value={form.status} onValueChange={(v) => setForm({ ...form, status: v })} placeholder="Status" ariaLabel="Estimate status" options={statuses.map((s) => ({ value: s, label: s }))} />
               </div>
             </div>
             <div className="space-y-1.5"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>

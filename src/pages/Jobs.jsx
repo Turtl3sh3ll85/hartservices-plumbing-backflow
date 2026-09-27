@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MobileSelect } from "@/components/ui/mobile-select";
 import StatusBadge from "@/components/StatusBadge";
 import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -139,13 +139,14 @@ export default function Jobs() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by title, address, customer…" className="pl-9" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            {statuses.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <MobileSelect
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+          placeholder="Status"
+          triggerClassName="w-[160px]"
+          ariaLabel="Filter by status"
+          options={[{ value: "all", label: "All statuses" }, ...statuses.map((s) => ({ value: s, label: s.replace("_", " ") }))]}
+        />
       </div>
 
       {loading ? (
@@ -186,10 +187,13 @@ export default function Jobs() {
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1.5">
               <Label>Customer *</Label>
-              <Select value={form.customer_id} onValueChange={fillFromCustomer}>
-                <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
-                <SelectContent>{customers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.customer_id}
+                onValueChange={fillFromCustomer}
+                placeholder="Select customer"
+                ariaLabel="Customer"
+                options={customers.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </div>
             <div className="col-span-2 space-y-1.5"><Label>Job title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Kitchen sink replacement" /></div>
             <div className="col-span-2 space-y-1.5"><Label>Job street address</Label><Input value={form.job_street} onChange={(e) => setForm({ ...form, job_street: e.target.value })} /></div>
@@ -200,10 +204,13 @@ export default function Jobs() {
             </div>
             <div className="space-y-1.5">
               <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}</SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.status}
+                onValueChange={(v) => setForm({ ...form, status: v })}
+                placeholder="Status"
+                ariaLabel="Job status"
+                options={statuses.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+              />
             </div>
             <div className="space-y-1.5"><Label>Scheduled date</Label><Input type="date" value={form.scheduled_date || ""} onChange={(e) => setForm({ ...form, scheduled_date: e.target.value })} /></div>
             <div className="col-span-2 space-y-1.5"><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} /></div>

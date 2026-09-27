@@ -5,7 +5,7 @@ import { Plus, Search, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MobileSelect } from "@/components/ui/mobile-select";
 import StatusBadge from "@/components/StatusBadge";
 import EmptyState from "@/components/EmptyState";
 import { formatMoney } from "@/lib/invoice";
@@ -58,17 +58,21 @@ export default function Estimates() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, number, job, customer…" className="pl-9" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="declined">Declined</SelectItem>
-            <SelectItem value="converted">Converted</SelectItem>
-          </SelectContent>
-        </Select>
+        <MobileSelect
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+          placeholder="Status"
+          triggerClassName="w-[160px]"
+          ariaLabel="Filter by status"
+          options={[
+            { value: "all", label: "All" },
+            { value: "draft", label: "Draft" },
+            { value: "sent", label: "Sent" },
+            { value: "approved", label: "Approved" },
+            { value: "declined", label: "Declined" },
+            { value: "converted", label: "Converted" },
+          ]}
+        />
       </div>
 
       {loading ? (
@@ -82,7 +86,7 @@ export default function Estimates() {
               const j = jobMap[e.job_id];
               const c = j ? customerMap[j.customer_id] : null;
               return (
-                <Link key={e.id} to={`/estimates/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-accent transition-colors">
+                <Link key={e.id} to={`/estimates/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11 hover:bg-accent transition-colors">
                   <div className="min-w-0">
                     <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
                     <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}{j ? ` · ${j.title}` : ""}</div>
