@@ -14,6 +14,7 @@ import CustomerFormDialog from "@/components/CustomerFormDialog";
 import SheetItemsDialog from "@/components/SheetItemsDialog";
 import InvoiceAttachments from "@/components/InvoiceAttachments";
 import StatusBadge from "@/components/StatusBadge";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
 
@@ -46,6 +47,7 @@ export default function InvoiceEditor() {
     due_date: "",
     notes: "",
     payment_schedule: [],
+    reminders_enabled: true,
   });
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState(id || null);
@@ -290,6 +292,16 @@ export default function InvoiceEditor() {
           <Label>Notes</Label>
           <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
         </div>
+
+        {!isEstimate && (
+          <div className="flex items-center justify-between gap-4 py-1">
+            <div>
+              <div className="text-sm font-medium">Daily payment reminders</div>
+              <p className="text-sm text-muted-foreground">Send the customer a daily reminder email until this invoice is paid.</p>
+            </div>
+            <Switch checked={form.reminders_enabled !== false} onCheckedChange={(v) => setForm({ ...form, reminders_enabled: v })} />
+          </div>
+        )}
 
         <div className="border-t pt-4 space-y-1.5">
           <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{formatMoney(totals.subtotal)}</span></div>

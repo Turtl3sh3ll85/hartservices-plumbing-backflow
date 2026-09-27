@@ -139,6 +139,11 @@
       "default": false,
       "title": "Opened by customer"
     },
+    "reminders_enabled": {
+      "type": "boolean",
+      "default": true,
+      "title": "Daily Reminders Enabled"
+    },
     "notes": {
       "type": "string",
       "title": "Notes"

@@ -16,7 +16,7 @@ export default async function(req) {
     const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
     const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
 
-    const open = invoices.filter(isOpenInvoice);
+    const open = invoices.filter((inv) => isOpenInvoice(inv) && inv.reminders_enabled !== false);
     const sent = [];
     for (const inv of open) {
       const job = jobMap[inv.job_id];
