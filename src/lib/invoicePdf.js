@@ -88,7 +88,7 @@ export async function downloadInvoicePdf({ invoice, job, customer, settings }) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.text("BILL TO", M, y);
-  doc.text("JOB SITE", W / 2, y);
+  doc.text("JOB NAME", W / 2, y);
   y += 12;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
