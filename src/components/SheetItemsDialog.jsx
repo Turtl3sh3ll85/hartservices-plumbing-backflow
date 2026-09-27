@@ -67,7 +67,7 @@ export default function SheetItemsDialog({ open, onOpenChange, onPick, defaultSh
             <Input value={sheetId} onChange={(e) => setSheetId(e.target.value)} placeholder="Google Sheet ID" />
             <Button type="button" variant="secondary" onClick={() => load()} disabled={loading}>{loading ? "Loading…" : "Load"}</Button>
           </div>
-          <p className="text-xs text-muted-foreground">The first sheet should have header columns named Description, Quantity, and Unit Price.</p>
+          <p className="text-xs text-muted-foreground">The first sheet should have header columns named Description, Quantity, Unit Price, and Thumbnail (URL).</p>
           {items.length > 0 && (
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -83,6 +83,11 @@ export default function SheetItemsDialog({ open, onOpenChange, onPick, defaultSh
               {filtered.map(({ item, idx }) => (
                 <label key={idx} className="w-full text-left p-3 rounded-lg hover:bg-accent transition-colors flex items-center gap-3 cursor-pointer">
                   <Checkbox checked={!!selected[idx]} onCheckedChange={() => toggle(idx)} />
+                  {item.image_url ? (
+                    <img src={item.image_url} alt="" className="w-10 h-10 rounded-md object-cover border bg-muted shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-md bg-muted shrink-0" />
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-sm truncate">{item.description}</div>
                     <div className="text-xs text-muted-foreground">{item.quantity} × {formatMoney(item.unit_price)}</div>
