@@ -32,7 +32,7 @@ export default function PullToRefresh({ onRefresh, children }) {
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      style={{ transform: pull ? `translateY(${pull}px)` : undefined, transition: pull ? "none" : "transform 0.2s ease" }}
+      style={{ transform: pull ? `translateY(${pull}px)` : undefined, transition: pull ? "none" : "transform 0.2s ease", overscrollBehavior: "contain" }}
     >
       {(pull > 10 || refreshing) && (
         <div className="flex items-center justify-center" style={{ height: refreshing ? 40 : pull }}>

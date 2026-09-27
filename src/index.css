@@ -105,4 +105,19 @@
     -webkit-user-select: none;
     user-select: none;
   }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  button,
+  a,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 }

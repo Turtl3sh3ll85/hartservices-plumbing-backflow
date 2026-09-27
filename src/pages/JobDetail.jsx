@@ -85,7 +85,7 @@ export default function JobDetail() {
       </Card>
 
       <Tabs defaultValue="invoices">
-        <TabsList className="w-full justify-start overflow-x-auto">
+        <TabsList className="w-full justify-start overflow-x-auto scrollbar-hide">
           <TabsTrigger value="invoices">Invoices ({invoices.length})</TabsTrigger>
           <TabsTrigger value="estimates">Estimates ({estimates.length})</TabsTrigger>
           <TabsTrigger value="contracts">Contracts ({contracts.length})</TabsTrigger>

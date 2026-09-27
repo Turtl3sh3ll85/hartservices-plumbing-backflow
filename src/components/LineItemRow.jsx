@@ -142,7 +142,7 @@ export default function LineItemRow({
             <span key={mi} className="inline-flex items-center gap-1 rounded-full bg-secondary text-secondary-foreground px-2 py-1 text-xs select-none">
               <span>{m.name}{m.price_adjustment ? ` (${m.price_adjustment >= 0 ? "+" : ""}${formatMoney(m.price_adjustment)})` : ""}</span>
               {editable && (
-                <button type="button" onClick={() => onRemoveModifier(mi)} className="text-muted-foreground hover:text-foreground select-none" aria-label="Remove modifier" title="Remove modifier">
+                <button type="button" onClick={() => onRemoveModifier(mi)} className="text-muted-foreground hover:text-foreground select-none min-h-[32px] min-w-[32px] inline-flex items-center justify-center" aria-label="Remove modifier" title="Remove modifier">
                   <X className="w-3 h-3" />
                 </button>
               )}
