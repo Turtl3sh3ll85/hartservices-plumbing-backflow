@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
+import { secrets } from "base44:runtime";
 import { getPaypalBaseUrl, getPaypalAccessToken } from "../../shared/paypal.ts";
 
 function installmentAmount(item, total) {
@@ -75,8 +76,11 @@ export default async function(req) {
     }
     await base44.asServiceRole.entities.Invoice.update(invoice_id, updatePayload);
 
-    const approvalLink = (order.links || []).find((l) => l.rel === "approve");
-    return Response.json({ order_id: order.id, approval_url: approvalLink ? approvalLink.url : null, schedule_index: idx, amount });
+    const approvalLink = (order.links || []).find((l) => l.rel === "approve" || l.rel === "payer-action");
+    const env = secrets.get("PAYPAL_ENVIRONMENT") === "live" ? "live" : "sandbox";
+    const paypalHost = env === "live" ? "https://www.paypal.com" : "https://www.sandbox.paypal.com";
+    const approvalUrl = approvalLink?.url || `${paypalHost}/checkoutnow?token=${order.id}`;
+    return Response.json({ order_id: order.id, approval_url: approvalUrl, schedule_index: idx, amount });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
