@@ -12,7 +12,6 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
-import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
 import Jobs from '@/pages/Jobs';
 import JobDetail from '@/pages/JobDetail';
@@ -22,6 +21,9 @@ import Estimates from '@/pages/Estimates';
 import Settings from '@/pages/Settings';
 import PayInvoice from '@/pages/PayInvoice';
 import AcceptEstimate from '@/pages/AcceptEstimate';
+import MyDocuments from '@/pages/MyDocuments';
+import RoleGuard from '@/components/RoleGuard';
+import RoleHome from '@/components/RoleHome';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -57,17 +59,18 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/jobs/:id" element={<JobDetail />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/invoices/new" element={<InvoiceEditor />} />
-          <Route path="/invoices/:id" element={<InvoiceEditor />} />
-          <Route path="/estimates" element={<Estimates />} />
-          <Route path="/estimates/new" element={<InvoiceEditor />} />
-          <Route path="/estimates/:id" element={<InvoiceEditor />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/" element={<RoleHome />} />
+          <Route path="/portal" element={<RoleGuard roles={["customer"]}><MyDocuments /></RoleGuard>} />
+          <Route path="/jobs" element={<RoleGuard roles={["admin", "tech"]}><Jobs /></RoleGuard>} />
+          <Route path="/jobs/:id" element={<RoleGuard roles={["admin", "tech"]}><JobDetail /></RoleGuard>} />
+          <Route path="/invoices" element={<RoleGuard roles={["admin", "tech"]}><Invoices /></RoleGuard>} />
+          <Route path="/invoices/new" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />
+          <Route path="/invoices/:id" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />
+          <Route path="/estimates" element={<RoleGuard roles={["admin", "tech"]}><Estimates /></RoleGuard>} />
+          <Route path="/estimates/new" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />
+          <Route path="/estimates/:id" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />
+          <Route path="/customers" element={<RoleGuard roles={["admin"]}><Customers /></RoleGuard>} />
+          <Route path="/settings" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
