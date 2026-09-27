@@ -171,10 +171,7 @@ export default function InvoiceEditor() {
           <LineItemEditor lineItems={form.line_items} onChange={setLineItems} />
         </div>
 
-        <div className="space-y-1.5">
-          <Label>Due date</Label>
-          <Input type="date" value={form.due_date || ""} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-        </div>
+        <p className="text-sm text-muted-foreground italic">Invoices are due within 7 days of issuance unless otherwise noted.</p>
 
         <div className="space-y-1.5">
           <Label>Notes</Label>
