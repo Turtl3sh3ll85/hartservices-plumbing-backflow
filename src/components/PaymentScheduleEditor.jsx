@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatMoney } from "@/lib/invoice";
 
 const installmentAmount = (item, total) =>
@@ -38,14 +39,15 @@ export default function PaymentScheduleEditor({ total = 0, schedule = [], onChan
               value={p.label || ""}
               onChange={(e) => update(i, { label: e.target.value })}
             />
-            <select
-              className="col-span-6 sm:col-span-2 flex h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              value={p.type}
-              onChange={(e) => update(i, { type: e.target.value })}
-            >
-              <option value="percentage">Percentage</option>
-              <option value="amount">Dollar</option>
-            </select>
+            <div className="col-span-6 sm:col-span-2">
+              <Select value={p.type} onValueChange={(v) => update(i, { type: v })}>
+                <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="amount">Dollar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="col-span-6 sm:col-span-3 relative">
               <Input
                 type="number"
@@ -59,7 +61,7 @@ export default function PaymentScheduleEditor({ total = 0, schedule = [], onChan
             </div>
             <div className="col-span-10 sm:col-span-2 text-right text-sm tabular-nums">{formatMoney(amt)}</div>
             <div className="col-span-2 sm:col-span-1 flex justify-end">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(i)}>
+              <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(i)} aria-label="Remove payment">
                 <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
             </div>

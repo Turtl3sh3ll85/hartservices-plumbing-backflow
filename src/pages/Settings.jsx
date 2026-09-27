@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Image } from "@/components/ui/image";
 import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const empty = { business_name: "", business_email: "", business_phone: "", business_street: "", business_city: "", business_state: "", business_zip: "", logo_url: "", default_tax_rate: 0, payment_terms: "Due on receipt", google_sheet_id: "", weekly_summary_enabled: false };
 
@@ -17,6 +18,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -50,6 +52,15 @@ export default function Settings() {
   };
 
   const removeLogo = () => setForm((f) => ({ ...f, logo_url: "" }));
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await base44.functions.invoke("deleteAccount", {});
+      await base44.auth.logout("/login");
+    } catch (e) { alert(e.message); }
+    setDeleting(false);
+  };
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -129,6 +140,31 @@ export default function Settings() {
       <div className="flex justify-end">
         <Button onClick={save} disabled={saving}><Save className="w-4 h-4 mr-1" /> {saving ? "Saving…" : saved ? "Saved!" : "Save settings"}</Button>
       </div>
+
+      <Card className="p-6 space-y-3 border-destructive/30">
+        <div className="text-sm font-medium text-destructive">Danger Zone</div>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="text-sm font-medium">Delete account</div>
+            <p className="text-sm text-muted-foreground">Permanently delete your account and all data you've created. This cannot be undone.</p>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={deleting}>{deleting ? "Deleting…" : "Delete account"}</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete account?</AlertDialogTitle>
+                <AlertDialogDescription>This will permanently delete all data you've created — customers, jobs, invoices, estimates, contracts, and more. This action cannot be undone.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete permanently</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </Card>
     </div>
   );
 }

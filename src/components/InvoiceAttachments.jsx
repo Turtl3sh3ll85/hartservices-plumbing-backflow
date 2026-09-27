@@ -110,7 +110,7 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
                   Open in Drive <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
-              <Button type="button" variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => remove(att)}>
+              <Button type="button" variant="ghost" size="icon" className="shrink-0 h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(att)} aria-label="Delete attachment">
                 <Trash2 className="w-4 h-4 text-muted-foreground" />
               </Button>
             </div>
@@ -130,7 +130,7 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
                 <div className="text-sm font-medium truncate">{p.file_name}</div>
                 <div className="text-xs text-muted-foreground inline-flex items-center gap-1"><Clock className="w-3 h-3" /> Uploads on save</div>
               </div>
-              <Button type="button" variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => onRemovePending?.(p.id)}>
+              <Button type="button" variant="ghost" size="icon" className="shrink-0 h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => onRemovePending?.(p.id)} aria-label="Remove pending attachment">
                 <Trash2 className="w-4 h-4 text-muted-foreground" />
               </Button>
             </div>

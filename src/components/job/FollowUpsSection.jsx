@@ -88,8 +88,8 @@ export default function FollowUpsSection({ job, followups, reload }) {
                   {f.status === "scheduled" && (
                     <Button variant="outline" size="sm" onClick={() => markComplete(f)}><Check className="w-4 h-4 mr-1" /> Complete</Button>
                   )}
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(f)}><Pencil className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="sm" onClick={() => remove(f)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => openEdit(f)} aria-label="Edit follow-up"><Pencil className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="sm" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(f)} aria-label="Delete follow-up"><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
               </div>
             </Card>

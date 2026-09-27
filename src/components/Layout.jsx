@@ -1,8 +1,10 @@
-import { Outlet, NavLink, Link } from "react-router-dom";
+import { Outlet, NavLink, Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, Wrench, Users } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/lib/AuthContext";
 import { Image } from "@/components/ui/image";
+import PullToRefresh from "@/components/PullToRefresh";
 
 const allNav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ["admin", "tech"] },
@@ -34,13 +36,14 @@ function BrandMark({ settings, size = "md" }) {
 export default function Layout() {
   const { settings } = useSettings();
   const { user } = useAuth();
+  const location = useLocation();
   const brand = settings?.business_name || "FlowPro Plumbing";
   const short = brand.split(" ")[0];
   const nav = allNav.filter((item) => item.roles.includes(user?.role));
 
   return (
     <div className="min-h-screen flex bg-muted/30">
-      <aside className="hidden md:flex w-64 flex-col border-r bg-card shrink-0">
+      <aside className="hidden md:flex w-64 flex-col border-r bg-card shrink-0 select-none">
         <Link to="/" className="h-16 flex items-center gap-2.5 px-6 border-b">
           <BrandMark settings={settings} />
           <span className="font-heading font-semibold text-lg tracking-tight">{short}</span>
@@ -52,7 +55,7 @@ export default function Layout() {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors select-none ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -69,24 +72,40 @@ export default function Layout() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
-        <header className="md:hidden h-14 flex items-center gap-2.5 px-4 border-b bg-card sticky top-0 z-10">
+      <div className="flex-1 flex flex-col min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+        <header
+          className="md:hidden min-h-14 flex items-center gap-2.5 px-4 border-b bg-card sticky top-0 z-10"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
           <BrandMark settings={settings} size="sm" />
           <span className="font-heading font-semibold">{short}</span>
         </header>
-        <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
-          <Outlet />
+        <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overscroll-none">
+          <PullToRefresh onRefresh={() => window.location.reload()}>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Outlet />
+            </motion.div>
+          </PullToRefresh>
         </main>
       </div>
 
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-card border-t flex justify-around px-1 py-1.5">
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-card border-t flex justify-around px-1 py-1.5 select-none"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         {nav.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[11px] font-medium ${
+              `flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[11px] font-medium select-none ${
                 isActive ? "text-primary" : "text-muted-foreground"
               }`
             }

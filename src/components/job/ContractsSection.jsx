@@ -65,8 +65,8 @@ export default function ContractsSection({ job, contracts, reload }) {
                     <SelectTrigger className="h-8 w-[120px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewFile(c)}><Download className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(c)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => viewFile(c)} aria-label="Download contract"><Download className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(c)} aria-label="Delete contract"><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
               </div>
             </Card>

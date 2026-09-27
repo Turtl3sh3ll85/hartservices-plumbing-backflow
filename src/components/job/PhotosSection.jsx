@@ -42,8 +42,8 @@ export default function PhotosSection({ job, photos, reload }) {
               <div className="aspect-square bg-muted flex items-center justify-center relative">
                 <ImageIcon className="w-8 h-8 text-muted-foreground/40" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                  <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => viewFile(p)}><Eye className="w-4 h-4" /></Button>
-                  <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => remove(p)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  <Button variant="secondary" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => viewFile(p)} aria-label="View photo"><Eye className="w-4 h-4" /></Button>
+                  <Button variant="secondary" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(p)} aria-label="Delete photo"><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
               </div>
               {p.caption && <div className="p-2 text-xs text-muted-foreground truncate">{p.caption}</div>}

@@ -62,8 +62,8 @@ export default function EstimatesSection({ job, estimates, reload }) {
                     <SelectTrigger className="h-8 w-[130px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(e)}><Pencil className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(e)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => startEdit(e)} aria-label="Edit estimate"><Pencil className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(e)} aria-label="Delete estimate"><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
               </div>
             </Card>
