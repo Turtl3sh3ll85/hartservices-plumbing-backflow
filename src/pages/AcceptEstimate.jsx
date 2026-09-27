@@ -155,9 +155,7 @@ export default function AcceptEstimate() {
                 )}
               </div>
             ) : (
-              <Button onClick={accept} disabled={accepting || !agreed} className="w-full h-12 text-base">
-                {accepting ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Converting…</>) : (<><FileText className="w-5 h-5 mr-2" /> Accept estimate</>)}
-              </Button>
+              <div className="text-sm text-muted-foreground text-center">Review the Service Terms &amp; Conditions below to accept this estimate.</div>
             )}
             <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-muted-foreground">
               <ShieldCheck className="w-3.5 h-3.5" /> Accepting converts this estimate into a payable invoice
@@ -166,7 +164,12 @@ export default function AcceptEstimate() {
         </div>
 
         {!alreadyConverted && (
-          <ServiceTerms agreed={agreed} onChange={setAgreed} />
+          <>
+            <ServiceTerms agreed={agreed} onChange={setAgreed} />
+            <Button onClick={accept} disabled={accepting || !agreed} className="w-full h-12 text-base mt-4">
+              {accepting ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Converting…</>) : (<><FileText className="w-5 h-5 mr-2" /> Accept estimate</>)}
+            </Button>
+          </>
         )}
 
         {estimate.notes && <p className="text-center text-sm text-muted-foreground mt-4">{estimate.notes}</p>}
