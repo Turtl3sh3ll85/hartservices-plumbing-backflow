@@ -21,6 +21,7 @@ import InvoiceEditor from '@/pages/InvoiceEditor';
 import Estimates from '@/pages/Estimates';
 import Settings from '@/pages/Settings';
 import PayInvoice from '@/pages/PayInvoice';
+import AcceptEstimate from '@/pages/AcceptEstimate';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -49,6 +50,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/pay/:invoiceId" element={<PayInvoice />} />
+      <Route path="/accept/:estimateId" element={<AcceptEstimate />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

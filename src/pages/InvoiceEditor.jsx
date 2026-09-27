@@ -148,7 +148,7 @@ export default function InvoiceEditor() {
       }
       const basePayload = { ...form, job_id: jobId, ...totals, status: send ? "sent" : form.status };
       const payload = isEstimate
-        ? { job_id: basePayload.job_id, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, total: basePayload.total, status: basePayload.status, notes: basePayload.notes }
+        ? { job_id: basePayload.job_id, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, total: basePayload.total, payment_schedule: basePayload.payment_schedule, status: basePayload.status, notes: basePayload.notes }
         : basePayload;
       const entity = isEstimate ? base44.entities.Estimate : base44.entities.Invoice;
       let resultId = savedId;
@@ -164,7 +164,7 @@ export default function InvoiceEditor() {
     setSaving(false);
   };
 
-  const payLink = savedId ? `${window.location.origin}/pay/${savedId}` : null;
+  const payLink = savedId ? `${window.location.origin}/${isEstimate ? "accept" : "pay"}/${savedId}` : null;
   const copyLink = () => {
     if (!payLink) return;
     navigator.clipboard.writeText(payLink);
@@ -252,13 +252,13 @@ export default function InvoiceEditor() {
           <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total</span><span className="tabular-nums">{formatMoney(totals.total)}</span></div>
         </div>
 
-        {!isEstimate && <PaymentScheduleEditor total={totals.total} schedule={form.payment_schedule} onChange={(s) => setForm({ ...form, payment_schedule: s })} />}
+        <PaymentScheduleEditor total={totals.total} schedule={form.payment_schedule} onChange={(s) => setForm({ ...form, payment_schedule: s })} />
       </Card>
 
-      {!isEstimate && payLink && (
+      {payLink && (
         <Card className="p-4 bg-primary/5 border-primary/20">
-          <div className="flex items-center gap-2 text-sm font-medium mb-2"><LinkIcon className="w-4 h-4" /> Payment link</div>
-          <p className="text-xs text-muted-foreground mb-3">Share this link with your client so they can pay with PayPal.</p>
+          <div className="flex items-center gap-2 text-sm font-medium mb-2"><LinkIcon className="w-4 h-4" /> {isEstimate ? "Accept link" : "Payment link"}</div>
+          <p className="text-xs text-muted-foreground mb-3">{isEstimate ? "Share this link with your client so they can review and accept the estimate." : "Share this link with your client so they can pay with PayPal."}</p>
           <div className="flex gap-2">
             <Input readOnly value={payLink} className="bg-background font-mono text-xs" />
             <Button variant="outline" onClick={copyLink}>{copied ? <><Check className="w-4 h-4 mr-1" /> Copied</> : <><Copy className="w-4 h-4 mr-1" /> Copy</>}</Button>
