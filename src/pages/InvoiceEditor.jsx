@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import LineItemEditor from "@/components/LineItemEditor";
+import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
 import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 import CustomerFormDialog from "@/components/CustomerFormDialog";
 import SheetItemsDialog from "@/components/SheetItemsDialog";
@@ -36,6 +37,7 @@ export default function InvoiceEditor() {
     payment_status: "unpaid",
     due_date: "",
     notes: "",
+    payment_schedule: [],
   });
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState(id || null);
@@ -59,7 +61,7 @@ export default function InvoiceEditor() {
       setSettings(st[0] || null);
       if (isEdit) {
         const inv = await base44.entities.Invoice.get(id);
-        setForm({ ...form, ...inv, line_items: inv.line_items || [] });
+        setForm({ ...form, ...inv, line_items: inv.line_items || [], payment_schedule: inv.payment_schedule || [] });
         setSavedId(id);
         const j = jb.find((x) => x.id === inv.job_id);
         if (j) setSelectedCustomerId(j.customer_id || "");
@@ -215,6 +217,8 @@ export default function InvoiceEditor() {
           <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{formatMoney(totals.subtotal)}</span></div>
           <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total</span><span className="tabular-nums">{formatMoney(totals.total)}</span></div>
         </div>
+
+        <PaymentScheduleEditor total={totals.total} schedule={form.payment_schedule} onChange={(s) => setForm({ ...form, payment_schedule: s })} />
       </Card>
 
       {payLink && (

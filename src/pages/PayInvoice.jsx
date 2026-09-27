@@ -157,6 +157,23 @@ export default function PayInvoice() {
               <div className="flex justify-between text-sm text-muted-foreground"><span>Tax</span><span className="tabular-nums">{formatMoney(invoice.tax)}</span></div>
               <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total due</span><span className="tabular-nums">{formatMoney(invoice.total)}</span></div>
             </div>
+
+            {(invoice.payment_schedule || []).length > 0 && (
+              <div className="border-t mt-4 pt-4">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Payment schedule</div>
+                <div className="space-y-1.5">
+                  {(invoice.payment_schedule || []).map((p, i) => {
+                    const amt = p.type === "percentage" ? ((Number(invoice.total) || 0) * (Number(p.value) || 0)) / 100 : Number(p.value) || 0;
+                    return (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span>{p.label || `Payment ${i + 1}`}</span>
+                        <span className="tabular-nums">{formatMoney(amt)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="p-6 border-t bg-muted/30">

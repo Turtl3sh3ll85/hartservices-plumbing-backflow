@@ -51,6 +51,32 @@
       "type": "number",
       "title": "Total"
     },
+    "payment_schedule": {
+      "type": "array",
+      "title": "Payment Schedule",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percentage",
+              "amount"
+            ],
+            "default": "percentage",
+            "title": "Type"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          }
+        }
+      }
+    },
     "status": {
       "type": "string",
       "enum": [
