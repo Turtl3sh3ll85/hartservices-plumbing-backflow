@@ -4,6 +4,7 @@ const HEADER_MAP = {
   description: ["description", "item", "name", "task", "service", "product"],
   quantity: ["quantity", "qty", "q", "count"],
   unit_price: ["unit price", "unitprice", "price", "rate", "cost", "amount"],
+  category: ["category", "type", "group", "section"],
 };
 
 function matchHeader(header) {
@@ -67,7 +68,8 @@ export default async function(req) {
       if (!description) continue;
       const quantity = fieldIndex.quantity !== undefined ? parseFloat(row[fieldIndex.quantity]) || 1 : 1;
       const unit_price = fieldIndex.unit_price !== undefined ? parseFloat(row[fieldIndex.unit_price]) || 0 : 0;
-      line_items.push({ description, quantity, unit_price, markup: 0, markup_mode: "preset" });
+      const category = fieldIndex.category !== undefined ? String(row[fieldIndex.category] || "").trim() : "";
+      line_items.push({ description, quantity, unit_price, category, markup: 0, markup_mode: "preset" });
     }
 
     return Response.json({ line_items });

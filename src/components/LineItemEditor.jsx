@@ -42,8 +42,18 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
                   disabled={!editable}
                 >
                   <option value="">Pick from catalog…</option>
-                  {catalog.map((c, idx) => (
-                    <option key={idx} value={idx}>{c.description} — {formatMoney(c.unit_price)}</option>
+                  {Object.entries(
+                    catalog.reduce((acc, c, idx) => {
+                      const cat = c.category || "Other";
+                      (acc[cat] = acc[cat] || []).push({ c, idx });
+                      return acc;
+                    }, {})
+                  ).map(([cat, entries]) => (
+                    <optgroup key={cat} label={cat}>
+                      {entries.map(({ c, idx }) => (
+                        <option key={idx} value={idx}>{c.description} — {formatMoney(c.unit_price)}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               )}
