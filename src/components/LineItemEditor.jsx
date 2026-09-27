@@ -64,10 +64,10 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
                     <Input
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="5"
                       className="pr-7 text-right"
                       value={li.markup ?? 0}
-                      onChange={(e) => update(i, "markup", parseFloat(e.target.value) || 0)}
+                      onChange={(e) => update(i, "markup", Math.round((parseFloat(e.target.value) || 0) / 5) * 5)}
                       disabled={!editable}
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
