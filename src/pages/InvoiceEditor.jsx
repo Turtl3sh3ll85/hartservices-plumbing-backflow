@@ -42,9 +42,6 @@ export default function InvoiceEditor() {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [googleOpen, setGoogleOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
-  const [newJobTitle, setNewJobTitle] = useState("");
-  const [creatingJob, setCreatingJob] = useState(false);
-
   useEffect(() => {
     (async () => {
       const [jb, cs, st] = await Promise.all([
@@ -89,25 +86,21 @@ export default function InvoiceEditor() {
     setForm((f) => ({ ...f, job_id: "" }));
   };
 
-  const createJob = async () => {
-    if (!newJobTitle || !selectedCustomerId) return;
-    setCreatingJob(true);
-    try {
-      const jb = await base44.entities.Job.create({ title: newJobTitle, customer_id: selectedCustomerId, status: "scheduled" });
-      setJobs((prev) => [jb, ...prev]);
-      setForm((f) => ({ ...f, job_id: jb.id }));
-      setNewJobTitle("");
-    } catch (e) { alert(e.message); }
-    setCreatingJob(false);
-  };
-
   const setLineItems = (li) => setForm({ ...form, line_items: li });
 
   const save = async (send = false) => {
-    if (!form.job_id || !form.name) { alert("Select a job and name the invoice."); return; }
+    if (!form.name) { alert("Name the invoice."); return; }
+    if (!selectedCustomerId && !form.job_id) { alert("Select a customer."); return; }
     setSaving(true);
     try {
-      const payload = { ...form, ...totals, status: send ? "sent" : form.status };
+      let jobId = form.job_id;
+      if (!jobId) {
+        const jb = await base44.entities.Job.create({ title: form.name, customer_id: selectedCustomerId, status: "scheduled" });
+        jobId = jb.id;
+        setJobs((prev) => [jb, ...prev]);
+        setForm((f) => ({ ...f, job_id: jb.id }));
+      }
+      const payload = { ...form, job_id: jobId, ...totals, status: send ? "sent" : form.status };
       let resultId = savedId;
       if (isEdit || savedId) {
         await base44.entities.Invoice.update(savedId, payload);
@@ -162,14 +155,6 @@ export default function InvoiceEditor() {
         </div>
 
         <div className="space-y-1.5">
-          <Label>Job name *</Label>
-          <div className="flex gap-2">
-            <Input value={newJobTitle} onChange={(e) => setNewJobTitle(e.target.value)} placeholder={selectedCustomerId ? "Job title (e.g. Kitchen sink repair)" : "Select a customer first"} disabled={!selectedCustomerId} />
-            <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={createJob} disabled={!newJobTitle || !selectedCustomerId || creatingJob}><Plus className="w-4 h-4 mr-1" /> {creatingJob ? "…" : "Create"}</Button>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
           <Label>Invoice name * <span className="text-muted-foreground font-normal">(describe the tasks performed)</span></Label>
           <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Replace bathroom vanity &amp; repair leak under sink" />
         </div>
@@ -219,7 +204,7 @@ export default function InvoiceEditor() {
       <div className="flex flex-wrap gap-2 justify-end">
         <Button asChild variant="outline"><Link to="/invoices">Cancel</Link></Button>
         <Button variant="outline" onClick={() => save(false)} disabled={saving}><Save className="w-4 h-4 mr-1" /> {saving ? "Saving…" : "Save draft"}</Button>
-        <Button onClick={() => save(true)} disabled={saving || !form.job_id || !form.name}><Send className="w-4 h-4 mr-1" /> Save &amp; send</Button>
+        <Button onClick={() => save(true)} disabled={saving || !form.name}><Send className="w-4 h-4 mr-1" /> Save &amp; send</Button>
       </div>
     </div>
   );
