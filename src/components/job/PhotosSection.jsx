@@ -6,9 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import FileUpload from "@/components/FileUpload";
 import EmptyState from "@/components/EmptyState";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function PhotosSection({ job, photos, reload }) {
   const [caption, setCaption] = useState("");
+  const { toast } = useToast();
+  const { confirmState, confirm, onOpenChange } = useConfirmDialog();
 
   const onUploaded = async ({ file_uri, file_name }) => {
     await base44.entities.Attachment.create({ job_id: job.id, type: "photo", file_uri, file_name, caption });
@@ -16,13 +21,26 @@ export default function PhotosSection({ job, photos, reload }) {
     reload();
   };
 
-  const remove = async (p) => { if (confirm("Delete photo?")) { await base44.entities.Attachment.delete(p.id); reload(); } };
+  const remove = (p) => {
+    confirm({
+      title: "Delete photo",
+      description: "Delete photo?",
+      confirmLabel: "Delete",
+      destructive: true,
+      onConfirm: () => doRemove(p),
+    });
+  };
+
+  const doRemove = async (p) => {
+    await base44.entities.Attachment.delete(p.id);
+    reload();
+  };
 
   const viewFile = async (p) => {
     try {
       const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: p.file_uri });
       window.open(signed_url, "_blank");
-    } catch (e) { alert("Could not open file: " + e.message); }
+    } catch (e) { toast({ title: "Error", description: "Could not open file: " + e.message, variant: "destructive" }); }
   };
 
   return (
@@ -52,6 +70,8 @@ export default function PhotosSection({ job, photos, reload }) {
           ))}
         </div>
       )}
+
+      <ConfirmDialog {...confirmState} onOpenChange={onOpenChange} />
     </div>
   );
 }

@@ -68,7 +68,7 @@ export default function FollowUpsSection({ job, followups, reload }) {
       ) : (
         <div className="space-y-2">
           {followups.map((f) => (
-            <Card key={f.id} className={`p-4 ${isOverdue(f) ? "border-red-200 bg-red-50/40" : ""}`}>
+            <Card key={f.id} className={`p-4 ${isOverdue(f) ? "border-destructive/20 bg-destructive/5" : ""}`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">

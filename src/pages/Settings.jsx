@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Image } from "@/components/ui/image";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useToast } from "@/components/ui/use-toast";
 
 const empty = { business_name: "", business_email: "", business_phone: "", business_street: "", business_city: "", business_state: "", business_zip: "", logo_url: "", default_tax_rate: 0, payment_terms: "Due on receipt", google_sheet_id: "", weekly_summary_enabled: false };
 
@@ -20,6 +21,7 @@ export default function Settings() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const fileRef = useRef(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     (async () => {
@@ -37,7 +39,7 @@ export default function Settings() {
       else { const created = await base44.entities.Settings.create(form); setExisting(created); }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     setSaving(false);
   };
 
@@ -47,7 +49,7 @@ export default function Settings() {
     try {
       const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
       setForm((f) => ({ ...f, logo_url: file_url }));
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     setUploading(false);
   };
 
@@ -58,7 +60,7 @@ export default function Settings() {
     try {
       await base44.functions.invoke("deleteAccount", {});
       await base44.auth.logout("/login");
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     setDeleting(false);
   };
 

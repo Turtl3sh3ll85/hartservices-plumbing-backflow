@@ -90,7 +90,7 @@ export default function Invoices() {
                 <Link key={i.id} to={`/invoices/${i.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-accent transition-colors">
                   <div className="min-w-0">
                     <div className="font-medium truncate">{j?.title || "No job"}</div>
-                    <div className="text-xs text-muted-foreground truncate">{i.name || "Untitled invoice"} · {i.number}{c ? ` · ${c.name}` : ""}</div>
+                    <div className="text-sm text-muted-foreground truncate">{i.name || "Untitled invoice"} · {i.number}{c ? ` · ${c.name}` : ""}</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>

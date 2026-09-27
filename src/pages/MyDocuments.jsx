@@ -78,7 +78,7 @@ export default function MyDocuments() {
                   <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                     <div className="min-w-0">
                       <div className="font-medium truncate">{j?.title || i.name || "Invoice"}</div>
-                      <div className="text-xs text-muted-foreground truncate">
+                      <div className="text-sm text-muted-foreground truncate">
                         {i.name || i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
                       </div>
                     </div>
@@ -112,7 +112,7 @@ export default function MyDocuments() {
                   <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                     <div className="min-w-0">
                       <div className="font-medium truncate">{j?.title || e.name || "Estimate"}</div>
-                      <div className="text-xs text-muted-foreground truncate">{e.name || e.number}</div>
+                      <div className="text-sm text-muted-foreground truncate">{e.name || e.number}</div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>

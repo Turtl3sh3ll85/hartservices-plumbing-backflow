@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import EmptyState from "@/components/EmptyState";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { useToast } from "@/components/ui/use-toast";
 import { fullAddress } from "@/lib/invoice";
 
 const empty = { name: "", company: "", email: "", phone: "", street: "", city: "", state: "", zip: "", notes: "" };
@@ -21,6 +24,8 @@ export default function Customers() {
   const [form, setForm] = useState(empty);
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  const { confirmState, confirm, onOpenChange } = useConfirmDialog();
 
   const load = async () => {
     setLoading(true);
@@ -62,21 +67,30 @@ export default function Customers() {
       } else {
         setCustomers((prev) => prev.filter((c) => c.id !== tempId));
       }
-      alert(e.message);
+      toast({ title: "Error", description: e.message, variant: "destructive" });
       setOpen(true);
     }
     setSaving(false);
   };
 
-  const remove = async (c) => {
-    if (!confirm(`Delete customer "${c.name}"?`)) return;
+  const remove = (c) => {
+    confirm({
+      title: "Delete customer",
+      description: `Delete customer "${c.name}"?`,
+      confirmLabel: "Delete",
+      destructive: true,
+      onConfirm: () => doRemove(c),
+    });
+  };
+
+  const doRemove = async (c) => {
     const previous = customers;
     setCustomers((prev) => prev.filter((x) => x.id !== c.id));
     try {
       await base44.entities.Customer.delete(c.id);
     } catch (e) {
       setCustomers(previous);
-      alert(e.message);
+      toast({ title: "Error", description: e.message, variant: "destructive" });
     }
   };
 
@@ -112,7 +126,7 @@ export default function Customers() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-heading font-semibold truncate">{c.name}</div>
-                  {c.company && <div className="text-xs text-muted-foreground">{c.company}</div>}
+                  {c.company && <div className="text-sm text-muted-foreground">{c.company}</div>}
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => startEdit(c)} aria-label="Edit customer"><Pencil className="w-4 h-4" /></Button>
@@ -160,6 +174,8 @@ export default function Customers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog {...confirmState} onOpenChange={onOpenChange} />
     </div>
   );
 }

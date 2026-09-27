@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Upload, Loader2, ImageIcon, FileIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function FileUpload({ type = "photo", onUploaded, label }) {
   const [uploading, setUploading] = useState(false);
   const defaultLabel = type === "photo" ? "Add photos" : "Attach contract";
   const text = label || defaultLabel;
+  const { toast } = useToast();
 
   const handleFiles = async (files) => {
     if (!files || !files.length) return;
@@ -17,7 +19,7 @@ export default function FileUpload({ type = "photo", onUploaded, label }) {
       }
     } catch (e) {
       console.error("Upload failed", e);
-      alert("Upload failed: " + (e?.message || "unknown error"));
+      toast({ title: "Upload failed", description: e?.message || "unknown error", variant: "destructive" });
     } finally {
       setUploading(false);
     }

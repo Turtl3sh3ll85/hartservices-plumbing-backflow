@@ -12,6 +12,8 @@ import ContractsSection from "@/components/job/ContractsSection";
 import PhotosSection from "@/components/job/PhotosSection";
 import FollowUpsSection from "@/components/job/FollowUpsSection";
 import { fullAddress } from "@/lib/invoice";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 export default function JobDetail() {
   const { id } = useParams();
@@ -23,6 +25,7 @@ export default function JobDetail() {
   const [photos, setPhotos] = useState([]);
   const [followups, setFollowups] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { confirmState, confirm, onOpenChange } = useConfirmDialog();
 
   const load = async () => {
     setLoading(true);
@@ -50,8 +53,17 @@ export default function JobDetail() {
 
   useEffect(() => { load(); }, [id]);
 
-  const remove = async () => {
-    if (!confirm("Delete this job and all its records?")) return;
+  const remove = () => {
+    confirm({
+      title: "Delete job",
+      description: "Delete this job and all its records?",
+      confirmLabel: "Delete",
+      destructive: true,
+      onConfirm: doRemove,
+    });
+  };
+
+  const doRemove = async () => {
     await base44.entities.Job.delete(id);
     window.location.href = "/jobs";
   };
@@ -98,6 +110,8 @@ export default function JobDetail() {
         <TabsContent value="photos" className="mt-4"><PhotosSection job={job} photos={photos} reload={load} /></TabsContent>
         <TabsContent value="followups" className="mt-4"><FollowUpsSection job={job} followups={followups} reload={load} /></TabsContent>
       </Tabs>
+
+      <ConfirmDialog {...confirmState} onOpenChange={onOpenChange} />
     </div>
   );
 }

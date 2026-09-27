@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import FileUpload from "@/components/FileUpload";
 import StatusBadge from "@/components/StatusBadge";
 import EmptyState from "@/components/EmptyState";
+import { useToast } from "@/components/ui/use-toast";
 import { formatMoney } from "@/lib/invoice";
 
 const statuses = ["draft", "sent", "signed", "declined"];
@@ -18,6 +19,7 @@ const blank = { title: "", file_uri: "", file_name: "", amount: 0, status: "draf
 export default function ContractsSection({ job, contracts, reload }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(blank);
+  const { toast } = useToast();
 
   const startNew = () => { setForm(blank); setOpen(true); };
 
@@ -26,7 +28,7 @@ export default function ContractsSection({ job, contracts, reload }) {
   };
 
   const save = async () => {
-    if (!form.title || !form.file_uri) { alert("Add a title and a contract file."); return; }
+    if (!form.title || !form.file_uri) { toast({ description: "Add a title and a contract file." }); return; }
     await base44.entities.Contract.create({ ...form, job_id: job.id });
     setOpen(false);
     reload();
@@ -39,7 +41,7 @@ export default function ContractsSection({ job, contracts, reload }) {
     try {
       const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: c.file_uri });
       window.open(signed_url, "_blank");
-    } catch (e) { alert("Could not open file: " + e.message); }
+    } catch (e) { toast({ title: "Error", description: "Could not open file: " + e.message, variant: "destructive" }); }
   };
 
   return (

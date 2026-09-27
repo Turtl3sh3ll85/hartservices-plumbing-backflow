@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import LineItemEditor from "@/components/LineItemEditor";
 import StatusBadge from "@/components/StatusBadge";
 import EmptyState from "@/components/EmptyState";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
 
 const blank = { number: "", line_items: [{ description: "", quantity: 1, unit_price: 0 }], tax_rate: 0, notes: "", status: "draft" };
@@ -21,6 +23,7 @@ export default function EstimatesSection({ job, estimates, reload }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(blank);
+  const { confirmState, confirm, onOpenChange } = useConfirmDialog();
 
   const startNew = async () => {
     const all = await base44.entities.Estimate.list();
@@ -39,7 +42,20 @@ export default function EstimatesSection({ job, estimates, reload }) {
     reload();
   };
 
-  const remove = async (e) => { if (confirm("Delete estimate?")) { await base44.entities.Estimate.delete(e.id); reload(); } };
+  const remove = (e) => {
+    confirm({
+      title: "Delete estimate",
+      description: "Delete estimate?",
+      confirmLabel: "Delete",
+      destructive: true,
+      onConfirm: () => doRemove(e),
+    });
+  };
+
+  const doRemove = async (e) => {
+    await base44.entities.Estimate.delete(e.id);
+    reload();
+  };
   const setStatus = async (e, status) => { await base44.entities.Estimate.update(e.id, { status }); reload(); };
   const totals = calcTotals(form.line_items, form.tax_rate);
 
@@ -96,6 +112,8 @@ export default function EstimatesSection({ job, estimates, reload }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog {...confirmState} onOpenChange={onOpenChange} />
     </div>
   );
 }

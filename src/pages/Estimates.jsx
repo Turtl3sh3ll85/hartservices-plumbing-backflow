@@ -85,7 +85,7 @@ export default function Estimates() {
                 <Link key={e.id} to={`/estimates/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-accent transition-colors">
                   <div className="min-w-0">
                     <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
-                    <div className="text-xs text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}{j ? ` · ${j.title}` : ""}</div>
+                    <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}{j ? ` · ${j.title}` : ""}</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>

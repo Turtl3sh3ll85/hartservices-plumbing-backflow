@@ -141,8 +141,8 @@ export default function InvoiceEditor() {
   };
 
   const save = async (send = false) => {
-    if (!form.name) { alert(`Name the ${docLabel}.`); return; }
-    if (!selectedCustomerId && !form.job_id) { alert("Select a customer."); return; }
+    if (!form.name) { toast({ description: `Name the ${docLabel}.` }); return; }
+    if (!selectedCustomerId && !form.job_id) { toast({ description: "Select a customer." }); return; }
     setSaving(true);
     try {
       let jobId = form.job_id;
@@ -211,7 +211,7 @@ export default function InvoiceEditor() {
         }
       }
       navigate(`/${isEstimate ? "estimates" : "invoices"}/${resultId}`);
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     setSaving(false);
   };
 

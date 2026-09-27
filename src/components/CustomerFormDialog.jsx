@@ -4,10 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function CustomerFormDialog({ open, onOpenChange, onPick }) {
   const [form, setForm] = useState({ name: "", company: "", email: "", phone: "", street: "", city: "", state: "", zip: "" });
   const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -23,7 +25,7 @@ export default function CustomerFormDialog({ open, onOpenChange, onPick }) {
       onPick(cust);
       onOpenChange(false);
       setForm({ name: "", company: "", email: "", phone: "", street: "", city: "", state: "", zip: "" });
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
     setSaving(false);
   };
 

@@ -134,7 +134,7 @@ export default function Layout() {
               }
             }}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[11px] font-medium select-none ${
+              `flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-xs font-medium select-none ${
                 isActive ? "text-primary" : "text-muted-foreground"
               }`
             }

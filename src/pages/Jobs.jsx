@@ -11,6 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatusBadge from "@/components/StatusBadge";
 import EmptyState from "@/components/EmptyState";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { useToast } from "@/components/ui/use-toast";
 import { fullAddress } from "@/lib/invoice";
 
 const empty = { customer_id: "", title: "", job_street: "", job_city: "", job_state: "", job_zip: "", status: "scheduled", scheduled_date: "", description: "" };
@@ -27,6 +30,8 @@ export default function Jobs() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  const { confirmState, confirm, onOpenChange } = useConfirmDialog();
 
   const customerMap = customers.length ? Object.fromEntries(customers.map((c) => [c.id, c])) : {};
 
@@ -84,21 +89,30 @@ export default function Jobs() {
       } else {
         setJobs((prev) => prev.filter((j) => j.id !== tempId));
       }
-      alert(e.message);
+      toast({ title: "Error", description: e.message, variant: "destructive" });
       setOpen(true);
     }
     setSaving(false);
   };
 
-  const remove = async (j) => {
-    if (!confirm(`Delete job "${j.title}"?`)) return;
+  const remove = (j) => {
+    confirm({
+      title: "Delete job",
+      description: `Delete job "${j.title}"?`,
+      confirmLabel: "Delete",
+      destructive: true,
+      onConfirm: () => doRemove(j),
+    });
+  };
+
+  const doRemove = async (j) => {
     const previous = jobs;
     setJobs((prev) => prev.filter((x) => x.id !== j.id));
     try {
       await base44.entities.Job.delete(j.id);
     } catch (e) {
       setJobs(previous);
-      alert(e.message);
+      toast({ title: "Error", description: e.message, variant: "destructive" });
     }
   };
 
@@ -147,14 +161,14 @@ export default function Jobs() {
                 <Link to={`/jobs/${j.id}`} className="flex items-start justify-between gap-2 group">
                   <div className="min-w-0">
                     <div className="font-heading font-semibold group-hover:text-primary transition-colors truncate">{j.title}</div>
-                    {c && <div className="text-xs text-muted-foreground truncate">{c.name}</div>}
+                    {c && <div className="text-sm text-muted-foreground truncate">{c.name}</div>}
                   </div>
                   <StatusBadge status={j.status} />
                 </Link>
                 {fullAddress(j, "job_") && (
                   <div className="flex items-start gap-2 text-sm text-muted-foreground"><MapPin className="w-4 h-4 mt-0.5 shrink-0" /><span>{fullAddress(j, "job_")}</span></div>
                 )}
-                {j.scheduled_date && <div className="text-xs text-muted-foreground">Scheduled: {new Date(j.scheduled_date).toLocaleDateString()}</div>}
+                {j.scheduled_date && <div className="text-sm text-muted-foreground">Scheduled: {new Date(j.scheduled_date).toLocaleDateString()}</div>}
                 <div className="flex gap-1 mt-1">
                   <Button asChild variant="outline" size="sm" className="flex-1"><Link to={`/jobs/${j.id}`}>Open</Link></Button>
                   <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-9 sm:w-9 select-none" onClick={() => startEdit(j)} aria-label="Edit job"><Pencil className="w-4 h-4" /></Button>
@@ -200,6 +214,8 @@ export default function Jobs() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog {...confirmState} onOpenChange={onOpenChange} />
     </div>
   );
 }
