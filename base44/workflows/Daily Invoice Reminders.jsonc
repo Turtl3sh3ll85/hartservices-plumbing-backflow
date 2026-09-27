@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 8 * * *",
+      "one_time_date": null,
+      "timezone": "America/Chicago",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Sends a reminder email for each unpaid invoice at 8am every day",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "daily_invoice_reminders",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "remind": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendUnpaidInvoiceReminders"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send unpaid invoice reminders",
+            "description": "Emails customers with open invoices"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Daily Invoice Reminders"
+}

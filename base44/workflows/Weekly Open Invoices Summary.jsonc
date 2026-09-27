@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 8 * * 4",
+      "one_time_date": null,
+      "timezone": "America/Chicago",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Sends each customer a single email listing all their open invoices at 8am every Thursday",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "weekly_open_invoices_summary",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "summarize": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendWeeklyOpenInvoicesSummary"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send weekly open invoices summary",
+            "description": "One email per customer with all open invoices"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Weekly Open Invoices Summary"
+}

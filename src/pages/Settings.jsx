@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Image } from "@/components/ui/image";
+import { Switch } from "@/components/ui/switch";
 
-const empty = { business_name: "", business_email: "", business_phone: "", business_street: "", business_city: "", business_state: "", business_zip: "", logo_url: "", default_tax_rate: 0, payment_terms: "Due on receipt", google_sheet_id: "" };
+const empty = { business_name: "", business_email: "", business_phone: "", business_street: "", business_city: "", business_state: "", business_zip: "", logo_url: "", default_tax_rate: 0, payment_terms: "Due on receipt", google_sheet_id: "", weekly_summary_enabled: false };
 
 export default function Settings() {
   const [form, setForm] = useState(empty);
@@ -107,6 +108,17 @@ export default function Settings() {
         <div className="text-sm font-medium">Line item catalog (Google Sheets)</div>
         <p className="text-sm text-muted-foreground">Paste a Google Sheets ID to pull line items into invoices. The first sheet should have header columns named <span className="font-medium">Description</span>, <span className="font-medium">Quantity</span>, and <span className="font-medium">Unit Price</span>.</p>
         <div className="space-y-1.5"><Label>Google Sheet ID</Label><Input value={form.google_sheet_id} onChange={(e) => setForm({ ...form, google_sheet_id: e.target.value })} placeholder="1AbC…xyz" /></div>
+      </Card>
+
+      <Card className="p-6 space-y-2">
+        <div className="text-sm font-medium">Automated reminders</div>
+        <div className="flex items-center justify-between gap-4 py-1">
+          <div>
+            <div className="text-sm font-medium">Weekly open-invoices summary</div>
+            <p className="text-sm text-muted-foreground">Every Thursday at 8am, email each customer a single message listing all their open invoices.</p>
+          </div>
+          <Switch checked={!!form.weekly_summary_enabled} onCheckedChange={(v) => setForm({ ...form, weekly_summary_enabled: v })} />
+        </div>
       </Card>
 
       <Card className="p-6 space-y-2">
