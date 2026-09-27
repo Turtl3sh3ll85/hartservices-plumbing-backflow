@@ -12,6 +12,7 @@ import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
 import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 import CustomerFormDialog from "@/components/CustomerFormDialog";
 import SheetItemsDialog from "@/components/SheetItemsDialog";
+import InvoiceAttachments from "@/components/InvoiceAttachments";
 import StatusBadge from "@/components/StatusBadge";
 import { useToast } from "@/components/ui/use-toast";
 import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
@@ -269,6 +270,12 @@ export default function InvoiceEditor() {
 
         <PaymentScheduleEditor total={totals.total} schedule={form.payment_schedule} onChange={(s) => setForm({ ...form, payment_schedule: s })} />
       </Card>
+
+      {savedId && !isEstimate && (
+        <Card className="p-5">
+          <InvoiceAttachments invoiceId={savedId} />
+        </Card>
+      )}
 
       {payLink && (
         <Card className="p-4 bg-primary/5 border-primary/20">

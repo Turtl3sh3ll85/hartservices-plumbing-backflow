@@ -1,0 +1,47 @@
+{
+  "name": "InvoiceAttachment",
+  "type": "object",
+  "properties": {
+    "invoice_id": {
+      "type": "string",
+      "title": "Invoice"
+    },
+    "file_name": {
+      "type": "string",
+      "title": "File Name"
+    },
+    "drive_file_id": {
+      "type": "string",
+      "title": "Google Drive File ID"
+    },
+    "drive_link": {
+      "type": "string",
+      "title": "Google Drive Link"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "title": "Thumbnail URL"
+    },
+    "mime_type": {
+      "type": "string",
+      "title": "MIME Type"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "photo",
+        "document"
+      ],
+      "default": "document",
+      "title": "Type"
+    },
+    "caption": {
+      "type": "string",
+      "title": "Caption"
+    }
+  },
+  "required": [
+    "invoice_id",
+    "file_name"
+  ]
+}

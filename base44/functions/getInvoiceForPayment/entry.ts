@@ -25,6 +25,11 @@ export default async function(req) {
       settings = allSettings[0] || null;
     } catch (e) {}
 
+    let attachments = [];
+    try {
+      attachments = await base44.asServiceRole.entities.InvoiceAttachment.filter({ invoice_id }, "-created_date", 100);
+    } catch (e) {}
+
     // Notify the business the first time the customer opens this invoice
     if (!invoice.opened) {
       try {
@@ -33,7 +38,7 @@ export default async function(req) {
       } catch (e) {}
     }
 
-    return Response.json({ invoice, job, customer, settings });
+    return Response.json({ invoice, job, customer, settings, attachments });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

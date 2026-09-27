@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Droplet, CheckCircle2, Loader2, CreditCard, ShieldCheck, CheckCircle, FileDown } from "lucide-react";
+import { Droplet, CheckCircle2, Loader2, CreditCard, ShieldCheck, CheckCircle, FileDown, Paperclip, FileText, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
@@ -87,7 +87,7 @@ export default function PayInvoice() {
     );
   }
 
-  const { invoice, job, customer, settings } = data || {};
+  const { invoice, job, customer, settings, attachments } = data || {};
   const biz = settings || {};
   const brand = biz.business_name || "FlowPro Plumbing";
   const schedule = invoice?.payment_schedule || [];
@@ -268,6 +268,31 @@ export default function PayInvoice() {
             </div>
           </div>
         </div>
+
+        {Array.isArray(attachments) && attachments.length > 0 && (
+          <div className="bg-card rounded-2xl shadow-sm border p-6 mt-4">
+            <div className="flex items-center gap-1.5 text-sm font-medium mb-3"><Paperclip className="w-4 h-4" /> Attachments</div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {attachments.map((att) => (
+                <a key={att.id} href={att.drive_link} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-lg border p-2.5 hover:bg-muted/40 transition-colors">
+                  {att.type === "photo" && att.thumbnail_url ? (
+                    <div className="w-12 h-12 rounded-md overflow-hidden border bg-muted shrink-0">
+                      <Image src={att.thumbnail_url} alt={att.file_name} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">{att.file_name}</div>
+                    <div className="text-xs text-primary inline-flex items-center gap-1">Open <ExternalLink className="w-3 h-3" /></div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {invoice.notes && <p className="text-center text-sm text-muted-foreground mt-4">{invoice.notes}</p>}
       </div>
