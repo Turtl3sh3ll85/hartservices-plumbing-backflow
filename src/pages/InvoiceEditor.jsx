@@ -174,15 +174,11 @@ export default function InvoiceEditor() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            {selectedCustomerId && (
-              <>
-                <Label>New job for this customer</Label>
-                <div className="flex gap-2">
-                  <Input value={newJobTitle} onChange={(e) => setNewJobTitle(e.target.value)} placeholder="Job title (e.g. Kitchen sink repair)" />
-                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={createJob} disabled={!newJobTitle || creatingJob}><Plus className="w-4 h-4 mr-1" /> {creatingJob ? "…" : "Create"}</Button>
-                </div>
-              </>
-            )}
+            <Label>New job name</Label>
+            <div className="flex gap-2">
+              <Input value={newJobTitle} onChange={(e) => setNewJobTitle(e.target.value)} placeholder={selectedCustomerId ? "Job title (e.g. Kitchen sink repair)" : "Select a customer first"} disabled={!selectedCustomerId} />
+              <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={createJob} disabled={!newJobTitle || !selectedCustomerId || creatingJob}><Plus className="w-4 h-4 mr-1" /> {creatingJob ? "…" : "Create"}</Button>
+            </div>
           </div>
         </div>
 

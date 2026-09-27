@@ -98,28 +98,6 @@ export default function Dashboard() {
           )}
         </Card>
 
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-semibold">Active jobs</h2>
-            <Button asChild variant="ghost" size="sm"><Link to="/jobs">View all <ArrowRight className="w-4 h-4 ml-1" /></Link></Button>
-          </div>
-          {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : jobs.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No jobs yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {jobs.slice(0, 6).map((j) => (
-                <Link key={j.id} to={`/jobs/${j.id}`} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-accent transition-colors">
-                  <div className="min-w-0">
-                    <div className="font-medium text-sm truncate">{j.title}</div>
-                    <div className="text-xs text-muted-foreground truncate">{[j.job_street, j.job_city].filter(Boolean).join(", ")}</div>
-                  </div>
-                  <StatusBadge status={j.status} />
-                </Link>
-              ))}
-            </div>
-          )}
-        </Card>
-
         <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading font-semibold">Upcoming follow-ups</h2>
