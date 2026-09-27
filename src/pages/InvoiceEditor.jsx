@@ -159,6 +159,11 @@ export default function InvoiceEditor() {
         resultId = created.id;
         setSavedId(resultId);
       }
+      if (send) {
+        try {
+          await base44.functions.invoke("sendDocumentEmail", { type: isEstimate ? "estimate" : "invoice", id: resultId });
+        } catch (e) { /* email delivery is best-effort */ }
+      }
       navigate(`/${isEstimate ? "estimates" : "invoices"}/${resultId}`);
     } catch (e) { alert(e.message); }
     setSaving(false);

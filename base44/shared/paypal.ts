@@ -22,7 +22,7 @@ export async function getPaypalAccessToken() {
   });
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Failed to get PayPal access token: ${err}`);
+    throw new Error(`PayPal authentication failed: ${err}. Verify PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET are valid for the configured PAYPAL_ENVIRONMENT (sandbox or live).`);
   }
   const data = await res.json();
   return data.access_token;
