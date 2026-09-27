@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, MapPin, Calendar, User, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 export default function JobDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [customer, setCustomer] = useState(null);
   const [estimates, setEstimates] = useState([]);
@@ -65,7 +66,7 @@ export default function JobDetail() {
 
   const doRemove = async () => {
     await base44.entities.Job.delete(id);
-    window.location.href = "/jobs";
+    navigate("/jobs");
   };
 
   if (loading) return <p className="text-muted-foreground">Loading…</p>;

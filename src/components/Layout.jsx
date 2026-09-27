@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Outlet, NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, Wrench, Users } from "lucide-react";
+import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, Wrench, Users, ArrowLeft } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/lib/AuthContext";
 import { Image } from "@/components/ui/image";
@@ -46,6 +46,7 @@ export default function Layout() {
   const nav = allNav.filter((item) => item.roles.includes(user?.role));
   const tabRoutes = useRef({});
   const activeItem = nav.find((i) => i.end ? location.pathname === i.to : location.pathname === i.to || location.pathname.startsWith(i.to + "/"));
+  const isChildRoute = !activeItem || location.pathname !== activeItem.to;
 
   useEffect(() => {
     if (activeItem) tabRoutes.current[activeItem.to] = location.pathname;
@@ -87,12 +88,25 @@ export default function Layout() {
           className="md:hidden min-h-14 flex items-center gap-2.5 px-4 border-b bg-card sticky top-0 z-10"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-          <BrandMark settings={settings} size="sm" />
-          <span className="font-heading font-semibold shrink-0">{short}</span>
-          {activeItem && (
+          {isChildRoute ? (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 -ml-1 px-1 min-h-11 min-w-11 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back</span>
+            </button>
+          ) : (
             <>
-              <span className="text-muted-foreground/40 shrink-0">/</span>
-              <span className="text-sm font-medium text-muted-foreground truncate min-w-0">{activeItem.label}</span>
+              <BrandMark settings={settings} size="sm" />
+              <span className="font-heading font-semibold shrink-0">{short}</span>
+              {activeItem && (
+                <>
+                  <span className="text-muted-foreground/40 shrink-0">/</span>
+                  <span className="text-sm font-medium text-muted-foreground truncate min-w-0">{activeItem.label}</span>
+                </>
+              )}
             </>
           )}
         </header>
