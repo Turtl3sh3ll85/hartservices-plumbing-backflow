@@ -41,6 +41,10 @@
     "payment_terms": {
       "type": "string",
       "title": "Payment Terms"
+    },
+    "google_sheet_id": {
+      "type": "string",
+      "title": "Google Sheet ID for item catalog"
     }
   }
 }

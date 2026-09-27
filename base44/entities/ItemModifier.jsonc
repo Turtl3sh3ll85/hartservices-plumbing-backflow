@@ -1,0 +1,22 @@
+{
+  "name": "ItemModifier",
+  "type": "object",
+  "properties": {
+    "item_id": {
+      "type": "string",
+      "title": "Item"
+    },
+    "name": {
+      "type": "string",
+      "title": "Modifier Name"
+    },
+    "price_adjustment": {
+      "type": "number",
+      "title": "Price Adjustment"
+    }
+  },
+  "required": [
+    "item_id",
+    "name"
+  ]
+}

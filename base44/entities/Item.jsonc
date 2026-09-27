@@ -1,0 +1,29 @@
+{
+  "name": "Item",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Name"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category"
+    },
+    "unit_price": {
+      "type": "number",
+      "title": "Unit Price"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "sheet_row": {
+      "type": "number",
+      "title": "Sheet Row"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
