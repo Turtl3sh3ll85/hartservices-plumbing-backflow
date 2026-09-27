@@ -95,10 +95,10 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
                 className="col-span-6 sm:col-span-1 text-right"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 placeholder="1"
                 value={li.quantity ?? ""}
-                onChange={(e) => update(i, "quantity", parseFloat(e.target.value) || 0)}
+                onChange={(e) => update(i, "quantity", Math.round(parseFloat(e.target.value) || 0))}
                 disabled={!editable}
               />
               <Input
