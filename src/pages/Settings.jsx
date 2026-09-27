@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 
-const empty = { business_name: "", business_email: "", business_phone: "", business_street: "", business_city: "", business_state: "", business_zip: "", logo_url: "", default_tax_rate: 0, payment_terms: "Due on receipt" };
+const empty = { business_name: "", business_email: "", business_phone: "", business_street: "", business_city: "", business_state: "", business_zip: "", logo_url: "", default_tax_rate: 0, payment_terms: "Due on receipt", google_sheet_id: "" };
 
 export default function Settings() {
   const [form, setForm] = useState(empty);
@@ -64,6 +64,12 @@ export default function Settings() {
           <div className="space-y-1.5"><Label>Default tax rate %</Label><Input type="number" min="0" step="0.01" value={form.default_tax_rate ?? 0} onChange={(e) => setForm({ ...form, default_tax_rate: parseFloat(e.target.value) || 0 })} /></div>
           <div className="space-y-1.5"><Label>Payment terms</Label><Input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} /></div>
         </div>
+      </Card>
+
+      <Card className="p-6 space-y-3">
+        <div className="text-sm font-medium">Line item catalog (Google Sheets)</div>
+        <p className="text-sm text-muted-foreground">Paste a Google Sheets ID to pull line items into invoices. The first sheet should have header columns named <span className="font-medium">Description</span>, <span className="font-medium">Quantity</span>, and <span className="font-medium">Unit Price</span>.</p>
+        <div className="space-y-1.5"><Label>Google Sheet ID</Label><Input value={form.google_sheet_id} onChange={(e) => setForm({ ...form, google_sheet_id: e.target.value })} placeholder="1AbC…xyz" /></div>
       </Card>
 
       <Card className="p-6 space-y-2">

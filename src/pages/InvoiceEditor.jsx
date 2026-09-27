@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus } from "lucide-react";
+import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +42,8 @@ export default function InvoiceEditor() {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [googleOpen, setGoogleOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
+  const [pulling, setPulling] = useState(false);
+
   useEffect(() => {
     (async () => {
       const [jb, cs, st] = await Promise.all([
@@ -87,6 +89,18 @@ export default function InvoiceEditor() {
   };
 
   const setLineItems = (li) => setForm({ ...form, line_items: li });
+
+  const pullSheet = async () => {
+    setPulling(true);
+    try {
+      const res = await base44.functions.invoke("getSheetLineItems", {});
+      const items = res.data?.line_items || [];
+      if (!items.length) { alert("No line items found in the Google Sheet."); return; }
+      const cleaned = form.line_items.filter((li) => (li.description || "").trim());
+      setForm({ ...form, line_items: [...cleaned, ...items] });
+    } catch (e) { alert(e.message || "Failed to read the Google Sheet."); }
+    setPulling(false);
+  };
 
   const save = async (send = false) => {
     if (!form.name) { alert("Name the invoice."); return; }
@@ -167,7 +181,12 @@ export default function InvoiceEditor() {
         )}
 
         <div className="space-y-2">
-          <Label>Line items</Label>
+          <div className="flex items-center justify-between">
+            <Label>Line items</Label>
+            <Button type="button" variant="outline" size="sm" onClick={pullSheet} disabled={pulling}>
+              <FileSpreadsheet className="w-4 h-4 mr-1" /> {pulling ? "Pulling…" : "Pull from Google Sheet"}
+            </Button>
+          </div>
           <LineItemEditor lineItems={form.line_items} onChange={setLineItems} />
         </div>
 
