@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import LineItemEditor from "@/components/LineItemEditor";
 import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 import CustomerFormDialog from "@/components/CustomerFormDialog";
@@ -72,7 +71,6 @@ export default function InvoiceEditor() {
   const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
   const selectedJob = jobMap[form.job_id];
-  const filteredJobs = selectedCustomerId ? jobs.filter((j) => j.customer_id === selectedCustomerId) : jobs;
   const totals = calcTotals(form.line_items, form.tax_rate);
 
   const pickGoogleContact = async (c) => {
@@ -163,22 +161,11 @@ export default function InvoiceEditor() {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label>Job *</Label>
-            <Select value={form.job_id} onValueChange={(v) => { setForm({ ...form, job_id: v }); const jb = jobMap[v]; if (jb) setSelectedCustomerId(jb.customer_id || ""); }}>
-              <SelectTrigger><SelectValue placeholder={selectedCustomerId ? "Select job" : "Select a customer first"} /></SelectTrigger>
-              <SelectContent>
-                {filteredJobs.map((j) => <SelectItem key={j.id} value={j.id}>{j.title}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>New job name</Label>
-            <div className="flex gap-2">
-              <Input value={newJobTitle} onChange={(e) => setNewJobTitle(e.target.value)} placeholder={selectedCustomerId ? "Job title (e.g. Kitchen sink repair)" : "Select a customer first"} disabled={!selectedCustomerId} />
-              <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={createJob} disabled={!newJobTitle || !selectedCustomerId || creatingJob}><Plus className="w-4 h-4 mr-1" /> {creatingJob ? "…" : "Create"}</Button>
-            </div>
+        <div className="space-y-1.5">
+          <Label>Job name *</Label>
+          <div className="flex gap-2">
+            <Input value={newJobTitle} onChange={(e) => setNewJobTitle(e.target.value)} placeholder={selectedCustomerId ? "Job title (e.g. Kitchen sink repair)" : "Select a customer first"} disabled={!selectedCustomerId} />
+            <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={createJob} disabled={!newJobTitle || !selectedCustomerId || creatingJob}><Plus className="w-4 h-4 mr-1" /> {creatingJob ? "…" : "Create"}</Button>
           </div>
         </div>
 
