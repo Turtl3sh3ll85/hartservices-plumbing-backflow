@@ -45,6 +45,7 @@ export default function InvoiceEditor() {
   const [manualOpen, setManualOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [catalog, setCatalog] = useState([]);
+  const [modifiersCatalog, setModifiersCatalog] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -74,6 +75,15 @@ export default function InvoiceEditor() {
       try {
         const res = await base44.functions.invoke("getSheetLineItems", { sheet_id: "1x0jEtP3eJMFYi5dTDdBEtNrI8W5R7p9LqIGvCRKwKXw" });
         setCatalog(res.data?.line_items || []);
+      } catch (e) {}
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await base44.functions.invoke("getSheetModifiers", { sheet_id: "10XcNV3lHx0he2XoVV9TOS2OXEfZSqAi9rhp5KFvyt0E" });
+        setModifiersCatalog(res.data?.modifiers || []);
       } catch (e) {}
     })();
   }, []);
@@ -191,7 +201,7 @@ export default function InvoiceEditor() {
               <FileSpreadsheet className="w-4 h-4 mr-1" /> Pull from Google Sheet
             </Button>
           </div>
-          <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} />
+          <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} modifiersCatalog={modifiersCatalog} />
         </div>
 
         <p className="text-sm text-muted-foreground italic">Invoices are due within 7 days of issuance unless otherwise noted.</p>

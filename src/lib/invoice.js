@@ -1,7 +1,9 @@
 export function lineTotal(li) {
   const base = (Number(li?.quantity) || 0) * (Number(li?.unit_price) || 0);
   const markup = Number(li?.markup) || 0;
-  return markup ? base * (1 + markup / 100) : base;
+  const marked = markup ? base * (1 + markup / 100) : base;
+  const mods = (li?.modifiers || []).reduce((s, m) => s + (Number(m?.price_adjustment) || 0), 0);
+  return marked + mods;
 }
 
 export function calcTotals(lineItems = [], taxRate = 0) {
