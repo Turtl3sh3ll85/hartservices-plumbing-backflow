@@ -44,16 +44,78 @@ export default function Layout() {
   const brand = settings?.business_name || "FlowPro Plumbing";
   const short = brand.split(" ")[0];
   const nav = allNav.filter((item) => item.roles.includes(user?.role));
+  const TAB_ROUTES_KEY = "proinvoice_tabRoutes";
   const tabRoutes = useRef({});
+  const pendingRestore = useRef(null);
   const activeItem = nav.find((i) => i.end ? location.pathname === i.to : location.pathname === i.to || location.pathname.startsWith(i.to + "/"));
   const isChildRoute = !activeItem || location.pathname !== activeItem.to;
 
+  const persist = () => {
+    try { sessionStorage.setItem(TAB_ROUTES_KEY, JSON.stringify(tabRoutes.current)); } catch (e) {}
+  };
+
+  const buildHierarchy = (tabRoot, currentPath) => {
+    if (currentPath === tabRoot) return [{ path: tabRoot, scroll: 0 }];
+    const segments = currentPath.split("/").filter(Boolean);
+    const rootDepth = tabRoot.split("/").filter(Boolean).length;
+    const hierarchy = [tabRoot];
+    for (let i = rootDepth + 1; i <= segments.length; i++) {
+      hierarchy.push("/" + segments.slice(0, i).join("/"));
+    }
+    return hierarchy.map((p) => ({ path: p, scroll: 0 }));
+  };
+
+  // mount: deserialize from sessionStorage, then seed deep-link hierarchy
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(TAB_ROUTES_KEY);
+      if (raw) tabRoutes.current = JSON.parse(raw);
+    } catch (e) {}
+    if (activeItem) {
+      const stack = tabRoutes.current[activeItem.to] || [];
+      const hasCurrent = stack.some((e) => e && e.path === location.pathname);
+      if (!hasCurrent) {
+        tabRoutes.current[activeItem.to] = buildHierarchy(activeItem.to, location.pathname);
+      }
+    }
+    persist();
+    return () => persist();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // track the current path at the top of the active tab's stack
   useEffect(() => {
     if (activeItem) {
       const stack = tabRoutes.current[activeItem.to] || [];
-      if (stack[stack.length - 1] !== location.pathname) {
-        tabRoutes.current[activeItem.to] = [...stack, location.pathname];
+      const top = stack[stack.length - 1];
+      if (!top || top.path !== location.pathname) {
+        tabRoutes.current[activeItem.to] = [...stack, { path: location.pathname, scroll: 0 }];
+        persist();
       }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // record scroll position for the current top-of-stack path
+  useEffect(() => {
+    const onScroll = () => {
+      if (!activeItem) return;
+      const stack = tabRoutes.current[activeItem.to];
+      if (!stack || !stack.length) return;
+      const top = stack[stack.length - 1];
+      if (top && top.path === location.pathname) top.scroll = window.scrollY;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeItem, location.pathname]);
+
+  // restore scroll position after switching back to a previously visited tab
+  useEffect(() => {
+    if (pendingRestore.current && pendingRestore.current.path === location.pathname) {
+      const y = pendingRestore.current.scroll || 0;
+      pendingRestore.current = null;
+      requestAnimationFrame(() => window.scrollTo(0, y));
     }
   }, [location.pathname]);
 
@@ -143,14 +205,18 @@ export default function Layout() {
               const isActive = Boolean(activeItem && activeItem.to === item.to);
               if (isActive) {
                 e.preventDefault();
-                tabRoutes.current[item.to] = [item.to];
+                tabRoutes.current[item.to] = [{ path: item.to, scroll: 0 }];
+                pendingRestore.current = null;
+                persist();
                 navigate(item.to, { replace: true, state: { t: Date.now() } });
               } else {
                 const stack = tabRoutes.current[item.to];
-                const top = stack && stack.length ? stack[stack.length - 1] : item.to;
-                if (top !== item.to) {
+                const top = stack && stack.length ? stack[stack.length - 1] : null;
+                const topPath = top ? top.path : item.to;
+                if (topPath !== item.to) {
                   e.preventDefault();
-                  navigate(top);
+                  pendingRestore.current = { path: topPath, scroll: (top && top.scroll) || 0 };
+                  navigate(topPath);
                 }
               }
             }}
