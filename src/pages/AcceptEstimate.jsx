@@ -5,6 +5,7 @@ import { Droplet, CheckCircle2, Loader2, ShieldCheck, FileText, CreditCard } fro
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
+import ServiceTerms from "@/components/ServiceTerms";
 
 export default function AcceptEstimate() {
   const { estimateId } = useParams();
@@ -12,6 +13,7 @@ export default function AcceptEstimate() {
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState("");
+  const [agreed, setAgreed] = useState(false);
 
   const load = async () => {
     try {
@@ -23,6 +25,7 @@ export default function AcceptEstimate() {
   useEffect(() => { load(); }, []);
 
   const accept = async () => {
+    if (!agreed) { setError("Please review and agree to the Service Terms & Conditions before accepting."); return; }
     setAccepting(true);
     setError("");
     try {
@@ -152,7 +155,7 @@ export default function AcceptEstimate() {
                 )}
               </div>
             ) : (
-              <Button onClick={accept} disabled={accepting} className="w-full h-12 text-base">
+              <Button onClick={accept} disabled={accepting || !agreed} className="w-full h-12 text-base">
                 {accepting ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Converting…</>) : (<><FileText className="w-5 h-5 mr-2" /> Accept estimate</>)}
               </Button>
             )}
@@ -161,6 +164,10 @@ export default function AcceptEstimate() {
             </div>
           </div>
         </div>
+
+        {!alreadyConverted && (
+          <ServiceTerms agreed={agreed} onChange={setAgreed} />
+        )}
 
         {estimate.notes && <p className="text-center text-sm text-muted-foreground mt-4">{estimate.notes}</p>}
       </div>

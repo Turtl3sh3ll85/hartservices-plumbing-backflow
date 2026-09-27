@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoicePdf";
+import ServiceTerms from "@/components/ServiceTerms";
 
 function installmentAmount(item, total) {
   return item.type === "percentage"
@@ -23,6 +24,7 @@ export default function PayInvoice() {
   const [error, setError] = useState("");
   const [captured, setCaptured] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -55,6 +57,7 @@ export default function PayInvoice() {
   }, []);
 
   const pay = async (scheduleIndex) => {
+    if (!agreed) { setError("Please review and agree to the Service Terms & Conditions before paying."); return; }
     setPaying(scheduleIndex == null ? "full" : scheduleIndex);
     setError("");
     try {
@@ -228,7 +231,7 @@ export default function PayInvoice() {
                           <CheckCircle className="w-3.5 h-3.5" /> Paid
                         </span>
                       ) : (
-                        <Button size="sm" onClick={() => pay(i)} disabled={paying != null} className="shrink-0">
+                        <Button size="sm" onClick={() => pay(i)} disabled={paying != null || !agreed} className="shrink-0">
                           {isPayingThis ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CreditCard className="w-4 h-4 mr-1.5" />}
                           Pay
                         </Button>
@@ -240,10 +243,12 @@ export default function PayInvoice() {
             </div>
           )}
 
+          <ServiceTerms agreed={agreed} onChange={setAgreed} />
+
           <div className="p-6 border-t bg-muted/30">
             {error && <div className="text-sm text-red-600 mb-3 text-center">{error}</div>}
             {!hasSchedule && (
-              <Button onClick={() => pay(null)} disabled={paying != null} className="w-full h-12 text-base">
+              <Button onClick={() => pay(null)} disabled={paying != null || !agreed} className="w-full h-12 text-base">
                 {paying != null ? (
                   <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing…</>
                 ) : (
@@ -252,7 +257,7 @@ export default function PayInvoice() {
               </Button>
             )}
             {hasSchedule && nextUnpaid >= 0 && (
-              <Button onClick={() => pay(nextUnpaid)} disabled={paying != null} className="w-full h-12 text-base">
+              <Button onClick={() => pay(nextUnpaid)} disabled={paying != null || !agreed} className="w-full h-12 text-base">
                 {paying === nextUnpaid ? (
                   <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing…</>
                 ) : (
