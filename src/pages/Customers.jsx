@@ -115,8 +115,8 @@ export default function Customers() {
                   {c.company && <div className="text-xs text-muted-foreground">{c.company}</div>}
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(c)}><Pencil className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(c)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => startEdit(c)} aria-label="Edit customer"><Pencil className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(c)} aria-label="Delete customer"><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
               </div>
               <div className="space-y-1.5 text-sm text-muted-foreground">

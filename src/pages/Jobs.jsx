@@ -157,8 +157,8 @@ export default function Jobs() {
                 {j.scheduled_date && <div className="text-xs text-muted-foreground">Scheduled: {new Date(j.scheduled_date).toLocaleDateString()}</div>}
                 <div className="flex gap-1 mt-1">
                   <Button asChild variant="outline" size="sm" className="flex-1"><Link to={`/jobs/${j.id}`}>Open</Link></Button>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => startEdit(j)}><Pencil className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => remove(j)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-9 sm:w-9 select-none" onClick={() => startEdit(j)} aria-label="Edit job"><Pencil className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-9 sm:w-9 select-none" onClick={() => remove(j)} aria-label="Delete job"><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
               </Card>
             );

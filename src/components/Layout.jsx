@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Outlet, NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -43,6 +44,12 @@ export default function Layout() {
   const brand = settings?.business_name || "FlowPro Plumbing";
   const short = brand.split(" ")[0];
   const nav = allNav.filter((item) => item.roles.includes(user?.role));
+  const tabRoutes = useRef({});
+  const activeItem = nav.find((i) => i.end ? location.pathname === i.to : location.pathname === i.to || location.pathname.startsWith(i.to + "/"));
+
+  useEffect(() => {
+    if (activeItem) tabRoutes.current[activeItem.to] = location.pathname;
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen flex bg-muted/30">
@@ -81,7 +88,13 @@ export default function Layout() {
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <BrandMark settings={settings} size="sm" />
-          <span className="font-heading font-semibold">{short}</span>
+          <span className="font-heading font-semibold shrink-0">{short}</span>
+          {activeItem && (
+            <>
+              <span className="text-muted-foreground/40 shrink-0">/</span>
+              <span className="text-sm font-medium text-muted-foreground truncate min-w-0">{activeItem.label}</span>
+            </>
+          )}
         </header>
         <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overscroll-none">
           <PullToRefresh onRefresh={async () => { await queryClient.invalidateQueries(); }}>
@@ -108,11 +121,16 @@ export default function Layout() {
             to={item.to}
             end={item.end}
             onClick={(e) => {
-              const onRoot = location.pathname === item.to;
-              const onChild = !item.end && location.pathname.startsWith(item.to + "/");
-              if (onRoot || onChild) {
+              const isActive = Boolean(activeItem && activeItem.to === item.to);
+              if (isActive) {
                 e.preventDefault();
                 navigate(item.to, { replace: true, state: { t: Date.now() } });
+              } else {
+                const restore = tabRoutes.current[item.to];
+                if (restore && restore !== item.to) {
+                  e.preventDefault();
+                  navigate(restore);
+                }
               }
             }}
             className={({ isActive }) =>
