@@ -137,15 +137,14 @@ export default function InvoiceEditor() {
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Customer</Label>
-            <div className="flex gap-2">
-              <Select value={selectedCustomerId} onValueChange={(v) => { setSelectedCustomerId(v); setForm((f) => ({ ...f, job_id: "" })); }}>
-                <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
-                <SelectContent>
-                  {customers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setGoogleOpen(true)}><Contact className="w-4 h-4 mr-1" /> Google</Button>
-            </div>
+            {selectedCustomerId ? (
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-md border bg-muted/30">
+                <span className="font-medium text-sm truncate">{customerMap[selectedCustomerId]?.name || "Selected customer"}</span>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setGoogleOpen(true)}>Change</Button>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" onClick={() => setGoogleOpen(true)}><Contact className="w-4 h-4 mr-1" /> New customer</Button>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Invoice number</Label>
