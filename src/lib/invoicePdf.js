@@ -124,14 +124,27 @@ export async function downloadInvoicePdf({ invoice, job, customer, settings }) {
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  (invoice.line_items || []).forEach((li) => {
+  for (const li of (invoice.line_items || [])) {
     const desc = String(li.description || "—").split("\n");
-    doc.text(desc[0], colX.desc, y);
+    let textIndent = 0;
+    if (li.image_url) {
+      const dataUrl = await loadImageDataUrl(li.image_url);
+      if (dataUrl) {
+        try {
+          const props = doc.getImageProperties(dataUrl);
+          const th = 24;
+          const tw = (props.width / props.height) * th;
+          doc.addImage(dataUrl, "PNG", colX.desc, y - 16, tw, th);
+          textIndent = tw + 6;
+        } catch { /* ignore */ }
+      }
+    }
+    doc.text(desc[0], colX.desc + textIndent, y);
     doc.text(String(li.quantity ?? ""), colX.qty, y, { align: "right" });
     doc.text(formatMoney(li.unit_price), colX.price, y, { align: "right" });
     doc.text(formatMoney(lineTotal(li)), colX.total, y, { align: "right" });
     y += 16;
-  });
+  }
 
   y += 6;
   doc.line(M, y, W - M, y);

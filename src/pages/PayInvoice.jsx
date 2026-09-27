@@ -186,10 +186,17 @@ export default function PayInvoice() {
           <div className="p-6">
             <div className="space-y-2">
               {(invoice.line_items || []).map((li, i) => (
-                <div key={i} className="flex justify-between text-sm py-1.5">
-                  <div className="min-w-0 pr-3">
-                    <div className="font-medium">{li.description || "—"}</div>
-                    <div className="text-xs text-muted-foreground">{li.quantity} × {formatMoney(li.unit_price)}</div>
+                <div key={i} className="flex justify-between text-sm py-1.5 gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    {li.image_url && (
+                      <div className="w-12 h-12 rounded-md overflow-hidden border bg-muted shrink-0">
+                        <Image src={li.image_url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-medium">{li.description || "—"}</div>
+                      <div className="text-xs text-muted-foreground">{li.quantity} × {formatMoney(li.unit_price)}</div>
+                    </div>
                   </div>
                   <div className="tabular-nums shrink-0">{formatMoney(lineTotal(li))}</div>
                 </div>

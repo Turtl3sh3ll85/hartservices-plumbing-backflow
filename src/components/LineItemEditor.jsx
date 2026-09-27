@@ -2,6 +2,7 @@ import { Plus, Trash2, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatMoney, lineTotal } from "@/lib/invoice";
+import LineItemThumbnail from "@/components/LineItemThumbnail";
 
 export default function LineItemEditor({ lineItems = [], onChange, editable = true, catalog = [], modifiersCatalog = [] }) {
   const update = (i, field, value) => {
@@ -35,7 +36,8 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
   return (
     <div className="space-y-2">
       <div className="hidden sm:grid grid-cols-12 gap-2 px-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        <div className="col-span-4">Description / task</div>
+        <div className="col-span-1">Thumb</div>
+        <div className="col-span-3">Description / task</div>
         <div className="col-span-1 text-right">Qty</div>
         <div className="col-span-2 text-right">Unit price</div>
         <div className="col-span-2 text-right">Markup</div>
@@ -47,7 +49,10 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
         return (
           <div key={i} className="space-y-1">
             <div className="grid grid-cols-12 gap-2 items-center">
-              <div className="col-span-12 sm:col-span-4 space-y-1">
+              <div className="col-span-12 sm:col-span-1 flex sm:block">
+                <LineItemThumbnail url={li.image_url || ""} onChange={(url) => update(i, "image_url", url)} disabled={!editable} />
+              </div>
+              <div className="col-span-12 sm:col-span-3 space-y-1">
                 {catalog.length > 0 && (
                   <select
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"

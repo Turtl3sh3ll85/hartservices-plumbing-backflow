@@ -31,6 +31,10 @@
           "unit_price": {
             "type": "number",
             "title": "Unit Price"
+          },
+          "image_url": {
+            "type": "string",
+            "title": "Thumbnail URL"
           }
         }
       }
