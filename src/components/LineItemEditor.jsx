@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatMoney, lineTotal } from "@/lib/invoice";
 
-export default function LineItemEditor({ lineItems = [], onChange, editable = true }) {
+export default function LineItemEditor({ lineItems = [], onChange, editable = true, catalog = [] }) {
   const update = (i, field, value) => {
     const next = [...lineItems];
     next[i] = { ...next[i], [field]: value };
@@ -30,13 +30,30 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
         const mode = li.markup_mode === "custom" ? "custom" : "preset";
         return (
           <div key={i} className="grid grid-cols-12 gap-2 items-center">
-            <Input
-              className="col-span-12 sm:col-span-4"
-              placeholder="e.g. Replace kitchen sink faucet"
-              value={li.description || ""}
-              onChange={(e) => update(i, "description", e.target.value)}
-              disabled={!editable}
-            />
+            <div className="col-span-12 sm:col-span-4 space-y-1">
+              {catalog.length > 0 && (
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  value=""
+                  onChange={(e) => {
+                    const item = catalog[Number(e.target.value)];
+                    if (item) merge(i, { description: item.description, unit_price: item.unit_price, quantity: li.quantity || 1 });
+                  }}
+                  disabled={!editable}
+                >
+                  <option value="">Pick from catalog…</option>
+                  {catalog.map((c, idx) => (
+                    <option key={idx} value={idx}>{c.description} — {formatMoney(c.unit_price)}</option>
+                  ))}
+                </select>
+              )}
+              <Input
+                placeholder="e.g. Replace kitchen sink faucet"
+                value={li.description || ""}
+                onChange={(e) => update(i, "description", e.target.value)}
+                disabled={!editable}
+              />
+            </div>
             <Input
               className="col-span-6 sm:col-span-1 text-right"
               type="number"

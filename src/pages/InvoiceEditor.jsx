@@ -44,6 +44,7 @@ export default function InvoiceEditor() {
   const [googleOpen, setGoogleOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [catalog, setCatalog] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -67,6 +68,15 @@ export default function InvoiceEditor() {
       }
     })();
   }, [id]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await base44.functions.invoke("getSheetLineItems", { sheet_id: "1x0jEtP3eJMFYi5dTDdBEtNrI8W5R7p9LqIGvCRKwKXw" });
+        setCatalog(res.data?.line_items || []);
+      } catch (e) {}
+    })();
+  }, []);
 
   const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
@@ -181,7 +191,7 @@ export default function InvoiceEditor() {
               <FileSpreadsheet className="w-4 h-4 mr-1" /> Pull from Google Sheet
             </Button>
           </div>
-          <LineItemEditor lineItems={form.line_items} onChange={setLineItems} />
+          <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} />
         </div>
 
         <p className="text-sm text-muted-foreground italic">Invoices are due within 7 days of issuance unless otherwise noted.</p>
