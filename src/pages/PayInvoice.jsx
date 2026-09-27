@@ -70,10 +70,10 @@ export default function PayInvoice() {
     } catch (e) { setError(e.message); setPaying(null); }
   };
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
     setDownloading(true);
     try {
-      downloadInvoicePdf({ invoice, job, customer, settings: biz });
+      await downloadInvoicePdf({ invoice, job, customer, settings: biz });
     } finally {
       setDownloading(false);
     }
@@ -125,19 +125,23 @@ export default function PayInvoice() {
   return (
     <div className="min-h-screen bg-muted/30 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-2.5 mb-6">
+        <div className="flex items-center gap-3 mb-6">
           {biz.logo_url ? (
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-card border shrink-0">
+            <div className="w-12 h-12 rounded-xl overflow-hidden bg-card border shrink-0">
               <Image src={biz.logo_url} alt="Logo" className="w-full h-full object-contain" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
               <Droplet className="w-5 h-5 text-primary-foreground" />
             </div>
           )}
-          <div>
+          <div className="min-w-0">
             <div className="font-heading font-semibold text-lg">{brand}</div>
             {biz.business_email && <div className="text-xs text-muted-foreground">{biz.business_email}</div>}
+            <div className="text-xs text-muted-foreground">
+              {biz.business_phone && <span>{biz.business_phone}  •  </span>}<span className="font-medium">RMP42140</span>
+            </div>
+            <div className="text-xs text-muted-foreground">Jon Hart is licensed by the Texas State Board of Plumbing Examiners</div>
           </div>
         </div>
 

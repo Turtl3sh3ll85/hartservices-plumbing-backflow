@@ -7,7 +7,25 @@ function installmentAmount(item, total) {
     : (Number(item.value) || 0);
 }
 
-export function downloadInvoicePdf({ invoice, job, customer, settings }) {
+async function loadImageDataUrl(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext("2d").drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+export async function downloadInvoicePdf({ invoice, job, customer, settings }) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const W = doc.internal.pageSize.getWidth();
   const M = 48;
@@ -16,18 +34,39 @@ export function downloadInvoicePdf({ invoice, job, customer, settings }) {
   const biz = settings || {};
   const brand = biz.business_name || "FlowPro Plumbing";
 
-  // Header
+  // Logo
+  let logoW = 0;
+  let logoH = 0;
+  if (biz.logo_url) {
+    const dataUrl = await loadImageDataUrl(biz.logo_url);
+    if (dataUrl) {
+      try {
+        const props = doc.getImageProperties(dataUrl);
+        logoH = 40;
+        logoW = (props.width / props.height) * logoH;
+        doc.addImage(dataUrl, "PNG", M, y, logoW, logoH);
+      } catch { /* ignore */ }
+    }
+  }
+
+  // Brand name (to the right of the logo)
+  const textX = M + logoW + (logoW ? 12 : 0);
+  const brandY = y + (logoH ? 20 : 0);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
-  doc.text(brand, M, y);
-  y += 16;
+  doc.text(brand, textX, brandY);
+  y += logoH ? logoH + 6 : 16;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   const bizAddr = fullAddress(biz);
-  const bizContact = [biz.business_email, biz.business_phone].filter(Boolean).join("  •  ");
-  if (bizAddr) { doc.text(bizAddr, M, y); y += 12; }
-  if (bizContact) { doc.text(bizContact, M, y); y += 12; }
+  if (bizAddr) { doc.text(bizAddr, textX, y); y += 12; }
+  const phone = biz.business_phone ? `${biz.business_phone}  •  RMP42140` : "RMP42140";
+  const bizContact = [biz.business_email, phone].filter(Boolean).join("  •  ");
+  if (bizContact) { doc.text(bizContact, textX, y); y += 12; }
+  doc.setFontSize(8);
+  doc.text("Jon Hart is licensed by the Texas State Board of Plumbing Examiners", textX, y);
+  y += 12;
 
   // Invoice title (right aligned)
   doc.setFont("helvetica", "bold");
