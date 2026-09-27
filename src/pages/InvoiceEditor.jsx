@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import LineItemEditor from "@/components/LineItemEditor";
 import GoogleContactsDialog from "@/components/GoogleContactsDialog";
+import CustomerFormDialog from "@/components/CustomerFormDialog";
 import StatusBadge from "@/components/StatusBadge";
 import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
 
@@ -41,6 +42,7 @@ export default function InvoiceEditor() {
   const [copied, setCopied] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [googleOpen, setGoogleOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
   const [newJobTitle, setNewJobTitle] = useState("");
   const [creatingJob, setCreatingJob] = useState(false);
 
@@ -79,6 +81,12 @@ export default function InvoiceEditor() {
       cust = await base44.entities.Customer.create({ name: c.name || c.email, email: c.email || "", phone: c.phone || "" });
       setCustomers((prev) => [...prev, cust]);
     }
+    setSelectedCustomerId(cust.id);
+    setForm((f) => ({ ...f, job_id: "" }));
+  };
+
+  const pickManualCustomer = (cust) => {
+    setCustomers((prev) => [...prev, cust]);
     setSelectedCustomerId(cust.id);
     setForm((f) => ({ ...f, job_id: "" }));
   };
@@ -140,10 +148,13 @@ export default function InvoiceEditor() {
             {selectedCustomerId ? (
               <div className="flex items-center justify-between gap-2 p-2.5 rounded-md border bg-muted/30">
                 <span className="font-medium text-sm truncate">{customerMap[selectedCustomerId]?.name || "Selected customer"}</span>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setGoogleOpen(true)}>Change</Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => { setSelectedCustomerId(""); setForm((f) => ({ ...f, job_id: "" })); }}>Change</Button>
               </div>
             ) : (
-              <Button type="button" variant="outline" onClick={() => setGoogleOpen(true)}><Contact className="w-4 h-4 mr-1" /> New customer</Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setManualOpen(true)}><Plus className="w-4 h-4 mr-1" /> New customer</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setGoogleOpen(true)}><Contact className="w-4 h-4 mr-1" /> Google Contacts</Button>
+              </div>
             )}
           </div>
           <div className="space-y-1.5">
@@ -227,6 +238,7 @@ export default function InvoiceEditor() {
       )}
 
       <GoogleContactsDialog open={googleOpen} onOpenChange={setGoogleOpen} onPick={pickGoogleContact} />
+      <CustomerFormDialog open={manualOpen} onOpenChange={setManualOpen} onPick={pickManualCustomer} />
 
       <div className="flex flex-wrap gap-2 justify-end">
         <Button asChild variant="outline"><Link to="/invoices">Cancel</Link></Button>
