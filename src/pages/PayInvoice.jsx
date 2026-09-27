@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Droplet, CheckCircle2, Loader2, CreditCard, ShieldCheck, CheckCircle } from "lucide-react";
+import { Droplet, CheckCircle2, Loader2, CreditCard, ShieldCheck, CheckCircle, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
+import { downloadInvoicePdf } from "@/lib/invoicePdf";
 
 function installmentAmount(item, total) {
   return item.type === "percentage"
@@ -21,6 +22,7 @@ export default function PayInvoice() {
   const [paid, setPaid] = useState(false);
   const [error, setError] = useState("");
   const [captured, setCaptured] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -68,6 +70,15 @@ export default function PayInvoice() {
     } catch (e) { setError(e.message); setPaying(null); }
   };
 
+  const downloadPdf = () => {
+    setDownloading(true);
+    try {
+      downloadInvoicePdf({ invoice, job, customer, settings: biz });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -95,6 +106,9 @@ export default function PayInvoice() {
             Thank you! Your payment of <span className="font-medium text-foreground">{formatMoney(invoice?.total)}</span> for <span className="font-medium text-foreground">{invoice?.name}</span> has been received.
           </p>
           <p className="text-sm text-muted-foreground mt-4">{brand}</p>
+          <Button variant="outline" onClick={downloadPdf} disabled={downloading} className="mt-6">
+            <FileDown className="w-4 h-4 mr-2" /> Download invoice PDF
+          </Button>
         </div>
       </div>
     );
@@ -141,6 +155,11 @@ export default function PayInvoice() {
                   <div className="font-medium">{new Date(invoice.due_date).toLocaleDateString()}</div>
                 </div>
               )}
+            </div>
+            <div className="mt-3 flex justify-end">
+              <Button variant="outline" size="sm" onClick={downloadPdf} disabled={downloading}>
+                <FileDown className="w-4 h-4 mr-1.5" /> Download PDF
+              </Button>
             </div>
           </div>
 
