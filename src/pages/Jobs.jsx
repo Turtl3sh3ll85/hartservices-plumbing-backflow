@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Plus, Search, Wrench, MapPin, Pencil, Trash2 } from "lucide-react";
@@ -33,7 +33,7 @@ export default function Jobs() {
   const { toast } = useToast();
   const { confirmState, confirm, onOpenChange } = useConfirmDialog();
 
-  const customerMap = customers.length ? Object.fromEntries(customers.map((c) => [c.id, c])) : {};
+  const customerMap = useMemo(() => (customers.length ? Object.fromEntries(customers.map((c) => [c.id, c])) : {}), [customers]);
 
   const load = async () => {
     setLoading(true);

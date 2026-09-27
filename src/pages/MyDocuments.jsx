@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -40,7 +40,7 @@ export default function MyDocuments() {
   const myJobIds = new Set(jobs.filter((j) => j.customer_id === myCustomer?.id).map((j) => j.id));
   const myInvoices = invoices.filter((i) => myJobIds.has(i.job_id));
   const myEstimates = estimates.filter((e) => myJobIds.has(e.job_id));
-  const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
+  const jobMap = useMemo(() => Object.fromEntries(jobs.map((j) => [j.id, j])), [jobs]);
 
   if (loading) {
     return (

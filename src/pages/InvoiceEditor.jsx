@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams, useLocation, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,8 +58,6 @@ export default function InvoiceEditor() {
   const [googleOpen, setGoogleOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [catalog, setCatalog] = useState([]);
-  const [modifiersCatalog, setModifiersCatalog] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,23 +83,24 @@ export default function InvoiceEditor() {
     })();
   }, [id]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await base44.functions.invoke("getSheetLineItems", { sheet_id: "1x0jEtP3eJMFYi5dTDdBEtNrI8W5R7p9LqIGvCRKwKXw" });
-        setCatalog(res.data?.line_items || []);
-      } catch (e) {}
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await base44.functions.invoke("getSheetModifiers", { sheet_id: "10XcNV3lHx0he2XoVV9TOS2OXEfZSqAi9rhp5KFvyt0E" });
-        setModifiersCatalog(res.data?.modifiers || []);
-      } catch (e) {}
-    })();
-  }, []);
+  const { data: catalogData } = useQuery({
+    queryKey: ["sheetLineItems"],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getSheetLineItems", { sheet_id: "1x0jEtP3eJMFYi5dTDdBEtNrI8W5R7p9LqIGvCRKwKXw" });
+      return res.data?.line_items || [];
+    },
+    staleTime: Infinity,
+  });
+  const { data: modifiersData } = useQuery({
+    queryKey: ["sheetModifiers"],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getSheetModifiers", { sheet_id: "10XcNV3lHx0he2XoVV9TOS2OXEfZSqAi9rhp5KFvyt0E" });
+      return res.data?.modifiers || [];
+    },
+    staleTime: Infinity,
+  });
+  const catalog = catalogData || [];
+  const modifiersCatalog = modifiersData || [];
 
   const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));

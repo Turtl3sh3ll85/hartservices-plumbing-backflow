@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Plus, Search, ClipboardList } from "lucide-react";
@@ -34,8 +34,8 @@ export default function Estimates() {
   };
   useEffect(() => { load(); }, []);
 
-  const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
-  const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
+  const jobMap = useMemo(() => Object.fromEntries(jobs.map((j) => [j.id, j])), [jobs]);
+  const customerMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);
 
   const filtered = estimates.filter((e) => {
     const j = jobMap[e.job_id];
