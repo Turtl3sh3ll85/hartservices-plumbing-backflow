@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
+import { TERMS, ACKNOWLEDGMENT } from "@/lib/serviceTerms";
 
 function installmentAmount(item, total) {
   return item.type === "percentage"
@@ -196,6 +197,41 @@ export async function downloadInvoicePdf({ invoice, job, customer, settings }) {
     doc.setFontSize(10);
     doc.splitTextToSize(invoice.notes, W - M * 2).forEach((l) => { doc.text(l, M, y); y += 13; });
   }
+
+  // Service Terms & Conditions (own page(s))
+  doc.addPage();
+  y = M;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Service Terms & Conditions", M, y);
+  y += 16;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const termsBottom = pageHeight - 96;
+  const ensurePage = () => { if (y > termsBottom - 12) { doc.addPage(); y = M; } };
+  for (const t of TERMS) {
+    ensurePage();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(t.title, M, y);
+    y += 12;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.splitTextToSize(t.body, W - M * 2).forEach((l) => {
+      ensurePage();
+      doc.text(l, M, y);
+      y += 10;
+    });
+    y += 6;
+  }
+  ensurePage();
+  y += 4;
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8);
+  doc.splitTextToSize(ACKNOWLEDGMENT, W - M * 2).forEach((l) => {
+    ensurePage();
+    doc.text(l, M, y);
+    y += 10;
+  });
 
   // Status footer
   const isPaid = invoice.payment_status === "paid";
