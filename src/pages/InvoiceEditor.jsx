@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import LineItemEditor from "@/components/LineItemEditor";
+import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 import StatusBadge from "@/components/StatusBadge";
 import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
 
@@ -38,6 +39,10 @@ export default function InvoiceEditor() {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState(id || null);
   const [copied, setCopied] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [googleOpen, setGoogleOpen] = useState(false);
+  const [newJobTitle, setNewJobTitle] = useState("");
+  const [creatingJob, setCreatingJob] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -53,6 +58,8 @@ export default function InvoiceEditor() {
         const inv = await base44.entities.Invoice.get(id);
         setForm({ ...form, ...inv, line_items: inv.line_items || [] });
         setSavedId(id);
+        const j = jb.find((x) => x.id === inv.job_id);
+        if (j) setSelectedCustomerId(j.customer_id || "");
       } else {
         const all = await base44.entities.Invoice.list();
         setForm((f) => ({ ...f, number: nextNumber("INV", all.map((i) => i.number)), tax_rate: st[0]?.default_tax_rate || 0 }));
@@ -63,7 +70,30 @@ export default function InvoiceEditor() {
   const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
   const selectedJob = jobMap[form.job_id];
+  const filteredJobs = selectedCustomerId ? jobs.filter((j) => j.customer_id === selectedCustomerId) : jobs;
   const totals = calcTotals(form.line_items, form.tax_rate);
+
+  const pickGoogleContact = async (c) => {
+    let cust = customers.find((cu) => cu.email && c.email && cu.email.toLowerCase() === c.email.toLowerCase());
+    if (!cust) {
+      cust = await base44.entities.Customer.create({ name: c.name || c.email, email: c.email || "", phone: c.phone || "" });
+      setCustomers((prev) => [...prev, cust]);
+    }
+    setSelectedCustomerId(cust.id);
+    setForm((f) => ({ ...f, job_id: "" }));
+  };
+
+  const createJob = async () => {
+    if (!newJobTitle || !selectedCustomerId) return;
+    setCreatingJob(true);
+    try {
+      const jb = await base44.entities.Job.create({ title: newJobTitle, customer_id: selectedCustomerId, status: "scheduled" });
+      setJobs((prev) => [jb, ...prev]);
+      setForm((f) => ({ ...f, job_id: jb.id }));
+      setNewJobTitle("");
+    } catch (e) { alert(e.message); }
+    setCreatingJob(false);
+  };
 
   const setLineItems = (li) => setForm({ ...form, line_items: li });
 
@@ -106,20 +136,43 @@ export default function InvoiceEditor() {
       <Card className="p-5 space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Job *</Label>
-            <Select value={form.job_id} onValueChange={(v) => setForm({ ...form, job_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Select job" /></SelectTrigger>
-              <SelectContent>
-                {jobs.map((j) => {
-                  const c = customerMap[j.customer_id];
-                  return <SelectItem key={j.id} value={j.id}>{j.title}{c ? ` — ${c.name}` : ""}</SelectItem>;
-                })}
-              </SelectContent>
-            </Select>
+            <Label>Customer</Label>
+            <div className="flex gap-2">
+              <Select value={selectedCustomerId} onValueChange={(v) => { setSelectedCustomerId(v); setForm((f) => ({ ...f, job_id: "" })); }}>
+                <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
+                <SelectContent>
+                  {customers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setGoogleOpen(true)}><Contact className="w-4 h-4 mr-1" /> Google</Button>
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label>Invoice number</Label>
             <Input value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} />
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Job *</Label>
+            <Select value={form.job_id} onValueChange={(v) => { setForm({ ...form, job_id: v }); const jb = jobMap[v]; if (jb) setSelectedCustomerId(jb.customer_id || ""); }}>
+              <SelectTrigger><SelectValue placeholder={selectedCustomerId ? "Select job" : "Select a customer first"} /></SelectTrigger>
+              <SelectContent>
+                {filteredJobs.map((j) => <SelectItem key={j.id} value={j.id}>{j.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            {selectedCustomerId && (
+              <>
+                <Label>New job for this customer</Label>
+                <div className="flex gap-2">
+                  <Input value={newJobTitle} onChange={(e) => setNewJobTitle(e.target.value)} placeholder="Job title (e.g. Kitchen sink repair)" />
+                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={createJob} disabled={!newJobTitle || creatingJob}><Plus className="w-4 h-4 mr-1" /> {creatingJob ? "…" : "Create"}</Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -173,6 +226,8 @@ export default function InvoiceEditor() {
           </div>
         </Card>
       )}
+
+      <GoogleContactsDialog open={googleOpen} onOpenChange={setGoogleOpen} onPick={pickGoogleContact} />
 
       <div className="flex flex-wrap gap-2 justify-end">
         <Button asChild variant="outline"><Link to="/invoices">Cancel</Link></Button>
