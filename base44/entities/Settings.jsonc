@@ -1,0 +1,46 @@
+{
+  "name": "Settings",
+  "type": "object",
+  "properties": {
+    "business_name": {
+      "type": "string",
+      "title": "Business Name"
+    },
+    "business_email": {
+      "type": "string",
+      "title": "Business Email"
+    },
+    "business_phone": {
+      "type": "string",
+      "title": "Business Phone"
+    },
+    "business_street": {
+      "type": "string",
+      "title": "Street"
+    },
+    "business_city": {
+      "type": "string",
+      "title": "City"
+    },
+    "business_state": {
+      "type": "string",
+      "title": "State"
+    },
+    "business_zip": {
+      "type": "string",
+      "title": "ZIP"
+    },
+    "logo_url": {
+      "type": "string",
+      "title": "Logo URL"
+    },
+    "default_tax_rate": {
+      "type": "number",
+      "title": "Default Tax Rate %"
+    },
+    "payment_terms": {
+      "type": "string",
+      "title": "Payment Terms"
+    }
+  }
+}

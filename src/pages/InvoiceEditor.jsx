@@ -1,0 +1,184 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import LineItemEditor from "@/components/LineItemEditor";
+import StatusBadge from "@/components/StatusBadge";
+import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
+
+export default function InvoiceEditor() {
+  const { id } = useParams();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const isEdit = Boolean(id);
+
+  const [jobs, setJobs] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [settings, setSettings] = useState(null);
+  const [form, setForm] = useState({
+    job_id: params.get("job") || "",
+    number: "",
+    name: "",
+    line_items: [{ description: "", quantity: 1, unit_price: 0 }],
+    tax_rate: 0,
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    status: "draft",
+    payment_status: "unpaid",
+    due_date: "",
+    notes: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [savedId, setSavedId] = useState(id || null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const [jb, cs, st] = await Promise.all([
+        base44.entities.Job.list("-created_date", 200),
+        base44.entities.Customer.list("name", 500),
+        base44.entities.Settings.list().catch(() => []),
+      ]);
+      setJobs(jb);
+      setCustomers(cs);
+      setSettings(st[0] || null);
+      if (isEdit) {
+        const inv = await base44.entities.Invoice.get(id);
+        setForm({ ...form, ...inv, line_items: inv.line_items || [] });
+        setSavedId(id);
+      } else {
+        const all = await base44.entities.Invoice.list();
+        setForm((f) => ({ ...f, number: nextNumber("INV", all.map((i) => i.number)), tax_rate: st[0]?.default_tax_rate || 0 }));
+      }
+    })();
+  }, [id]);
+
+  const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
+  const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
+  const selectedJob = jobMap[form.job_id];
+  const totals = calcTotals(form.line_items, form.tax_rate);
+
+  const setLineItems = (li) => setForm({ ...form, line_items: li });
+
+  const save = async (send = false) => {
+    if (!form.job_id || !form.name) { alert("Select a job and name the invoice."); return; }
+    setSaving(true);
+    try {
+      const payload = { ...form, ...totals, status: send ? "sent" : form.status };
+      let resultId = savedId;
+      if (isEdit || savedId) {
+        await base44.entities.Invoice.update(savedId, payload);
+      } else {
+        const created = await base44.entities.Invoice.create(payload);
+        resultId = created.id;
+        setSavedId(resultId);
+      }
+      if (send) navigate(`/invoices/${resultId}`);
+      else navigate(`/invoices/${resultId}`);
+    } catch (e) { alert(e.message); }
+    setSaving(false);
+  };
+
+  const payLink = savedId ? `${window.location.origin}/pay/${savedId}` : null;
+  const copyLink = () => {
+    if (!payLink) return;
+    navigator.clipboard.writeText(payLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <Button asChild variant="ghost" size="sm" className="-ml-2"><Link to="/invoices"><ArrowLeft className="w-4 h-4 mr-1" /> Back to invoices</Link></Button>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">{isEdit ? "Edit invoice" : "New invoice"}</h1>
+        {savedId && <StatusBadge status={form.payment_status} />}
+      </div>
+
+      <Card className="p-5 space-y-4">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Job *</Label>
+            <Select value={form.job_id} onValueChange={(v) => setForm({ ...form, job_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Select job" /></SelectTrigger>
+              <SelectContent>
+                {jobs.map((j) => {
+                  const c = customerMap[j.customer_id];
+                  return <SelectItem key={j.id} value={j.id}>{j.title}{c ? ` — ${c.name}` : ""}</SelectItem>;
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Invoice number</Label>
+            <Input value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Invoice name * <span className="text-muted-foreground font-normal">(describe the tasks performed)</span></Label>
+          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Replace bathroom vanity &amp; repair leak under sink" />
+        </div>
+
+        {selectedJob && (
+          <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+            <span className="font-medium text-foreground">{customerMap[selectedJob.customer_id]?.name || ""}</span>
+            {selectedJob.job_street && <span> · {selectedJob.job_street}, {selectedJob.job_city}</span>}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label>Line items</Label>
+          <LineItemEditor lineItems={form.line_items} onChange={setLineItems} />
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Tax rate %</Label>
+            <Input type="number" min="0" step="0.01" value={form.tax_rate ?? 0} onChange={(e) => setForm({ ...form, tax_rate: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Due date</Label>
+            <Input type="date" value={form.due_date || ""} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Notes</Label>
+          <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+        </div>
+
+        <div className="border-t pt-4 space-y-1.5">
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{formatMoney(totals.subtotal)}</span></div>
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Tax ({form.tax_rate || 0}%)</span><span className="tabular-nums">{formatMoney(totals.tax)}</span></div>
+          <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total</span><span className="tabular-nums">{formatMoney(totals.total)}</span></div>
+        </div>
+      </Card>
+
+      {payLink && (
+        <Card className="p-4 bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-2 text-sm font-medium mb-2"><LinkIcon className="w-4 h-4" /> Payment link</div>
+          <p className="text-xs text-muted-foreground mb-3">Share this link with your client so they can pay with PayPal.</p>
+          <div className="flex gap-2">
+            <Input readOnly value={payLink} className="bg-background font-mono text-xs" />
+            <Button variant="outline" onClick={copyLink}>{copied ? <><Check className="w-4 h-4 mr-1" /> Copied</> : <><Copy className="w-4 h-4 mr-1" /> Copy</>}</Button>
+          </div>
+        </Card>
+      )}
+
+      <div className="flex flex-wrap gap-2 justify-end">
+        <Button asChild variant="outline"><Link to="/invoices">Cancel</Link></Button>
+        <Button variant="outline" onClick={() => save(false)} disabled={saving}><Save className="w-4 h-4 mr-1" /> {saving ? "Saving…" : "Save draft"}</Button>
+        <Button onClick={() => save(true)} disabled={saving || !form.job_id || !form.name}><Send className="w-4 h-4 mr-1" /> Save &amp; send</Button>
+      </div>
+    </div>
+  );
+}

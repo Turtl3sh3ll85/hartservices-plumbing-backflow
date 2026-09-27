@@ -1,0 +1,32 @@
+export function lineTotal(li) {
+  return (Number(li?.quantity) || 0) * (Number(li?.unit_price) || 0);
+}
+
+export function calcTotals(lineItems = [], taxRate = 0) {
+  const subtotal = (lineItems || []).reduce((s, li) => s + lineTotal(li), 0);
+  const tax = subtotal * ((Number(taxRate) || 0) / 100);
+  const total = subtotal + tax;
+  return { subtotal, tax, total };
+}
+
+export function formatMoney(n) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n) || 0);
+}
+
+export function fullAddress(obj, prefix = "") {
+  const street = obj[`${prefix}street`] || obj.street || "";
+  const city = obj[`${prefix}city`] || obj.city || "";
+  const state = obj[`${prefix}state`] || obj.state || "";
+  const zip = obj[`${prefix}zip`] || obj.zip || "";
+  return [street, `${city}${city && state ? ", " : ""}${state} ${zip}`].filter((p) => p.trim()).join(", ").trim();
+}
+
+export function nextNumber(prefix, existing = []) {
+  const year = new Date().getFullYear();
+  const nums = existing
+    .map((s) => (s || "").match(/(\d+)/))
+    .filter(Boolean)
+    .map((m) => parseInt(m[1], 10));
+  const max = nums.length ? Math.max(...nums) : 0;
+  return `${prefix}-${year}-${String(max + 1).padStart(4, "0")}`;
+}
