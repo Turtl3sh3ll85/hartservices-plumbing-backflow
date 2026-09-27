@@ -126,6 +126,11 @@
       "format": "date",
       "title": "Due Date"
     },
+    "opened": {
+      "type": "boolean",
+      "default": false,
+      "title": "Opened by customer"
+    },
     "notes": {
       "type": "string",
       "title": "Notes"

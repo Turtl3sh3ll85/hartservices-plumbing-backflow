@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
+import { notifyInvoiceOpened } from "../../shared/notifications.ts";
 
 export default async function(req) {
   try {
@@ -23,6 +24,15 @@ export default async function(req) {
       const allSettings = await base44.asServiceRole.entities.Settings.list();
       settings = allSettings[0] || null;
     } catch (e) {}
+
+    // Notify the business the first time the customer opens this invoice
+    if (!invoice.opened) {
+      try {
+        await base44.asServiceRole.entities.Invoice.update(invoice_id, { opened: true });
+        await notifyInvoiceOpened(base44, { invoice, customer, job });
+      } catch (e) {}
+    }
+
     return Response.json({ invoice, job, customer, settings });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
