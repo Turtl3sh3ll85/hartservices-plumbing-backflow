@@ -59,7 +59,12 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
                     value=""
                     onChange={(e) => {
                       const item = catalog[Number(e.target.value)];
-                      if (item) merge(i, { description: item.description, unit_price: item.unit_price, quantity: li.quantity || 1 });
+                      if (item) merge(i, {
+                        description: item.description,
+                        unit_price: item.unit_price,
+                        quantity: item.quantity || li.quantity || 1,
+                        image_url: item.image_url || li.image_url || "",
+                      });
                     }}
                     disabled={!editable}
                   >
