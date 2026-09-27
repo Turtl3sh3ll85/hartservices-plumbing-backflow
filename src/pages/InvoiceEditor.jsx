@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import LineItemEditor from "@/components/LineItemEditor";
 import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 import CustomerFormDialog from "@/components/CustomerFormDialog";
+import SheetItemsDialog from "@/components/SheetItemsDialog";
 import StatusBadge from "@/components/StatusBadge";
 import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
 
@@ -42,7 +43,7 @@ export default function InvoiceEditor() {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [googleOpen, setGoogleOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
-  const [pulling, setPulling] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -90,16 +91,9 @@ export default function InvoiceEditor() {
 
   const setLineItems = (li) => setForm({ ...form, line_items: li });
 
-  const pullSheet = async () => {
-    setPulling(true);
-    try {
-      const res = await base44.functions.invoke("getSheetLineItems", {});
-      const items = res.data?.line_items || [];
-      if (!items.length) { alert("No line items found in the Google Sheet."); return; }
-      const cleaned = form.line_items.filter((li) => (li.description || "").trim());
-      setForm({ ...form, line_items: [...cleaned, ...items] });
-    } catch (e) { alert(e.message || "Failed to read the Google Sheet."); }
-    setPulling(false);
+  const pickSheetItems = (items) => {
+    const cleaned = form.line_items.filter((li) => (li.description || "").trim());
+    setForm({ ...form, line_items: [...cleaned, ...items] });
   };
 
   const save = async (send = false) => {
@@ -183,8 +177,8 @@ export default function InvoiceEditor() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>Line items</Label>
-            <Button type="button" variant="outline" size="sm" onClick={pullSheet} disabled={pulling}>
-              <FileSpreadsheet className="w-4 h-4 mr-1" /> {pulling ? "Pulling…" : "Pull from Google Sheet"}
+            <Button type="button" variant="outline" size="sm" onClick={() => setSheetOpen(true)}>
+              <FileSpreadsheet className="w-4 h-4 mr-1" /> Pull from Google Sheet
             </Button>
           </div>
           <LineItemEditor lineItems={form.line_items} onChange={setLineItems} />
@@ -216,6 +210,7 @@ export default function InvoiceEditor() {
 
       <GoogleContactsDialog open={googleOpen} onOpenChange={setGoogleOpen} onPick={pickGoogleContact} />
       <CustomerFormDialog open={manualOpen} onOpenChange={setManualOpen} onPick={pickManualCustomer} />
+      <SheetItemsDialog open={sheetOpen} onOpenChange={setSheetOpen} onPick={pickSheetItems} defaultSheetId={settings?.google_sheet_id} />
 
       <div className="flex flex-wrap gap-2 justify-end">
         <Button asChild variant="outline"><Link to="/invoices">Cancel</Link></Button>

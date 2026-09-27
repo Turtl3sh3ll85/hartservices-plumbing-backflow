@@ -21,9 +21,10 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
+    const body = await req.json().catch(() => ({}));
     const settings = await base44.entities.Settings.list();
-    const sheetId = settings?.[0]?.google_sheet_id;
-    if (!sheetId) return Response.json({ error: "No Google Sheet ID is configured in Settings." }, { status: 400 });
+    const sheetId = (body.sheet_id && String(body.sheet_id).trim()) || settings?.[0]?.google_sheet_id;
+    if (!sheetId) return Response.json({ error: "No Google Sheet ID provided or configured in Settings." }, { status: 400 });
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googleworkspace");
 
