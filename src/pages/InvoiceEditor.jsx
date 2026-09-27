@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, useLocation, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,12 @@ export default function InvoiceEditor() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
+  const location = useLocation();
+  const isEstimateRoute = location.pathname.startsWith("/estimates");
+  const [docType, setDocType] = useState(isEstimateRoute ? "estimate" : "invoice");
+  const isEstimate = docType === "estimate";
+  const docLabel = isEstimate ? "estimate" : "invoice";
+  const listRoute = isEstimate ? "/estimates" : "/invoices";
 
   const [jobs, setJobs] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -60,14 +66,14 @@ export default function InvoiceEditor() {
       setCustomers(cs);
       setSettings(st[0] || null);
       if (isEdit) {
-        const inv = await base44.entities.Invoice.get(id);
+        const inv = await (isEstimateRoute ? base44.entities.Estimate.get(id) : base44.entities.Invoice.get(id));
         setForm({ ...form, ...inv, line_items: inv.line_items || [], payment_schedule: inv.payment_schedule || [] });
         setSavedId(id);
         const j = jb.find((x) => x.id === inv.job_id);
         if (j) setSelectedCustomerId(j.customer_id || "");
       } else {
-        const all = await base44.entities.Invoice.list();
-        setForm((f) => ({ ...f, number: nextNumber("INV", all.map((i) => i.number)), tax_rate: st[0]?.default_tax_rate || 0 }));
+        const all = await (isEstimateRoute ? base44.entities.Estimate.list() : base44.entities.Invoice.list());
+        setForm((f) => ({ ...f, number: nextNumber(isEstimateRoute ? "EST" : "INV", all.map((i) => i.number)), tax_rate: st[0]?.default_tax_rate || 0 }));
       }
     })();
   }, [id]);
@@ -113,13 +119,23 @@ export default function InvoiceEditor() {
 
   const setLineItems = (li) => setForm({ ...form, line_items: li });
 
+  const switchType = (t) => {
+    setDocType(t);
+    if (!isEdit) {
+      (async () => {
+        const all = await (t === "invoice" ? base44.entities.Invoice.list() : base44.entities.Estimate.list());
+        setForm((f) => ({ ...f, number: nextNumber(t === "invoice" ? "INV" : "EST", all.map((x) => x.number)) }));
+      })();
+    }
+  };
+
   const pickSheetItems = (items) => {
     const cleaned = form.line_items.filter((li) => (li.description || "").trim());
     setForm({ ...form, line_items: [...cleaned, ...items] });
   };
 
   const save = async (send = false) => {
-    if (!form.name) { alert("Name the invoice."); return; }
+    if (!form.name) { alert(`Name the ${docLabel}.`); return; }
     if (!selectedCustomerId && !form.job_id) { alert("Select a customer."); return; }
     setSaving(true);
     try {
@@ -130,17 +146,20 @@ export default function InvoiceEditor() {
         setJobs((prev) => [jb, ...prev]);
         setForm((f) => ({ ...f, job_id: jb.id }));
       }
-      const payload = { ...form, job_id: jobId, ...totals, status: send ? "sent" : form.status };
+      const basePayload = { ...form, job_id: jobId, ...totals, status: send ? "sent" : form.status };
+      const payload = isEstimate
+        ? { job_id: basePayload.job_id, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, total: basePayload.total, status: basePayload.status, notes: basePayload.notes }
+        : basePayload;
+      const entity = isEstimate ? base44.entities.Estimate : base44.entities.Invoice;
       let resultId = savedId;
       if (isEdit || savedId) {
-        await base44.entities.Invoice.update(savedId, payload);
+        await entity.update(savedId, payload);
       } else {
-        const created = await base44.entities.Invoice.create(payload);
+        const created = await entity.create(payload);
         resultId = created.id;
         setSavedId(resultId);
       }
-      if (send) navigate(`/invoices/${resultId}`);
-      else navigate(`/invoices/${resultId}`);
+      navigate(`/${isEstimate ? "estimates" : "invoices"}/${resultId}`);
     } catch (e) { alert(e.message); }
     setSaving(false);
   };
@@ -155,12 +174,27 @@ export default function InvoiceEditor() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <Button asChild variant="ghost" size="sm" className="-ml-2"><Link to="/invoices"><ArrowLeft className="w-4 h-4 mr-1" /> Back to invoices</Link></Button>
+      <Button asChild variant="ghost" size="sm" className="-ml-2"><Link to={listRoute}><ArrowLeft className="w-4 h-4 mr-1" /> Back to {isEstimate ? "estimates" : "invoices"}</Link></Button>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-heading text-2xl font-semibold tracking-tight">{isEdit ? "Edit invoice" : "New invoice"}</h1>
-        {savedId && <StatusBadge status={form.payment_status} />}
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">{isEdit ? `Edit ${docLabel}` : `New ${docLabel}`}</h1>
+        {savedId && <StatusBadge status={isEstimate ? form.status : form.payment_status} />}
       </div>
+
+      {!isEdit && (
+        <div className="inline-flex rounded-lg border bg-card p-0.5">
+          {["invoice", "estimate"].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => switchType(t)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${docType === t ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
       <Card className="p-5 space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
@@ -206,7 +240,7 @@ export default function InvoiceEditor() {
           <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} modifiersCatalog={modifiersCatalog} />
         </div>
 
-        <p className="text-sm text-muted-foreground italic">Invoices are due within 7 days of issuance unless otherwise noted.</p>
+        {!isEstimate && <p className="text-sm text-muted-foreground italic">Invoices are due within 7 days of issuance unless otherwise noted.</p>}
 
         <div className="space-y-1.5">
           <Label>Notes</Label>
@@ -218,10 +252,10 @@ export default function InvoiceEditor() {
           <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total</span><span className="tabular-nums">{formatMoney(totals.total)}</span></div>
         </div>
 
-        <PaymentScheduleEditor total={totals.total} schedule={form.payment_schedule} onChange={(s) => setForm({ ...form, payment_schedule: s })} />
+        {!isEstimate && <PaymentScheduleEditor total={totals.total} schedule={form.payment_schedule} onChange={(s) => setForm({ ...form, payment_schedule: s })} />}
       </Card>
 
-      {payLink && (
+      {!isEstimate && payLink && (
         <Card className="p-4 bg-primary/5 border-primary/20">
           <div className="flex items-center gap-2 text-sm font-medium mb-2"><LinkIcon className="w-4 h-4" /> Payment link</div>
           <p className="text-xs text-muted-foreground mb-3">Share this link with your client so they can pay with PayPal.</p>
@@ -237,7 +271,7 @@ export default function InvoiceEditor() {
       <SheetItemsDialog open={sheetOpen} onOpenChange={setSheetOpen} onPick={pickSheetItems} defaultSheetId={settings?.google_sheet_id} />
 
       <div className="flex flex-wrap gap-2 justify-end">
-        <Button asChild variant="outline"><Link to="/invoices">Cancel</Link></Button>
+        <Button asChild variant="outline"><Link to={listRoute}>Cancel</Link></Button>
         <Button variant="outline" onClick={() => save(false)} disabled={saving}><Save className="w-4 h-4 mr-1" /> {saving ? "Saving…" : "Save draft"}</Button>
         <Button onClick={() => save(true)} disabled={saving || !form.name}><Send className="w-4 h-4 mr-1" /> Save &amp; send</Button>
       </div>

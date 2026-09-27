@@ -1,9 +1,9 @@
 import { Outlet, NavLink, Link } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, Settings, Droplet } from "lucide-react";
+import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet } from "lucide-react";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/customers", label: "Customers", icon: Users },
+  { to: "/estimates", label: "Estimates", icon: ClipboardList },
   { to: "/invoices", label: "Invoices", icon: FileText },
   { to: "/settings", label: "Settings", icon: Settings },
 ];

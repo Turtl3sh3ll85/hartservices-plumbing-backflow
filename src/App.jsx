@@ -18,6 +18,7 @@ import Jobs from '@/pages/Jobs';
 import JobDetail from '@/pages/JobDetail';
 import Invoices from '@/pages/Invoices';
 import InvoiceEditor from '@/pages/InvoiceEditor';
+import Estimates from '@/pages/Estimates';
 import Settings from '@/pages/Settings';
 import PayInvoice from '@/pages/PayInvoice';
 
@@ -61,6 +62,9 @@ const AuthenticatedApp = () => {
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/invoices/new" element={<InvoiceEditor />} />
           <Route path="/invoices/:id" element={<InvoiceEditor />} />
+          <Route path="/estimates" element={<Estimates />} />
+          <Route path="/estimates/new" element={<InvoiceEditor />} />
+          <Route path="/estimates/:id" element={<InvoiceEditor />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
