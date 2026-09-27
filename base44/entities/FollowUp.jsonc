@@ -1,0 +1,55 @@
+{
+  "name": "FollowUp",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "title": "Job"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "annual_testing",
+        "service_maintenance",
+        "inspection",
+        "warranty",
+        "other"
+      ],
+      "default": "service_maintenance",
+      "title": "Type"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Due Date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "completed"
+      ],
+      "default": "scheduled",
+      "title": "Status"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Completed Date"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "job_id",
+    "title",
+    "type",
+    "due_date"
+  ]
+}

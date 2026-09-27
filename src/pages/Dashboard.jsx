@@ -10,17 +10,20 @@ import { formatMoney } from "@/lib/invoice";
 export default function Dashboard() {
   const [invoices, setInvoices] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [followups, setFollowups] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const [inv, jb] = await Promise.all([
+        const [inv, jb, fu] = await Promise.all([
           base44.entities.Invoice.list("-created_date", 50),
           base44.entities.Job.list("-created_date", 20),
+          base44.entities.FollowUp.filter({ status: "scheduled" }, "due_date", 20),
         ]);
         setInvoices(inv);
         setJobs(jb);
+        setFollowups(fu);
       } catch (e) {}
       setLoading(false);
     })();
@@ -113,6 +116,33 @@ export default function Dashboard() {
                   <StatusBadge status={j.status} />
                 </Link>
               ))}
+            </div>
+          )}
+        </Card>
+
+        <Card className="p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-heading font-semibold">Upcoming follow-ups</h2>
+          </div>
+          {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : followups.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">No scheduled follow-ups.</p>
+          ) : (
+            <div className="space-y-2">
+              {followups.slice(0, 6).map((f) => {
+                const jb = jobs.find((j) => j.id === f.job_id);
+                const overdue = f.due_date && new Date(f.due_date) < new Date(new Date().toDateString());
+                return (
+                  <Link key={f.id} to={jb ? `/jobs/${jb.id}` : "/jobs"} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-accent transition-colors">
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm truncate">{f.title}</div>
+                      <div className="text-xs text-muted-foreground truncate">{jb?.title || "—"}</div>
+                    </div>
+                    <span className={`text-xs shrink-0 ${overdue ? "text-red-600 font-medium" : "text-muted-foreground"}`}>
+                      {overdue ? "Overdue · " : ""}{new Date(f.due_date).toLocaleDateString()}
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </Card>

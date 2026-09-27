@@ -10,6 +10,7 @@ import EstimatesSection from "@/components/job/EstimatesSection";
 import InvoicesSection from "@/components/job/InvoicesSection";
 import ContractsSection from "@/components/job/ContractsSection";
 import PhotosSection from "@/components/job/PhotosSection";
+import FollowUpsSection from "@/components/job/FollowUpsSection";
 import { fullAddress } from "@/lib/invoice";
 
 export default function JobDetail() {
@@ -20,6 +21,7 @@ export default function JobDetail() {
   const [invoices, setInvoices] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [photos, setPhotos] = useState([]);
+  const [followups, setFollowups] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -30,16 +32,18 @@ export default function JobDetail() {
       if (j.customer_id) {
         try { setCustomer(await base44.entities.Customer.get(j.customer_id)); } catch (e) {}
       }
-      const [est, inv, con, pho] = await Promise.all([
+      const [est, inv, con, pho, fu] = await Promise.all([
         base44.entities.Estimate.filter({ job_id: id }, "-created_date"),
         base44.entities.Invoice.filter({ job_id: id }, "-created_date"),
         base44.entities.Contract.filter({ job_id: id }, "-created_date"),
         base44.entities.Attachment.filter({ job_id: id }, "-created_date"),
+        base44.entities.FollowUp.filter({ job_id: id }, "due_date"),
       ]);
       setEstimates(est);
       setInvoices(inv);
       setContracts(con);
       setPhotos(pho);
+      setFollowups(fu);
     } catch (e) {}
     setLoading(false);
   };
@@ -86,11 +90,13 @@ export default function JobDetail() {
           <TabsTrigger value="estimates">Estimates ({estimates.length})</TabsTrigger>
           <TabsTrigger value="contracts">Contracts ({contracts.length})</TabsTrigger>
           <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
+          <TabsTrigger value="followups">Follow-ups ({followups.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="invoices" className="mt-4"><InvoicesSection job={job} invoices={invoices} reload={load} /></TabsContent>
         <TabsContent value="estimates" className="mt-4"><EstimatesSection job={job} estimates={estimates} reload={load} /></TabsContent>
         <TabsContent value="contracts" className="mt-4"><ContractsSection job={job} contracts={contracts} reload={load} /></TabsContent>
         <TabsContent value="photos" className="mt-4"><PhotosSection job={job} photos={photos} reload={load} /></TabsContent>
+        <TabsContent value="followups" className="mt-4"><FollowUpsSection job={job} followups={followups} reload={load} /></TabsContent>
       </Tabs>
     </div>
   );
