@@ -78,8 +78,8 @@ export default function JobDetail() {
             {job.description && <p className="mt-3 text-sm text-muted-foreground whitespace-pre-wrap">{job.description}</p>}
           </div>
           <div className="flex gap-1">
-            <Button asChild variant="outline" size="sm"><Link to={`/jobs?edit=${job.id}`} onClick={(e) => e.preventDefault()}><Pencil className="w-4 h-4 mr-1" /> Edit</Link></Button>
-            <Button variant="ghost" size="sm" onClick={remove}><Trash2 className="w-4 h-4 mr-1 text-destructive" /> Delete</Button>
+            <Button asChild variant="outline" size="sm" className="h-11 sm:h-8"><Link to={`/jobs?edit=${job.id}`} onClick={(e) => e.preventDefault()}><Pencil className="w-4 h-4 mr-1" /> Edit</Link></Button>
+            <Button variant="ghost" size="sm" className="h-11 sm:h-8" onClick={remove}><Trash2 className="w-4 h-4 mr-1 text-destructive" /> Delete</Button>
           </div>
         </div>
       </Card>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Droplet, CheckCircle2, Loader2, CreditCard, ShieldCheck, CheckCircle, FileDown, Paperclip, FileText, ExternalLink } from "lucide-react";
+import { ArrowLeft, Droplet, CheckCircle2, Loader2, CreditCard, ShieldCheck, CheckCircle, FileDown, Paperclip, FileText, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
@@ -17,6 +17,7 @@ function installmentAmount(item, total) {
 export default function PayInvoice() {
   const { invoiceId } = useParams();
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(null);
@@ -128,6 +129,7 @@ export default function PayInvoice() {
   return (
     <div className="min-h-screen bg-muted/30 py-8 px-4">
       <div className="max-w-2xl mx-auto">
+        <Button variant="ghost" onClick={() => navigate("/")} className="-ml-2 mb-4"><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
         <div className="flex items-center gap-3 mb-6">
           {biz.logo_url ? (
             <div className="w-12 h-12 rounded-xl overflow-hidden bg-card border shrink-0">

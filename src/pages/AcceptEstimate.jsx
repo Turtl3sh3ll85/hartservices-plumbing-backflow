@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Droplet, CheckCircle2, Loader2, ShieldCheck, FileText, CreditCard } from "lucide-react";
+import { ArrowLeft, Droplet, CheckCircle2, Loader2, ShieldCheck, FileText, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
@@ -9,6 +9,7 @@ import ServiceTerms from "@/components/ServiceTerms";
 
 export default function AcceptEstimate() {
   const { estimateId } = useParams();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
@@ -64,6 +65,7 @@ export default function AcceptEstimate() {
   return (
     <div className="min-h-screen bg-muted/30 py-8 px-4">
       <div className="max-w-2xl mx-auto">
+        <Button variant="ghost" onClick={() => navigate("/")} className="-ml-2 mb-4"><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
         <div className="flex items-center gap-2.5 mb-6">
           {biz.logo_url ? (
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-card border shrink-0">
