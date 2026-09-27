@@ -16,6 +16,10 @@ export default function CustomerFormDialog({ open, onOpenChange, onPick }) {
     setSaving(true);
     try {
       const cust = await base44.entities.Customer.create(form);
+      // Best-effort sync to Google Contacts via Zapier webhook.
+      try {
+        await base44.functions.invoke('pushCustomerToZapier', { customer: form });
+      } catch (e) { console.error('Zapier sync failed:', e.message); }
       onPick(cust);
       onOpenChange(false);
       setForm({ name: "", company: "", email: "", phone: "", street: "", city: "", state: "", zip: "" });
