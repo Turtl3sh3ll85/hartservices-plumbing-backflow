@@ -73,6 +73,15 @@
           "value": {
             "type": "number",
             "title": "Value"
+          },
+          "paid": {
+            "type": "boolean",
+            "default": false,
+            "title": "Paid"
+          },
+          "paypal_order_id": {
+            "type": "string",
+            "title": "PayPal Order ID"
           }
         }
       }

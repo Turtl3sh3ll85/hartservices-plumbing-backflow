@@ -7,8 +7,8 @@ export function getPaypalBaseUrl() {
 }
 
 export async function getPaypalAccessToken() {
-  const clientId = secrets.get("PAYPAL_CLIENT_ID");
-  const secret = secrets.get("PAYPAL_CLIENT_SECRET");
+  const clientId = (secrets.get("PAYPAL_CLIENT_ID") || "").trim();
+  const secret = (secrets.get("PAYPAL_CLIENT_SECRET") || "").trim();
   if (!clientId || !secret) throw new Error("PayPal credentials not configured. Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET.");
   const base = getPaypalBaseUrl();
   const auth = btoa(`${clientId}:${secret}`);
@@ -22,7 +22,8 @@ export async function getPaypalAccessToken() {
   });
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`PayPal authentication failed: ${err}. Verify PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET are valid for the configured PAYPAL_ENVIRONMENT (sandbox or live).`);
+    const env = secrets.get("PAYPAL_ENVIRONMENT") === "live" ? "live" : "sandbox";
+    throw new Error(`PayPal authentication failed against the ${env} API: ${err}. Make sure PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET are copied from your ${env} PayPal app, and that PAYPAL_ENVIRONMENT is set to "sandbox" or "live" to match.`);
   }
   const data = await res.json();
   return data.access_token;

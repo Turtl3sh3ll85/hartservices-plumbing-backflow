@@ -1,60 +1,70 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Droplet, CheckCircle2, Loader2, CreditCard, ShieldCheck } from "lucide-react";
+import { Droplet, CheckCircle2, Loader2, CreditCard, ShieldCheck, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
+
+function installmentAmount(item, total) {
+  return item.type === "percentage"
+    ? ((Number(total) || 0) * (Number(item.value) || 0)) / 100
+    : (Number(item.value) || 0);
+}
 
 export default function PayInvoice() {
   const { invoiceId } = useParams();
   const [params] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
+  const [paying, setPaying] = useState(null);
   const [paid, setPaid] = useState(false);
   const [error, setError] = useState("");
   const [captured, setCaptured] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const res = await base44.functions.invoke("getInvoiceForPayment", { invoice_id: invoiceId });
       setData(res.data);
-      if (res.data.invoice.payment_status === "paid") setPaid(true);
+      setPaid(res.data.invoice.payment_status === "paid");
     } catch (e) { setError(e.message || "Invoice not found"); }
     setLoading(false);
-  };
+  }, [invoiceId]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     const status = params.get("paypal");
     const token = params.get("token");
     if (status === "approved" && token && !captured) {
       setCaptured(true);
-      setPaying(true);
+      setPaying("full");
       (async () => {
         try {
           const res = await base44.functions.invoke("capturePaypalPayment", { order_id: token, invoice_id: invoiceId });
-          if (res.data?.success) { setPaid(true); }
-          else { setError(res.data?.error || "Payment could not be confirmed"); }
+          if (res.data?.success) {
+            await load();
+            if (!res.data?.paid_in_full) setPaid(false);
+          } else { setError(res.data?.error || "Payment could not be confirmed"); }
         } catch (e) { setError(e.message); }
-        setPaying(false);
+        setPaying(null);
       })();
     }
   }, []);
 
-  const pay = async () => {
-    setPaying(true);
+  const pay = async (scheduleIndex) => {
+    setPaying(scheduleIndex == null ? "full" : scheduleIndex);
     setError("");
     try {
-      const res = await base44.functions.invoke("createPaypalOrder", { invoice_id: invoiceId });
+      const payload = { invoice_id: invoiceId };
+      if (scheduleIndex != null) payload.schedule_index = scheduleIndex;
+      const res = await base44.functions.invoke("createPaypalOrder", payload);
       if (res.data?.approval_url) {
         window.location.href = res.data.approval_url;
       } else {
         setError(res.data?.error || "Could not start PayPal payment. Check that PayPal credentials are configured.");
-        setPaying(false);
+        setPaying(null);
       }
-    } catch (e) { setError(e.message); setPaying(false); }
+    } catch (e) { setError(e.message); setPaying(null); }
   };
 
   if (loading) {
@@ -68,6 +78,9 @@ export default function PayInvoice() {
   const { invoice, job, customer, settings } = data || {};
   const biz = settings || {};
   const brand = biz.business_name || "FlowPro Plumbing";
+  const schedule = invoice?.payment_schedule || [];
+  const hasSchedule = schedule.length > 0;
+  const nextUnpaid = hasSchedule ? schedule.findIndex((s) => !s.paid) : -1;
 
   if (paid) {
     return (
@@ -157,34 +170,62 @@ export default function PayInvoice() {
               <div className="flex justify-between text-sm text-muted-foreground"><span>Tax</span><span className="tabular-nums">{formatMoney(invoice.tax)}</span></div>
               <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total due</span><span className="tabular-nums">{formatMoney(invoice.total)}</span></div>
             </div>
-
-            {(invoice.payment_schedule || []).length > 0 && (
-              <div className="border-t mt-4 pt-4">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Payment schedule</div>
-                <div className="space-y-1.5">
-                  {(invoice.payment_schedule || []).map((p, i) => {
-                    const amt = p.type === "percentage" ? ((Number(invoice.total) || 0) * (Number(p.value) || 0)) / 100 : Number(p.value) || 0;
-                    return (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span>{p.label || `Payment ${i + 1}`}</span>
-                        <span className="tabular-nums">{formatMoney(amt)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
+
+          {hasSchedule && (
+            <div className="p-6 border-t">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Payment schedule</div>
+              <div className="space-y-2.5">
+                {schedule.map((p, i) => {
+                  const amt = installmentAmount(p, invoice.total);
+                  const isPaid = !!p.paid;
+                  const isPayingThis = paying === i;
+                  return (
+                    <div key={i} className="flex items-center justify-between gap-3 py-2 border-b last:border-0">
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm">{p.label || `Payment ${i + 1}`}</div>
+                        <div className="text-sm tabular-nums text-muted-foreground">{formatMoney(amt)}</div>
+                      </div>
+                      {isPaid ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                          <CheckCircle className="w-3.5 h-3.5" /> Paid
+                        </span>
+                      ) : (
+                        <Button size="sm" onClick={() => pay(i)} disabled={paying != null} className="shrink-0">
+                          {isPayingThis ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CreditCard className="w-4 h-4 mr-1.5" />}
+                          Pay
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="p-6 border-t bg-muted/30">
             {error && <div className="text-sm text-red-600 mb-3 text-center">{error}</div>}
-            <Button onClick={pay} disabled={paying} className="w-full h-12 text-base">
-              {paying ? (
-                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing…</>
-              ) : (
-                <><CreditCard className="w-5 h-5 mr-2" /> Pay {formatMoney(invoice.total)} with PayPal</>
-              )}
-            </Button>
+            {!hasSchedule && (
+              <Button onClick={() => pay(null)} disabled={paying != null} className="w-full h-12 text-base">
+                {paying != null ? (
+                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing…</>
+                ) : (
+                  <><CreditCard className="w-5 h-5 mr-2" /> Pay {formatMoney(invoice.total)} with PayPal</>
+                )}
+              </Button>
+            )}
+            {hasSchedule && nextUnpaid >= 0 && (
+              <Button onClick={() => pay(nextUnpaid)} disabled={paying != null} className="w-full h-12 text-base">
+                {paying === nextUnpaid ? (
+                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Processing…</>
+                ) : (
+                  <><CreditCard className="w-5 h-5 mr-2" /> Pay {formatMoney(installmentAmount(schedule[nextUnpaid], invoice.total))} — {schedule[nextUnpaid].label || `Payment ${nextUnpaid + 1}`}</>
+                )}
+              </Button>
+            )}
+            {hasSchedule && nextUnpaid === -1 && (
+              <div className="text-center text-sm text-emerald-700 font-medium">All payments complete</div>
+            )}
             <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-muted-foreground">
               <ShieldCheck className="w-3.5 h-3.5" /> Secure payment powered by PayPal
             </div>
