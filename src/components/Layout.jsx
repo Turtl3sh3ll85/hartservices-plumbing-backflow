@@ -1,4 +1,5 @@
-import { Outlet, NavLink, Link, useLocation } from "react-router-dom";
+import { Outlet, NavLink, Link, useLocation, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, Wrench, Users } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
@@ -37,6 +38,8 @@ export default function Layout() {
   const { settings } = useSettings();
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const brand = settings?.business_name || "FlowPro Plumbing";
   const short = brand.split(" ")[0];
   const nav = allNav.filter((item) => item.roles.includes(user?.role));
@@ -81,7 +84,7 @@ export default function Layout() {
           <span className="font-heading font-semibold">{short}</span>
         </header>
         <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overscroll-none">
-          <PullToRefresh onRefresh={() => window.location.reload()}>
+          <PullToRefresh onRefresh={async () => { await queryClient.invalidateQueries(); }}>
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0, x: 20 }}
@@ -104,6 +107,14 @@ export default function Layout() {
             key={item.to}
             to={item.to}
             end={item.end}
+            onClick={(e) => {
+              const onRoot = location.pathname === item.to;
+              const onChild = !item.end && location.pathname.startsWith(item.to + "/");
+              if (onRoot || onChild) {
+                e.preventDefault();
+                navigate(item.to, { replace: true, state: { t: Date.now() } });
+              }
+            }}
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[11px] font-medium select-none ${
                 isActive ? "text-primary" : "text-muted-foreground"

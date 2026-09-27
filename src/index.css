@@ -91,4 +91,18 @@
   body {
     @apply bg-background text-foreground font-body;
   }
+
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+
+  button,
+  a,
+  [role='button'],
+  nav,
+  .select-none {
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }

@@ -38,19 +38,46 @@ export default function Customers() {
   const save = async () => {
     if (!form.name) return;
     setSaving(true);
+    const wasEditing = Boolean(editing);
+    const previous = wasEditing ? customers.find((c) => c.id === editing.id) : null;
+    const tempId = wasEditing ? editing.id : `temp_${Date.now()}`;
+    const optimistic = { ...form, id: tempId, created_date: previous?.created_date || new Date().toISOString(), updated_date: new Date().toISOString() };
+    if (wasEditing) {
+      setCustomers((prev) => prev.map((c) => (c.id === tempId ? optimistic : c)));
+    } else {
+      setCustomers((prev) => [optimistic, ...prev]);
+    }
+    setOpen(false);
     try {
-      if (editing) await base44.entities.Customer.update(editing.id, form);
-      else await base44.entities.Customer.create(form);
-      setOpen(false);
-      load();
-    } catch (e) { alert(e.message); }
+      if (wasEditing) {
+        const saved = await base44.entities.Customer.update(editing.id, form);
+        setCustomers((prev) => prev.map((c) => (c.id === tempId ? { ...saved, id: editing.id } : c)));
+      } else {
+        const created = await base44.entities.Customer.create(form);
+        setCustomers((prev) => prev.map((c) => (c.id === tempId ? created : c)));
+      }
+    } catch (e) {
+      if (wasEditing) {
+        setCustomers((prev) => prev.map((c) => (c.id === tempId ? previous : c)));
+      } else {
+        setCustomers((prev) => prev.filter((c) => c.id !== tempId));
+      }
+      alert(e.message);
+      setOpen(true);
+    }
     setSaving(false);
   };
 
   const remove = async (c) => {
     if (!confirm(`Delete customer "${c.name}"?`)) return;
-    await base44.entities.Customer.delete(c.id);
-    load();
+    const previous = customers;
+    setCustomers((prev) => prev.filter((x) => x.id !== c.id));
+    try {
+      await base44.entities.Customer.delete(c.id);
+    } catch (e) {
+      setCustomers(previous);
+      alert(e.message);
+    }
   };
 
   const filtered = customers.filter((c) => {

@@ -60,19 +60,46 @@ export default function Jobs() {
   const save = async () => {
     if (!form.customer_id || !form.title) return;
     setSaving(true);
+    const wasEditing = Boolean(editing);
+    const previous = wasEditing ? jobs.find((j) => j.id === editing.id) : null;
+    const tempId = wasEditing ? editing.id : `temp_${Date.now()}`;
+    const optimistic = { ...form, id: tempId, created_date: previous?.created_date || new Date().toISOString(), updated_date: new Date().toISOString() };
+    if (wasEditing) {
+      setJobs((prev) => prev.map((j) => (j.id === tempId ? optimistic : j)));
+    } else {
+      setJobs((prev) => [optimistic, ...prev]);
+    }
+    setOpen(false);
     try {
-      if (editing) await base44.entities.Job.update(editing.id, form);
-      else await base44.entities.Job.create(form);
-      setOpen(false);
-      load();
-    } catch (e) { alert(e.message); }
+      if (wasEditing) {
+        const saved = await base44.entities.Job.update(editing.id, form);
+        setJobs((prev) => prev.map((j) => (j.id === tempId ? { ...saved, id: editing.id } : j)));
+      } else {
+        const created = await base44.entities.Job.create(form);
+        setJobs((prev) => prev.map((j) => (j.id === tempId ? created : j)));
+      }
+    } catch (e) {
+      if (wasEditing) {
+        setJobs((prev) => prev.map((j) => (j.id === tempId ? previous : j)));
+      } else {
+        setJobs((prev) => prev.filter((j) => j.id !== tempId));
+      }
+      alert(e.message);
+      setOpen(true);
+    }
     setSaving(false);
   };
 
   const remove = async (j) => {
     if (!confirm(`Delete job "${j.title}"?`)) return;
-    await base44.entities.Job.delete(j.id);
-    load();
+    const previous = jobs;
+    setJobs((prev) => prev.filter((x) => x.id !== j.id));
+    try {
+      await base44.entities.Job.delete(j.id);
+    } catch (e) {
+      setJobs(previous);
+      alert(e.message);
+    }
   };
 
   const filtered = jobs.filter((j) => {
