@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams, useLocation, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -231,12 +231,7 @@ export default function InvoiceEditor() {
         )}
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Line items</Label>
-            <Button type="button" variant="outline" size="sm" onClick={() => setSheetOpen(true)}>
-              <FileSpreadsheet className="w-4 h-4 mr-1" /> Pull from Google Sheet
-            </Button>
-          </div>
+          <Label>Line items</Label>
           <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} modifiersCatalog={modifiersCatalog} />
         </div>
 
