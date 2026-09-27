@@ -186,15 +186,9 @@ export default function InvoiceEditor() {
           <LineItemEditor lineItems={form.line_items} onChange={setLineItems} />
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label>Tax rate %</Label>
-            <Input type="number" min="0" step="0.01" value={form.tax_rate ?? 0} onChange={(e) => setForm({ ...form, tax_rate: parseFloat(e.target.value) || 0 })} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Due date</Label>
-            <Input type="date" value={form.due_date || ""} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-          </div>
+        <div className="space-y-1.5">
+          <Label>Due date</Label>
+          <Input type="date" value={form.due_date || ""} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
         </div>
 
         <div className="space-y-1.5">
@@ -204,7 +198,6 @@ export default function InvoiceEditor() {
 
         <div className="border-t pt-4 space-y-1.5">
           <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{formatMoney(totals.subtotal)}</span></div>
-          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Tax ({form.tax_rate || 0}%)</span><span className="tabular-nums">{formatMoney(totals.tax)}</span></div>
           <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total</span><span className="tabular-nums">{formatMoney(totals.total)}</span></div>
         </div>
       </Card>
