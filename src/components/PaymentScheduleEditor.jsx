@@ -50,10 +50,10 @@ export default function PaymentScheduleEditor({ total = 0, schedule = [], onChan
               <Input
                 type="number"
                 min="0"
-                step="0.01"
+                step={p.type === "percentage" ? 1 : 0.01}
                 className="pr-7 text-right"
                 value={p.value ?? ""}
-                onChange={(e) => update(i, { value: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => update(i, { value: p.type === "percentage" ? Math.round(parseFloat(e.target.value) || 0) : parseFloat(e.target.value) || 0 })}
               />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{p.type === "percentage" ? "%" : "$"}</span>
             </div>
