@@ -1,0 +1,54 @@
+{
+  "name": "Job",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "title": "Customer"
+    },
+    "title": {
+      "type": "string",
+      "title": "Job Title"
+    },
+    "job_street": {
+      "type": "string",
+      "title": "Job Street Address"
+    },
+    "job_city": {
+      "type": "string",
+      "title": "Job City"
+    },
+    "job_state": {
+      "type": "string",
+      "title": "Job State"
+    },
+    "job_zip": {
+      "type": "string",
+      "title": "Job ZIP"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "scheduled",
+      "title": "Status"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Scheduled Date"
+    }
+  },
+  "required": [
+    "customer_id",
+    "title"
+  ]
+}

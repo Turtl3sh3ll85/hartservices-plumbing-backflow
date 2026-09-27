@@ -1,0 +1,103 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "title": "Job"
+    },
+    "number": {
+      "type": "string",
+      "title": "Invoice Number"
+    },
+    "name": {
+      "type": "string",
+      "title": "Invoice Name"
+    },
+    "line_items": {
+      "type": "array",
+      "title": "Line Items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "type": "number",
+            "title": "Unit Price"
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "type": "number",
+      "title": "Subtotal"
+    },
+    "tax_rate": {
+      "type": "number",
+      "title": "Tax Rate %"
+    },
+    "tax": {
+      "type": "number",
+      "title": "Tax"
+    },
+    "total": {
+      "type": "number",
+      "title": "Total"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "paid",
+        "overdue",
+        "cancelled"
+      ],
+      "default": "draft",
+      "title": "Status"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "unpaid",
+        "partial",
+        "paid"
+      ],
+      "default": "unpaid",
+      "title": "Payment Status"
+    },
+    "paypal_order_id": {
+      "type": "string",
+      "title": "PayPal Order ID"
+    },
+    "amount_paid": {
+      "type": "number",
+      "title": "Amount Paid"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Paid Date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Due Date"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "job_id",
+    "name"
+  ]
+}
