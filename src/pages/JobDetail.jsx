@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, MapPin, Calendar, User, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,41 +18,25 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [job, setJob] = useState(null);
-  const [customer, setCustomer] = useState(null);
-  const [estimates, setEstimates] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [contracts, setContracts] = useState([]);
-  const [photos, setPhotos] = useState([]);
-  const [followups, setFollowups] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: job, isLoading: loadingJob } = useQuery({ queryKey: ["job", id], queryFn: () => base44.entities.Job.get(id) });
+  const { data: customer, isLoading: loadingCustomer } = useQuery({ queryKey: ["customer", job?.customer_id], queryFn: () => base44.entities.Customer.get(job.customer_id), enabled: !!job?.customer_id });
+  const { data: estimates = [], isLoading: loadingEstimates } = useQuery({ queryKey: ["estimates", "job", id], queryFn: () => base44.entities.Estimate.filter({ job_id: id }, "-created_date") });
+  const { data: invoices = [], isLoading: loadingInvoices } = useQuery({ queryKey: ["invoices", "job", id], queryFn: () => base44.entities.Invoice.filter({ job_id: id }, "-created_date") });
+  const { data: contracts = [], isLoading: loadingContracts } = useQuery({ queryKey: ["contracts", "job", id], queryFn: () => base44.entities.Contract.filter({ job_id: id }, "-created_date") });
+  const { data: photos = [], isLoading: loadingPhotos } = useQuery({ queryKey: ["attachments", "job", id], queryFn: () => base44.entities.Attachment.filter({ job_id: id }, "-created_date") });
+  const { data: followups = [], isLoading: loadingFollowups } = useQuery({ queryKey: ["followups", "job", id], queryFn: () => base44.entities.FollowUp.filter({ job_id: id }, "due_date") });
+  const loading = loadingJob || loadingCustomer || loadingEstimates || loadingInvoices || loadingContracts || loadingPhotos || loadingFollowups;
   const { confirmState, confirm, onOpenChange } = useConfirmDialog();
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const j = await base44.entities.Job.get(id);
-      setJob(j);
-      if (j.customer_id) {
-        try { setCustomer(await base44.entities.Customer.get(j.customer_id)); } catch (e) {}
-      }
-      const [est, inv, con, pho, fu] = await Promise.all([
-        base44.entities.Estimate.filter({ job_id: id }, "-created_date"),
-        base44.entities.Invoice.filter({ job_id: id }, "-created_date"),
-        base44.entities.Contract.filter({ job_id: id }, "-created_date"),
-        base44.entities.Attachment.filter({ job_id: id }, "-created_date"),
-        base44.entities.FollowUp.filter({ job_id: id }, "due_date"),
-      ]);
-      setEstimates(est);
-      setInvoices(inv);
-      setContracts(con);
-      setPhotos(pho);
-      setFollowups(fu);
-    } catch (e) {}
-    setLoading(false);
+  const reload = () => {
+    queryClient.invalidateQueries({ queryKey: ["job", id] });
+    queryClient.invalidateQueries({ queryKey: ["estimates", "job", id] });
+    queryClient.invalidateQueries({ queryKey: ["invoices", "job", id] });
+    queryClient.invalidateQueries({ queryKey: ["contracts", "job", id] });
+    queryClient.invalidateQueries({ queryKey: ["attachments", "job", id] });
+    queryClient.invalidateQueries({ queryKey: ["followups", "job", id] });
   };
-
-  useEffect(() => { load(); }, [id]);
 
   const remove = () => {
     confirm({
@@ -105,11 +89,11 @@ export default function JobDetail() {
           <TabsTrigger value="photos">Photos ({photos.length})</TabsTrigger>
           <TabsTrigger value="followups">Follow-ups ({followups.length})</TabsTrigger>
         </TabsList>
-        <TabsContent value="invoices" className="mt-4"><InvoicesSection job={job} invoices={invoices} reload={load} /></TabsContent>
-        <TabsContent value="estimates" className="mt-4"><EstimatesSection job={job} estimates={estimates} reload={load} /></TabsContent>
-        <TabsContent value="contracts" className="mt-4"><ContractsSection job={job} contracts={contracts} reload={load} /></TabsContent>
-        <TabsContent value="photos" className="mt-4"><PhotosSection job={job} photos={photos} reload={load} /></TabsContent>
-        <TabsContent value="followups" className="mt-4"><FollowUpsSection job={job} followups={followups} reload={load} /></TabsContent>
+        <TabsContent value="invoices" className="mt-4"><InvoicesSection job={job} invoices={invoices} reload={reload} /></TabsContent>
+        <TabsContent value="estimates" className="mt-4"><EstimatesSection job={job} estimates={estimates} reload={reload} /></TabsContent>
+        <TabsContent value="contracts" className="mt-4"><ContractsSection job={job} contracts={contracts} reload={reload} /></TabsContent>
+        <TabsContent value="photos" className="mt-4"><PhotosSection job={job} photos={photos} reload={reload} /></TabsContent>
+        <TabsContent value="followups" className="mt-4"><FollowUpsSection job={job} followups={followups} reload={reload} /></TabsContent>
       </Tabs>
 
       <ConfirmDialog {...confirmState} onOpenChange={onOpenChange} />

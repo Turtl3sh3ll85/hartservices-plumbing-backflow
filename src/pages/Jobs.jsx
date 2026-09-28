@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Plus, Search, Wrench, MapPin, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,10 +21,10 @@ const empty = { customer_id: "", title: "", job_street: "", job_city: "", job_st
 const statuses = ["scheduled", "in_progress", "completed", "cancelled"];
 
 export default function Jobs() {
+  const queryClient = useQueryClient();
   const [params] = useSearchParams();
-  const [jobs, setJobs] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: jobs = [], isLoading: loading } = useQuery({ queryKey: ["jobs"], queryFn: () => base44.entities.Job.list("-created_date", 200) });
+  const { data: customers = [] } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(empty);
@@ -34,20 +35,6 @@ export default function Jobs() {
   const { confirmState, confirm, onOpenChange } = useConfirmDialog();
 
   const customerMap = useMemo(() => (customers.length ? Object.fromEntries(customers.map((c) => [c.id, c])) : {}), [customers]);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [jb, cs] = await Promise.all([
-        base44.entities.Job.list("-created_date", 200),
-        base44.entities.Customer.list("name", 500),
-      ]);
-      setJobs(jb);
-      setCustomers(cs);
-    } catch (e) {}
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
 
   const startNew = () => {
     setEditing(null);
@@ -70,24 +57,24 @@ export default function Jobs() {
     const tempId = wasEditing ? editing.id : `temp_${Date.now()}`;
     const optimistic = { ...form, id: tempId, created_date: previous?.created_date || new Date().toISOString(), updated_date: new Date().toISOString() };
     if (wasEditing) {
-      setJobs((prev) => prev.map((j) => (j.id === tempId ? optimistic : j)));
+      queryClient.setQueryData(["jobs"], (prev) => (prev || []).map((j) => (j.id === tempId ? optimistic : j)));
     } else {
-      setJobs((prev) => [optimistic, ...prev]);
+      queryClient.setQueryData(["jobs"], (prev) => [optimistic, ...(prev || [])]);
     }
     setOpen(false);
     try {
       if (wasEditing) {
         const saved = await base44.entities.Job.update(editing.id, form);
-        setJobs((prev) => prev.map((j) => (j.id === tempId ? { ...saved, id: editing.id } : j)));
+        queryClient.setQueryData(["jobs"], (prev) => (prev || []).map((j) => (j.id === tempId ? { ...saved, id: editing.id } : j)));
       } else {
         const created = await base44.entities.Job.create(form);
-        setJobs((prev) => prev.map((j) => (j.id === tempId ? created : j)));
+        queryClient.setQueryData(["jobs"], (prev) => (prev || []).map((j) => (j.id === tempId ? created : j)));
       }
     } catch (e) {
       if (wasEditing) {
-        setJobs((prev) => prev.map((j) => (j.id === tempId ? previous : j)));
+        queryClient.setQueryData(["jobs"], (prev) => (prev || []).map((j) => (j.id === tempId ? previous : j)));
       } else {
-        setJobs((prev) => prev.filter((j) => j.id !== tempId));
+        queryClient.setQueryData(["jobs"], (prev) => (prev || []).filter((j) => j.id !== tempId));
       }
       toast({ title: "Error", description: e.message, variant: "destructive" });
       setOpen(true);
@@ -107,11 +94,11 @@ export default function Jobs() {
 
   const doRemove = async (j) => {
     const previous = jobs;
-    setJobs((prev) => prev.filter((x) => x.id !== j.id));
+    queryClient.setQueryData(["jobs"], (prev) => (prev || []).filter((x) => x.id !== j.id));
     try {
       await base44.entities.Job.delete(j.id);
     } catch (e) {
-      setJobs(previous);
+      queryClient.setQueryData(["jobs"], previous);
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
   };

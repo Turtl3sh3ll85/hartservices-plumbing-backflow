@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { FileText, ClipboardList, Loader2, CreditCard } from "lucide-react";
@@ -10,29 +11,11 @@ import { formatMoney } from "@/lib/invoice";
 
 export default function MyDocuments() {
   const { user } = useAuth();
-  const [invoices, setInvoices] = useState([]);
-  const [estimates, setEstimates] = useState([]);
-  const [jobs, setJobs] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const [inv, est, jb, cs] = await Promise.all([
-          base44.entities.Invoice.list("-created_date", 200),
-          base44.entities.Estimate.list("-created_date", 200),
-          base44.entities.Job.list("-created_date", 200),
-          base44.entities.Customer.list("name", 500),
-        ]);
-        setInvoices(inv);
-        setEstimates(est);
-        setJobs(jb);
-        setCustomers(cs);
-      } catch (e) {}
-      setLoading(false);
-    })();
-  }, []);
+  const { data: invoices = [], isLoading: li } = useQuery({ queryKey: ["invoices"], queryFn: () => base44.entities.Invoice.list("-created_date", 200) });
+  const { data: estimates = [], isLoading: le } = useQuery({ queryKey: ["estimates"], queryFn: () => base44.entities.Estimate.list("-created_date", 200) });
+  const { data: jobs = [], isLoading: lj } = useQuery({ queryKey: ["jobs"], queryFn: () => base44.entities.Job.list("-created_date", 200) });
+  const { data: customers = [], isLoading: lc } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
+  const loading = li || le || lj || lc;
 
   const myCustomer = customers.find(
     (c) => c.email && user?.email && c.email.toLowerCase() === user.email.toLowerCase()

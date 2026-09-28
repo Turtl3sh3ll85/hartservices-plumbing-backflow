@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Plus, Search, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,28 +12,12 @@ import EmptyState from "@/components/EmptyState";
 import { formatMoney } from "@/lib/invoice";
 
 export default function Estimates() {
-  const [estimates, setEstimates] = useState([]);
-  const [jobs, setJobs] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: estimates = [], isLoading: loadingEstimates } = useQuery({ queryKey: ["estimates"], queryFn: () => base44.entities.Estimate.list("-created_date", 200) });
+  const { data: jobs = [], isLoading: loadingJobs } = useQuery({ queryKey: ["jobs"], queryFn: () => base44.entities.Job.list("-created_date", 200) });
+  const { data: customers = [], isLoading: loadingCustomers } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
+  const loading = loadingEstimates || loadingJobs || loadingCustomers;
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [est, jb, cs] = await Promise.all([
-        base44.entities.Estimate.list("-created_date", 200),
-        base44.entities.Job.list("-created_date", 200),
-        base44.entities.Customer.list("name", 500),
-      ]);
-      setEstimates(est);
-      setJobs(jb);
-      setCustomers(cs);
-    } catch (e) {}
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
 
   const jobMap = useMemo(() => Object.fromEntries(jobs.map((j) => [j.id, j])), [jobs]);
   const customerMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);

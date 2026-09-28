@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Plus, Pencil, Trash2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,13 +21,15 @@ const blank = { number: "", line_items: [{ description: "", quantity: 1, unit_pr
 const statuses = ["draft", "sent", "approved", "declined", "converted"];
 
 export default function EstimatesSection({ job, estimates, reload }) {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(blank);
   const { confirmState, confirm, onOpenChange } = useConfirmDialog();
 
   const startNew = async () => {
-    const all = await base44.entities.Estimate.list();
+    let all = queryClient.getQueryData(["estimates"]) || [];
+    if (!all.length) all = await base44.entities.Estimate.list();
     setEditing(null);
     setForm({ ...blank, number: nextNumber("EST", all.map((e) => e.number)) });
     setOpen(true);

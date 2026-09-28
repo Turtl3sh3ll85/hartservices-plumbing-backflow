@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Wrench, FileText, DollarSign, TrendingUp, Plus, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,26 +8,10 @@ import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
 
 export default function Dashboard() {
-  const [invoices, setInvoices] = useState([]);
-  const [jobs, setJobs] = useState([]);
-  const [followups, setFollowups] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const [inv, jb, fu] = await Promise.all([
-          base44.entities.Invoice.list("-created_date", 50),
-          base44.entities.Job.list("-created_date", 20),
-          base44.entities.FollowUp.filter({ status: "scheduled" }, "due_date", 20),
-        ]);
-        setInvoices(inv);
-        setJobs(jb);
-        setFollowups(fu);
-      } catch (e) {}
-      setLoading(false);
-    })();
-  }, []);
+  const { data: invoices = [], isLoading: loadingInvoices } = useQuery({ queryKey: ["invoices", "recent"], queryFn: () => base44.entities.Invoice.list("-created_date", 50) });
+  const { data: jobs = [], isLoading: loadingJobs } = useQuery({ queryKey: ["jobs", "recent"], queryFn: () => base44.entities.Job.list("-created_date", 20) });
+  const { data: followups = [], isLoading: loadingFollowups } = useQuery({ queryKey: ["followups", "scheduled"], queryFn: () => base44.entities.FollowUp.filter({ status: "scheduled" }, "due_date", 20) });
+  const loading = loadingInvoices || loadingJobs || loadingFollowups;
 
   const outstanding = invoices
     .filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft")

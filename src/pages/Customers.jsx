@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Plus, Pencil, Trash2, MapPin, Phone, Mail, Search, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,8 @@ import { fullAddress } from "@/lib/invoice";
 const empty = { name: "", company: "", email: "", phone: "", street: "", city: "", state: "", zip: "", notes: "" };
 
 export default function Customers() {
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: customers = [], isLoading: loading } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(empty);
@@ -26,16 +27,6 @@ export default function Customers() {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const { confirmState, confirm, onOpenChange } = useConfirmDialog();
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const list = await base44.entities.Customer.list("name", 500);
-      setCustomers(list);
-    } catch (e) {}
-    setLoading(false);
-  };
-  useEffect(() => { load(); }, []);
 
   const startNew = () => { setEditing(null); setForm(empty); setOpen(true); };
   const startEdit = (c) => { setEditing(c); setForm({ ...empty, ...c }); setOpen(true); };
@@ -48,24 +39,24 @@ export default function Customers() {
     const tempId = wasEditing ? editing.id : `temp_${Date.now()}`;
     const optimistic = { ...form, id: tempId, created_date: previous?.created_date || new Date().toISOString(), updated_date: new Date().toISOString() };
     if (wasEditing) {
-      setCustomers((prev) => prev.map((c) => (c.id === tempId ? optimistic : c)));
+      queryClient.setQueryData(["customers"], (prev) => (prev || []).map((c) => (c.id === tempId ? optimistic : c)));
     } else {
-      setCustomers((prev) => [optimistic, ...prev]);
+      queryClient.setQueryData(["customers"], (prev) => [optimistic, ...(prev || [])]);
     }
     setOpen(false);
     try {
       if (wasEditing) {
         const saved = await base44.entities.Customer.update(editing.id, form);
-        setCustomers((prev) => prev.map((c) => (c.id === tempId ? { ...saved, id: editing.id } : c)));
+        queryClient.setQueryData(["customers"], (prev) => (prev || []).map((c) => (c.id === tempId ? { ...saved, id: editing.id } : c)));
       } else {
         const created = await base44.entities.Customer.create(form);
-        setCustomers((prev) => prev.map((c) => (c.id === tempId ? created : c)));
+        queryClient.setQueryData(["customers"], (prev) => (prev || []).map((c) => (c.id === tempId ? created : c)));
       }
     } catch (e) {
       if (wasEditing) {
-        setCustomers((prev) => prev.map((c) => (c.id === tempId ? previous : c)));
+        queryClient.setQueryData(["customers"], (prev) => (prev || []).map((c) => (c.id === tempId ? previous : c)));
       } else {
-        setCustomers((prev) => prev.filter((c) => c.id !== tempId));
+        queryClient.setQueryData(["customers"], (prev) => (prev || []).filter((c) => c.id !== tempId));
       }
       toast({ title: "Error", description: e.message, variant: "destructive" });
       setOpen(true);
@@ -85,11 +76,11 @@ export default function Customers() {
 
   const doRemove = async (c) => {
     const previous = customers;
-    setCustomers((prev) => prev.filter((x) => x.id !== c.id));
+    queryClient.setQueryData(["customers"], (prev) => (prev || []).filter((x) => x.id !== c.id));
     try {
       await base44.entities.Customer.delete(c.id);
     } catch (e) {
-      setCustomers(previous);
+      queryClient.setQueryData(["customers"], previous);
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
   };

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams, useLocation, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,9 +31,10 @@ export default function InvoiceEditor() {
   const docLabel = isEstimate ? "estimate" : "invoice";
   const listRoute = isEstimate ? "/estimates" : "/invoices";
 
-  const [jobs, setJobs] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [settings, setSettings] = useState(null);
+  const queryClient = useQueryClient();
+  const { data: jobs = [], isLoading: loadingJobs } = useQuery({ queryKey: ["jobs"], queryFn: () => base44.entities.Job.list("-created_date", 200) });
+  const { data: customers = [] } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
+  const { data: settings = null, isLoading: loadingSettings } = useQuery({ queryKey: ["settings"], queryFn: async () => { const st = await base44.entities.Settings.list().catch(() => []); return st[0] || null; } });
   const [form, setForm] = useState({
     job_id: params.get("job") || "",
     number: "",
@@ -60,28 +61,33 @@ export default function InvoiceEditor() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const { toast } = useToast();
 
+  const { data: doc, isLoading: loadingDoc } = useQuery({
+    queryKey: [isEstimateRoute ? "estimate" : "invoice", id],
+    queryFn: () => (isEstimateRoute ? base44.entities.Estimate.get(id) : base44.entities.Invoice.get(id)),
+    enabled: isEdit,
+  });
+  const { data: allDocs = [], isLoading: loadingAllDocs } = useQuery({
+    queryKey: [isEstimateRoute ? "estimates-all" : "invoices-all"],
+    queryFn: () => (isEstimateRoute ? base44.entities.Estimate.list() : base44.entities.Invoice.list()),
+    enabled: !isEdit,
+  });
+
+  const populatedIdRef = useRef(null);
   useEffect(() => {
-    (async () => {
-      const [jb, cs, st] = await Promise.all([
-        base44.entities.Job.list("-created_date", 200),
-        base44.entities.Customer.list("name", 500),
-        base44.entities.Settings.list().catch(() => []),
-      ]);
-      setJobs(jb);
-      setCustomers(cs);
-      setSettings(st[0] || null);
-      if (isEdit) {
-        const inv = await (isEstimateRoute ? base44.entities.Estimate.get(id) : base44.entities.Invoice.get(id));
-        setForm({ ...form, ...inv, line_items: inv.line_items || [], payment_schedule: inv.payment_schedule || [] });
-        setSavedId(id);
-        const j = jb.find((x) => x.id === inv.job_id);
-        if (j) setSelectedCustomerId(j.customer_id || "");
-      } else {
-        const all = await (isEstimateRoute ? base44.entities.Estimate.list() : base44.entities.Invoice.list());
-        setForm((f) => ({ ...f, number: nextNumber(isEstimateRoute ? "EST" : "INV", all.map((i) => i.number)), tax_rate: st[0]?.default_tax_rate || 0 }));
-      }
-    })();
-  }, [id]);
+    if (populatedIdRef.current === id) return;
+    if (isEdit) {
+      if (loadingDoc || loadingJobs || !doc) return;
+      setForm((f) => ({ ...f, ...doc, line_items: doc.line_items || [], payment_schedule: doc.payment_schedule || [] }));
+      setSavedId(id);
+      const j = jobs.find((x) => x.id === doc.job_id);
+      if (j) setSelectedCustomerId(j.customer_id || "");
+      populatedIdRef.current = id;
+    } else {
+      if (loadingAllDocs || loadingSettings) return;
+      setForm((f) => ({ ...f, number: nextNumber(isEstimateRoute ? "EST" : "INV", allDocs.map((i) => i.number)), tax_rate: settings?.default_tax_rate || 0 }));
+      populatedIdRef.current = id;
+    }
+  }, [isEdit, loadingDoc, loadingJobs, doc, jobs, loadingAllDocs, loadingSettings, allDocs, settings, id]);
 
   const { data: catalogData } = useQuery({
     queryKey: ["sheetLineItems"],
@@ -111,14 +117,14 @@ export default function InvoiceEditor() {
     let cust = customers.find((cu) => cu.email && c.email && cu.email.toLowerCase() === c.email.toLowerCase());
     if (!cust) {
       cust = await base44.entities.Customer.create({ name: c.name || c.email, email: c.email || "", phone: c.phone || "" });
-      setCustomers((prev) => [...prev, cust]);
+      queryClient.setQueryData(["customers"], (prev) => [...(prev || []), cust]);
     }
     setSelectedCustomerId(cust.id);
     setForm((f) => ({ ...f, job_id: "" }));
   };
 
   const pickManualCustomer = (cust) => {
-    setCustomers((prev) => [...prev, cust]);
+    queryClient.setQueryData(["customers"], (prev) => [...(prev || []), cust]);
     setSelectedCustomerId(cust.id);
     setForm((f) => ({ ...f, job_id: "" }));
   };
@@ -149,7 +155,7 @@ export default function InvoiceEditor() {
       if (!jobId) {
         const jb = await base44.entities.Job.create({ title: form.name, customer_id: selectedCustomerId, status: "scheduled" });
         jobId = jb.id;
-        setJobs((prev) => [jb, ...prev]);
+        queryClient.setQueryData(["jobs"], (prev) => [jb, ...(prev || [])]);
         setForm((f) => ({ ...f, job_id: jb.id }));
       }
       const basePayload = { ...form, job_id: jobId, ...totals, status: send ? "sent" : form.status };
