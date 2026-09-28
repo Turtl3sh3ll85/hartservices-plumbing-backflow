@@ -13,6 +13,7 @@ import PaidAmountLabel from "@/components/PaidAmountLabel";
 import { formatMoney } from "@/lib/invoice";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 import BackflowReports from "@/components/portal/BackflowReports";
+import InvoicePaymentSchedule from "@/components/portal/InvoicePaymentSchedule";
 
 const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
 
@@ -127,26 +128,29 @@ export default function MyDocuments() {
                 <Card className="overflow-hidden p-0">
                   <div className="divide-y">
                     {visibleInvoices.map((i) => (
-                      <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
-                        <div className="min-w-0">
-                          <div className="font-medium truncate">{i.name || "Invoice"}</div>
-                          <div className="text-sm text-muted-foreground truncate">
-                            {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
+                      <div key={i.id} className="p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 min-h-11">
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{i.name || "Invoice"}</div>
+                            <div className="text-sm text-muted-foreground truncate">
+                              {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
+                            </div>
+                            <PaidAmountLabel invoice={i} />
                           </div>
-                          <PaidAmountLabel invoice={i} />
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
+                            <StatusBadge status={i.payment_status} />
+                            <Button size="sm" variant="outline" onClick={() => downloadPdf(i, "invoice")} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
+                              {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                            </Button>
+                            {i.payment_status === "paid" ? (
+                              <Button asChild size="sm" variant="outline"><Link to={`/pay/${i.id}`}>View</Link></Button>
+                            ) : (
+                              <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> Pay</Link></Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                          <StatusBadge status={i.payment_status} />
-                          <Button size="sm" variant="outline" onClick={() => downloadPdf(i, "invoice")} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
-                            {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                          </Button>
-                          {i.payment_status === "paid" ? (
-                            <Button asChild size="sm" variant="outline"><Link to={`/pay/${i.id}`}>View</Link></Button>
-                          ) : (
-                            <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> Pay</Link></Button>
-                          )}
-                        </div>
+                        <InvoicePaymentSchedule invoice={i} />
                       </div>
                     ))}
                   </div>
