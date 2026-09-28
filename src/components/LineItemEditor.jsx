@@ -69,8 +69,7 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
   return (
     <div className="space-y-4">
       <div className="hidden sm:grid grid-cols-12 gap-2 px-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        <div className="col-span-1">Thumb</div>
-        <div className="col-span-3">Description / task</div>
+        <div className="col-span-4">Description / task</div>
         <div className="col-span-1 text-right">Qty</div>
         <div className="col-span-2 text-right">Unit price</div>
         <div className="col-span-2 text-right">Markup</div>

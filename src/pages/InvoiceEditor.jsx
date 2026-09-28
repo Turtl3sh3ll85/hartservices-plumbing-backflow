@@ -274,7 +274,12 @@ export default function InvoiceEditor() {
             <Label>Customer</Label>
             {selectedCustomerId ? (
               <div className="flex items-center justify-between gap-2 p-2.5 rounded-md border bg-muted/30">
-                <span className="font-medium text-sm truncate">{customerMap[selectedCustomerId]?.name || "Selected customer"}</span>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">{customerMap[selectedCustomerId]?.name || "Selected customer"}</div>
+                  {customerMap[selectedCustomerId]?.email && (
+                    <div className="text-xs text-muted-foreground truncate">{customerMap[selectedCustomerId].email}</div>
+                  )}
+                </div>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedCustomerId("")}>Change</Button>
               </div>
             ) : (

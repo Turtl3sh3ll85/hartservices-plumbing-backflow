@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import { formatMoney, lineTotal } from "@/lib/invoice";
-import LineItemThumbnail from "@/components/LineItemThumbnail";
 import LineItemPhotos from "@/components/LineItemPhotos";
 
 export default function LineItemRow({
@@ -33,10 +32,7 @@ export default function LineItemRow({
   return (
     <div className="space-y-1">
       <div className="grid grid-cols-12 gap-2 items-center">
-        <div className="col-span-12 sm:col-span-1 flex sm:block">
-          <LineItemThumbnail url={li.image_url || ""} onChange={(url) => onUpdate("image_url", url)} disabled={!editable} />
-        </div>
-        <div className="col-span-12 sm:col-span-3 space-y-1">
+        <div className="col-span-12 sm:col-span-4 space-y-1">
           {catalog.length > 0 && (
             <MobileSelect
               value=""
@@ -135,19 +131,16 @@ export default function LineItemRow({
           )}
         </div>
       </div>
-      <div className="sm:grid sm:grid-cols-12 sm:gap-2">
-        <div className="hidden sm:block sm:col-span-1" />
-        <div className="sm:col-span-11 space-y-2">
-          <Textarea
-            placeholder="Add a longer description / notes for this line item (optional)"
-            value={li.details || ""}
-            onChange={(e) => onUpdate("details", e.target.value)}
-            disabled={!editable}
-            rows={2}
-            className="text-sm"
-          />
-          <LineItemPhotos photos={li.photos || []} onChange={(p) => onUpdate("photos", p)} disabled={!editable} />
-        </div>
+      <div className="space-y-2">
+        <Textarea
+          placeholder="Add a longer description / notes for this line item (optional)"
+          value={li.details || ""}
+          onChange={(e) => onUpdate("details", e.target.value)}
+          disabled={!editable}
+          rows={2}
+          className="text-sm"
+        />
+        <LineItemPhotos photos={li.photos || []} onChange={(p) => onUpdate("photos", p)} disabled={!editable} />
       </div>
       {(modifiersCatalog.length > 0 || mods.length > 0) && (
         <div className="flex flex-wrap items-center gap-1.5 sm:pl-1">
