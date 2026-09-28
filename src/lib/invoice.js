@@ -1,3 +1,7 @@
+export function installmentAmount(item, total) {
+  return item.type === "percentage" ? ((Number(total) || 0) * (Number(item.value) || 0)) / 100 : Number(item.value) || 0;
+}
+
 export function lineTotal(li) {
   const base = (Number(li?.quantity) || 0) * (Number(li?.unit_price) || 0);
   const markup = Number(li?.markup) || 0;

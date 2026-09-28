@@ -19,7 +19,7 @@ import OpenedIndicator from "@/components/OpenedIndicator";
 import InvoicePaymentControl from "@/components/InvoicePaymentControl";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
-import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
+import { calcTotals, formatMoney, nextNumber, installmentAmount } from "@/lib/invoice";
 
 function SectionTitle({ icon: Icon, children }) {
   return (
@@ -151,6 +151,37 @@ export default function InvoiceEditor() {
   const pickSheetItems = (items) => {
     const cleaned = form.line_items.filter((li) => (li.description || "").trim());
     setForm({ ...form, line_items: [...cleaned, ...items] });
+  };
+
+  const toggleSchedulePaid = async (i) => {
+    if (!savedId || isEstimate) return;
+    const item = form.payment_schedule[i];
+    const newPaid = !item.paid;
+    const nextSchedule = form.payment_schedule.map((s, idx) => (idx === i ? { ...s, paid: newPaid } : s));
+    const amount_paid = nextSchedule.reduce((s, it) => s + (it.paid ? installmentAmount(it, totals.total) : 0), 0);
+    const allPaid = nextSchedule.length > 0 && nextSchedule.every((it) => it.paid);
+    const anyPaid = nextSchedule.some((it) => it.paid);
+    const today = new Date().toISOString().slice(0, 10);
+    const update = {
+      payment_schedule: nextSchedule,
+      amount_paid,
+      payment_status: allPaid ? "paid" : anyPaid ? "partial" : "unpaid",
+      status: allPaid ? "paid" : "sent",
+      payment_method: anyPaid ? "check" : "",
+      paid_date: allPaid ? today : "",
+    };
+    setForm((f) => ({ ...f, ...update }));
+    [["invoices"], ["invoices", "recent"]].forEach((key) =>
+      queryClient.setQueryData(key, (old) => (old || []).map((x) => (x.id === savedId ? { ...x, ...update } : x)))
+    );
+    try {
+      await base44.entities.Invoice.update(savedId, update);
+      toast({ description: newPaid ? "Marked paid by check." : "Unmarked payment." });
+    } catch (e) {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["invoices", "recent"] });
+      toast({ variant: "destructive", description: "Could not update payment." });
+    }
   };
 
   const save = async (send = false) => {
@@ -357,7 +388,13 @@ export default function InvoiceEditor() {
           <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total</span><span className="tabular-nums">{formatMoney(totals.total)}</span></div>
         </div>
 
-        <PaymentScheduleEditor total={totals.total} schedule={form.payment_schedule} onChange={(s) => setForm({ ...form, payment_schedule: s })} />
+        <PaymentScheduleEditor
+          total={totals.total}
+          schedule={form.payment_schedule}
+          onChange={(s) => setForm({ ...form, payment_schedule: s })}
+          canMarkPaid={!isEstimate && !!savedId}
+          onTogglePaid={toggleSchedulePaid}
+        />
       </Card>
 
       <Card className="p-5">
