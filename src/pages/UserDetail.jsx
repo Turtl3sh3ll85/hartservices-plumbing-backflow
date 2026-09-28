@@ -85,15 +85,15 @@ export default function UserDetail() {
         <p className="text-muted-foreground text-sm mt-1">{user.email} · <span className="capitalize">{user.role}</span></p>
       </div>
 
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         {customer ? (
-          <Card className="p-6 flex-1 min-w-0">
-            <BillTo customer={customer} className="text-sm" />
-          </Card>
+          <div className="bg-card rounded-2xl shadow-sm border p-6 text-sm flex-1 min-w-0">
+            <BillTo customer={customer} />
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground">No customer record linked to this user yet.</p>
         )}
-        <Button variant="outline" size="sm" onClick={() => setContactsOpen(true)}>
+        <Button variant="outline" size="sm" onClick={() => setContactsOpen(true)} className="shrink-0">
           <Contact className="w-4 h-4" /> Link Google Contact
         </Button>
       </div>
