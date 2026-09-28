@@ -120,7 +120,7 @@ export default function InvoiceEditor() {
   const modifiersCatalog = modifiersData || [];
 
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
-  const totals = calcTotals(form.line_items, form.tax_rate, !isEstimate && !!form.cc_fee_enabled);
+  const totals = calcTotals(form.line_items, form.tax_rate, !!form.cc_fee_enabled);
 
   const pickGoogleContact = async (c) => {
     let cust = customers.find((cu) => cu.email && c.email && cu.email.toLowerCase() === c.email.toLowerCase());
@@ -157,7 +157,7 @@ export default function InvoiceEditor() {
   };
 
   const toggleSchedulePaid = async (i) => {
-    if (!savedId || isEstimate) return;
+    if (!savedId) return;
     const item = form.payment_schedule[i];
     const newPaid = !item.paid;
     const nextSchedule = form.payment_schedule.map((s, idx) => (idx === i ? { ...s, paid: newPaid } : s));
@@ -169,20 +169,23 @@ export default function InvoiceEditor() {
       payment_schedule: nextSchedule,
       amount_paid,
       payment_status: allPaid ? "paid" : anyPaid ? "partial" : "unpaid",
-      status: allPaid ? "paid" : "sent",
       payment_method: anyPaid ? "check" : "",
       paid_date: allPaid ? today : "",
     };
+    if (!isEstimate) update.status = allPaid ? "paid" : "sent";
     setForm((f) => ({ ...f, ...update }));
-    [["invoices"], ["invoices", "recent"]].forEach((key) =>
-      queryClient.setQueryData(key, (old) => (old || []).map((x) => (x.id === savedId ? { ...x, ...update } : x)))
-    );
+    const listKey = isEstimate ? "estimates" : "invoices";
+    queryClient.setQueryData([listKey], (old) => (old || []).map((x) => (x.id === savedId ? { ...x, ...update } : x)));
+    if (!isEstimate) {
+      queryClient.setQueryData(["invoices", "recent"], (old) => (old || []).map((x) => (x.id === savedId ? { ...x, ...update } : x)));
+    }
     try {
-      await base44.entities.Invoice.update(savedId, update);
+      const entity = isEstimate ? base44.entities.Estimate : base44.entities.Invoice;
+      await entity.update(savedId, update);
       toast({ description: newPaid ? "Marked paid by check." : "Unmarked payment." });
     } catch (e) {
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
-      queryClient.invalidateQueries({ queryKey: ["invoices", "recent"] });
+      queryClient.invalidateQueries({ queryKey: [listKey] });
+      if (!isEstimate) queryClient.invalidateQueries({ queryKey: ["invoices", "recent"] });
       toast({ variant: "destructive", description: "Could not update payment." });
     }
   };
@@ -204,7 +207,7 @@ export default function InvoiceEditor() {
     try {
       const basePayload = { ...form, customer_id: selectedCustomerId, customer_email: customerMap[selectedCustomerId]?.email || "", ...totals, status: send ? "sent" : form.status };
       const payload = isEstimate
-        ? { customer_id: basePayload.customer_id, customer_email: basePayload.customer_email, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, total: basePayload.total, payment_schedule: basePayload.payment_schedule, status: basePayload.status, notes: basePayload.notes }
+        ? { customer_id: basePayload.customer_id, customer_email: basePayload.customer_email, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, cc_fee_enabled: basePayload.cc_fee_enabled, cc_fee: basePayload.cc_fee, total: basePayload.total, payment_schedule: basePayload.payment_schedule, status: basePayload.status, payment_status: basePayload.payment_status, payment_method: basePayload.payment_method, amount_paid: basePayload.amount_paid, paid_date: basePayload.paid_date, notes: basePayload.notes }
         : basePayload;
       const entity = isEstimate ? base44.entities.Estimate : base44.entities.Invoice;
       let resultId = savedId;
@@ -375,15 +378,13 @@ export default function InvoiceEditor() {
           </div>
         )}
 
-        {!isEstimate && (
-          <div className="flex items-center justify-between gap-4 py-1">
-            <div>
-              <div className="text-sm font-medium">Credit Card Fee 3.5%</div>
-              <p className="text-sm text-muted-foreground">Add a 3.5% surcharge so the customer covers card processing fees.</p>
-            </div>
-            <Switch checked={!!form.cc_fee_enabled} onCheckedChange={(v) => setForm({ ...form, cc_fee_enabled: v })} />
+        <div className="flex items-center justify-between gap-4 py-1">
+          <div>
+            <div className="text-sm font-medium">Credit Card Fee 3.5%</div>
+            <p className="text-sm text-muted-foreground">Add a 3.5% surcharge so the customer covers card processing fees.</p>
           </div>
-        )}
+          <Switch checked={!!form.cc_fee_enabled} onCheckedChange={(v) => setForm({ ...form, cc_fee_enabled: v })} />
+        </div>
 
         <div className="border-t pt-4 space-y-1.5">
           <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{formatMoney(totals.subtotal)}</span></div>
@@ -397,7 +398,7 @@ export default function InvoiceEditor() {
           total={totals.total}
           schedule={form.payment_schedule}
           onChange={(s) => setForm({ ...form, payment_schedule: s })}
-          canMarkPaid={!isEstimate && !!savedId}
+          canMarkPaid={!!savedId}
           onTogglePaid={toggleSchedulePaid}
         />
       </Card>

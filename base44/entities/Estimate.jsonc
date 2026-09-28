@@ -70,6 +70,16 @@
       "type": "number",
       "title": "Tax"
     },
+    "cc_fee_enabled": {
+      "type": "boolean",
+      "default": false,
+      "title": "Credit Card Fee Enabled"
+    },
+    "cc_fee": {
+      "type": "number",
+      "default": 0,
+      "title": "Credit Card Fee"
+    },
     "total": {
       "type": "number",
       "title": "Total"
@@ -96,6 +106,15 @@
           "value": {
             "type": "number",
             "title": "Value"
+          },
+          "paid": {
+            "type": "boolean",
+            "default": false,
+            "title": "Paid"
+          },
+          "paypal_order_id": {
+            "type": "string",
+            "title": "PayPal Order ID"
           }
         }
       }
@@ -111,6 +130,33 @@
       ],
       "default": "draft",
       "title": "Status"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "unpaid",
+        "partial",
+        "paid"
+      ],
+      "default": "unpaid",
+      "title": "Payment Status"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "paypal",
+        "check"
+      ],
+      "title": "Payment Method"
+    },
+    "amount_paid": {
+      "type": "number",
+      "title": "Amount Paid"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Paid Date"
     },
     "converted_invoice_id": {
       "type": "string",
