@@ -1,3 +1,5 @@
+import { sendGmail } from "./gmail.ts";
+
 export async function getBusinessContext(base44) {
   let settings = null;
   try {
@@ -22,7 +24,7 @@ export async function notifyInvoiceOpened(base44, { invoice, customer }) {
       <p>Amount: <strong>$${total}</strong>${invoice.payment_status === "partial" ? " (partially paid)" : ""}</p>
       <p style="color:#6b7280;font-size:13px;margin-top:24px">This is an automated notification from ${brand}.</p>
     </div>`;
-    await base44.asServiceRole.integrations.Core.SendEmail({ to, subject, html, from_name: brand });
+    await sendGmail(base44, { to, subject, html, fromName: brand });
     return { sent: true };
   } catch (e) {
     return { sent: false, error: e.message };
@@ -43,7 +45,7 @@ export async function notifyPaymentReceived(base44, { invoice, customer, amount,
       <p>Invoice total: $${totalStr} — ${paidInFull ? "paid in full" : "partially paid"}</p>
       <p style="color:#6b7280;font-size:13px;margin-top:24px">This is an automated notification from ${brand}.</p>
     </div>`;
-    await base44.asServiceRole.integrations.Core.SendEmail({ to, subject, html, from_name: brand });
+    await sendGmail(base44, { to, subject, html, fromName: brand });
     return { sent: true };
   } catch (e) {
     return { sent: false, error: e.message };

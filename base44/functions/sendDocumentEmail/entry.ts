@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
+import { sendGmail } from "../../shared/gmail.ts";
 
 export default async function(req) {
   try {
@@ -47,7 +48,7 @@ export default async function(req) {
     const results = [];
     for (const to of recipients) {
       try {
-        await base44.asServiceRole.integrations.Core.SendEmail({ to, subject, html, from_name: brand });
+        await sendGmail(base44, { to, subject, html, fromName: brand });
         results.push({ to, ok: true });
       } catch (e) {
         results.push({ to, ok: false, error: e.message });

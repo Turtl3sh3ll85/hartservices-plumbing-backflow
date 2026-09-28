@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
 import { isOpenInvoice, money } from "../../shared/invoiceReminders.ts";
+import { sendGmail } from "../../shared/gmail.ts";
 
 export default async function(req) {
   try {
@@ -31,7 +32,7 @@ export default async function(req) {
         <p style="color:#6b7280;font-size:13px;margin-top:24px">${brand}${settings.business_phone ? ` &middot; ${settings.business_phone}` : ""}</p>
       </div>`;
       try {
-        await base44.asServiceRole.integrations.Core.SendEmail({ to: customer.email, subject, html, from_name: brand });
+        await sendGmail(base44, { to: customer.email, subject, html, fromName: brand });
         sent.push({ id: inv.id, to: customer.email, ok: true });
       } catch (e) {
         sent.push({ id: inv.id, to: customer.email, ok: false, error: e.message });

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
+import { sendGmail } from "../../shared/gmail.ts";
 
 const REGISTER_URL = "https://hartservices.base44.app/register";
 
@@ -40,7 +41,7 @@ export default async function(req) {
     </div>`;
 
     try {
-      await base44.asServiceRole.integrations.Core.SendEmail({ to: email, subject, html, from_name: brand });
+      await sendGmail(base44, { to: email, subject, html, fromName: brand });
       return Response.json({ sent: true, to: email });
     } catch (e) {
       return Response.json({ sent: false, error: e.message });
