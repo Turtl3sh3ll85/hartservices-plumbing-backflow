@@ -27,6 +27,7 @@ export default async function(req: Request): Promise<Response> {
       mime_type: mime_type || null,
       type: isImage ? 'photo' : 'document',
       caption: caption || null,
+      internal: true,
     });
 
     return Response.json({ attachment });

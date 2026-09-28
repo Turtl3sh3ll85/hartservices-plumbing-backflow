@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Paperclip, Upload, Trash2, FileText, Loader2, ExternalLink, Clock } from "lucide-react";
+import { Paperclip, Upload, Trash2, FileText, Loader2, ExternalLink, Clock, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Image } from "@/components/ui/image";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function InvoiceAttachments({ invoiceId, pending = [], onAddPending, onRemovePending, docLabel = "document" }) {
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
+  const { user } = useAuth();
+  const customerAttachments = attachments.filter((a) => !a.internal);
+  const internalAttachments = attachments.filter((a) => a.internal);
+  const canViewInternal = user?.role === "admin" || user?.role === "accountant";
 
   const load = async () => {
     try {
@@ -92,9 +97,9 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
         </p>
       </div>
 
-      {(attachments.length > 0 || pending.length > 0) && (
+      {(customerAttachments.length > 0 || pending.length > 0) && (
         <div className="grid sm:grid-cols-2 gap-2">
-          {attachments.map((att) => (
+          {customerAttachments.map((att) => (
             <div key={att.id} className="flex items-center gap-3 rounded-lg border bg-card p-2.5">
               {att.type === "photo" && att.thumbnail_url ? (
                 <div className="w-12 h-12 rounded-md overflow-hidden border bg-muted shrink-0">
@@ -136,6 +141,38 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
               </Button>
             </div>
           ))}
+        </div>
+      )}
+
+      {canViewInternal && internalAttachments.length > 0 && (
+        <div className="space-y-2 pt-3 border-t">
+          <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+            <Lock className="w-4 h-4" /> Internal files <span className="text-xs font-normal">(not shared with customer)</span>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {internalAttachments.map((att) => (
+              <div key={att.id} className="flex items-center gap-3 rounded-lg border bg-muted/30 p-2.5">
+                {att.type === "photo" && att.thumbnail_url ? (
+                  <div className="w-12 h-12 rounded-md overflow-hidden border bg-muted shrink-0">
+                    <Image src={att.thumbnail_url} alt={att.file_name} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium truncate">{att.file_name}</div>
+                  <a href={att.drive_link} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">
+                    Open in Drive <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <Button type="button" variant="ghost" size="icon" className="shrink-0 h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(att)} aria-label="Delete internal file">
+                  <Trash2 className="w-4 h-4 text-muted-foreground" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

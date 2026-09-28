@@ -23,7 +23,8 @@ export default async function(req) {
 
     let attachments = [];
     try {
-      attachments = await base44.asServiceRole.entities.InvoiceAttachment.filter({ invoice_id }, "-created_date", 100);
+      const all = await base44.asServiceRole.entities.InvoiceAttachment.filter({ invoice_id }, "-created_date", 100);
+      attachments = all.filter((a) => !a.internal);
     } catch (e) {}
 
     // Notify the business the first time the customer opens this invoice

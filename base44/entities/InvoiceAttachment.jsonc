@@ -38,6 +38,11 @@
     "caption": {
       "type": "string",
       "title": "Caption"
+    },
+    "internal": {
+      "type": "boolean",
+      "default": false,
+      "title": "Internal Only (not shared with customer)"
     }
   },
   "required": [
