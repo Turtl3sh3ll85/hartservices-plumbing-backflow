@@ -111,12 +111,13 @@ export default function Expenses() {
         <div className="flex items-center gap-2">
           <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
           <a
-            href="https://my.waveapps.com/transactions/"
+            href="https://my.waveapps.com/"
             target="_blank"
             rel="noopener noreferrer"
+            title="In Wave: top-right business name → Business settings → Data Export → Accounting. You'll get an email with the CSV."
             className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4"
           >
-            <ExternalLink className="w-4 h-4" /> Get CSV from Wave
+            <ExternalLink className="w-4 h-4" /> Open Wave
           </a>
           <Button onClick={() => fileRef.current?.click()} disabled={importing}>
             {importing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />} Import CSV
