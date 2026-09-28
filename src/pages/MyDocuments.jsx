@@ -20,46 +20,45 @@ export default function MyDocuments() {
   const [linking, setLinking] = useState(false);
   const [linkFailed, setLinkFailed] = useState(false);
 
-  // RLS-filtered queries: each customer only receives their own records
-  // (Invoice/Estimate by customer_email, Customer by email).
-  const { data: invoices = [], isLoading: loadingInvoices, error: invoicesError } = useQuery({
-    queryKey: ["portal-invoices"],
-    queryFn: () => base44.entities.Invoice.list("-created_date", 200),
+  // Backend function bypasses RLS and matches customer_email case-insensitively,
+  // so the customer sees their documents even when the email casing in the auth
+  // session differs from the stored customer_email.
+  const { data: portal = {}, isLoading, error: portalError } = useQuery({
+    queryKey: ["myPortalDocuments"],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getMyPortalDocuments", {});
+      if (!res.data) throw new Error(res.error || "Failed to load documents");
+      return res.data;
+    },
   });
-  const { data: estimates = [], isLoading: loadingEstimates } = useQuery({
-    queryKey: ["portal-estimates"],
-    queryFn: () => base44.entities.Estimate.list("-created_date", 200),
-  });
-  const { data: customers = [], isLoading: loadingCustomers } = useQuery({
-    queryKey: ["portal-customers"],
-    queryFn: () => base44.entities.Customer.list("-updated_date", 50),
-  });
-  const loading = loadingInvoices || loadingEstimates || loadingCustomers;
+  const invoices = portal.invoices || [];
+  const estimates = portal.estimates || [];
+  const customers = portal.customers || [];
 
   const myCustomer = useMemo(() => {
     if (customers.length === 0) return null;
     return customers.slice().sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date))[0];
   }, [customers]);
 
-  // Auto-link: if no customer record matches the signed-in user's email, create one
-  // so the portal always has a linked customer record for service requests/reminders.
+  // Auto-link a customer profile in the background if none exists yet.
+  // This must NOT block invoice/estimate display — those render as soon as loaded.
   useEffect(() => {
-    if (loading || linking || linkFailed || myCustomer || !user?.email) return;
+    if (isLoading || linking || linkFailed || myCustomer || !user?.email) return;
     setLinking(true);
     base44.entities.Customer.create({
       name: user.full_name || user.email,
       email: user.email,
     })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["portal-customers"] }))
+      .then(() => queryClient.invalidateQueries({ queryKey: ["myPortalDocuments"] }))
       .catch(() => setLinkFailed(true))
       .finally(() => setLinking(false));
-  }, [loading, linking, linkFailed, myCustomer, user, queryClient]);
+  }, [isLoading, linking, linkFailed, myCustomer, user, queryClient]);
 
   const myInvoices = invoices;
   const myEstimates = estimates;
   const visibleInvoices = hidePaid ? myInvoices.filter((i) => i.payment_status !== "paid") : myInvoices;
 
-  if (loading || linking) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -67,10 +66,10 @@ export default function MyDocuments() {
     );
   }
 
-  if (invoicesError && invoices.length === 0 && estimates.length === 0) {
+  if (portalError && invoices.length === 0 && estimates.length === 0) {
     return (
       <div className="text-center py-20 space-y-2">
-        <p className="text-destructive text-sm">Error loading documents: {invoicesError.message || String(invoicesError)}</p>
+        <p className="text-destructive text-sm">Error loading documents: {portalError.message || String(portalError)}</p>
       </div>
     );
   }
