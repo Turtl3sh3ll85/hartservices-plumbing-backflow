@@ -30,6 +30,16 @@ export default function Users() {
     queryKey: ["users"],
     queryFn: () => base44.entities.User.list(),
   });
+  const { data: customers = [] } = useQuery({
+    queryKey: ["customers"],
+    queryFn: () => base44.entities.Customer.list(),
+  });
+  const companyByEmail = new Map(
+    customers
+      .filter((c) => c.email && c.company)
+      .map((c) => [c.email.toLowerCase(), c.company])
+  );
+  const displayName = (u) => companyByEmail.get((u.email || "").toLowerCase()) || u.full_name || u.email;
 
   const changeRole = async (user, role) => {
     if (role === user.role) return;
@@ -75,7 +85,7 @@ export default function Users() {
           {users.map((u) => (
             <Card key={u.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
               <Link to={`/users/${u.id}`} className="min-w-0 hover:underline">
-                <div className="font-medium truncate">{u.full_name || u.email}</div>
+                <div className="font-medium truncate">{displayName(u)}</div>
                 <div className="text-sm text-muted-foreground truncate">{u.email}</div>
               </Link>
               <div className="flex items-center gap-2 w-full sm:w-auto">
