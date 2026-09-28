@@ -43,6 +43,7 @@ export default async function(req) {
         payment_status: paidInFull ? "paid" : "partial",
         status: paidInFull ? "paid" : invoice.status,
         amount_paid: Number(amountPaid.toFixed(2)),
+        payment_method: "paypal",
       };
       if (paidInFull) payload.paid_date = today;
       else if (invoice.paid_date) payload.paid_date = invoice.paid_date;
@@ -54,6 +55,7 @@ export default async function(req) {
         status: "paid",
         paid_date: today,
         amount_paid: capturedAmount,
+        payment_method: "paypal",
       });
     }
 

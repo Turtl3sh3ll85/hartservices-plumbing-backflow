@@ -1,4 +1,4 @@
-export default function StatusBadge({ status }) {
+export default function StatusBadge({ status, label }) {
   const map = {
     draft: "bg-muted text-muted-foreground",
     sent: "bg-primary/15 text-primary",
@@ -16,10 +16,10 @@ export default function StatusBadge({ status }) {
     partial: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
   };
   const cls = map[status] || "bg-muted text-muted-foreground";
-  const label = (status || "").replace(/_/g, " ");
+  const text = label || (status || "").replace(/_/g, " ");
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${cls}`}>
-      {label}
+      {text}
     </span>
   );
 }

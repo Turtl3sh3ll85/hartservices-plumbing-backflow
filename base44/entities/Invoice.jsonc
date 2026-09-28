@@ -141,6 +141,14 @@
       "default": "unpaid",
       "title": "Payment Status"
     },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "paypal",
+        "check"
+      ],
+      "title": "Payment Method"
+    },
     "paypal_order_id": {
       "type": "string",
       "title": "PayPal Order ID"

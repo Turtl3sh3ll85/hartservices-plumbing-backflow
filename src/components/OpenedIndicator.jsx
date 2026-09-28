@@ -15,9 +15,8 @@ export default function OpenedIndicator({ opened, lastOpenedDate, className = ""
         className={`inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full ${className}`}
         title={label ? `Opened ${label}` : "Opened"}
       >
-        <Eye className="w-3 h-3" />
-        <span className="hidden sm:inline">{label ? `Opened ${label}` : "Opened"}</span>
-        <span className="sm:hidden">Opened</span>
+        <Eye className="w-3 h-3 shrink-0" />
+        <span>{label ? `Opened ${label}` : "Opened"}</span>
       </span>
     );
   }
@@ -26,7 +25,7 @@ export default function OpenedIndicator({ opened, lastOpenedDate, className = ""
       className={`inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full ${className}`}
       title="Not opened yet"
     >
-      <EyeOff className="w-3 h-3" />
+      <EyeOff className="w-3 h-3 shrink-0" />
       <span>Not opened</span>
     </span>
   );

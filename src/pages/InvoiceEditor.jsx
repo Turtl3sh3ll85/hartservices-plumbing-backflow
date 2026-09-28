@@ -15,6 +15,7 @@ import CustomerFormDialog from "@/components/CustomerFormDialog";
 import SheetItemsDialog from "@/components/SheetItemsDialog";
 import InvoiceAttachments from "@/components/InvoiceAttachments";
 import StatusBadge from "@/components/StatusBadge";
+import OpenedIndicator from "@/components/OpenedIndicator";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
@@ -249,7 +250,12 @@ export default function InvoiceEditor() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-2xl font-semibold tracking-tight">{isEdit ? `Edit ${docLabel}` : `New ${docLabel}`}</h1>
-        {savedId && <StatusBadge status={isEstimate ? form.status : form.payment_status} />}
+        {savedId && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <StatusBadge status={isEstimate ? form.status : form.payment_status} label={!isEstimate && form.payment_status === "paid" && form.payment_method === "check" ? "Paid by check" : undefined} />
+            <OpenedIndicator opened={form.opened} lastOpenedDate={form.last_opened_date} />
+          </div>
+        )}
       </div>
 
       {!isEdit && (
