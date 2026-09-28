@@ -47,8 +47,9 @@ export default function MyDocuments() {
       .finally(() => setLinking(false));
   }, [loading, linking, linkFailed, myCustomer, user, queryClient]);
 
-  const myInvoices = invoices.filter((i) => i.customer_id === myCustomer?.id);
-  const myEstimates = estimates.filter((e) => e.customer_id === myCustomer?.id);
+  const userEmail = user?.email?.trim().toLowerCase();
+  const myInvoices = invoices.filter((i) => i.customer_email && i.customer_email.trim().toLowerCase() === userEmail);
+  const myEstimates = estimates.filter((e) => e.customer_email && e.customer_email.trim().toLowerCase() === userEmail);
   const visibleInvoices = hidePaid ? myInvoices.filter((i) => i.payment_status !== "paid") : myInvoices;
 
   if (loading || linking) {
