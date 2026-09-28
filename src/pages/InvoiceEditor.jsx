@@ -250,7 +250,6 @@ export default function InvoiceEditor() {
 
       if (send) {
         try {
-          await base44.functions.invoke("sendAccountOfferEmail", { customer_id: selectedCustomerId });
           const res = await base44.functions.invoke("sendDocumentEmail", { type: isEstimate ? "estimate" : "invoice", id: resultId });
           const sent = (res.data?.sent || []).filter((s) => s.ok).map((s) => s.to);
           const failed = (res.data?.sent || []).filter((s) => !s.ok);
