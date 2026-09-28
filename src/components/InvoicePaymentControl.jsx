@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 const INVOICE_QUERY_KEYS = [["invoices"], ["invoices", "recent"]];
 
-export default function InvoicePaymentControl({ invoice }) {
+export default function InvoicePaymentControl({ invoice, onUpdated }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -23,6 +23,7 @@ export default function InvoicePaymentControl({ invoice }) {
     applyOptimistic(update);
     try {
       await base44.entities.Invoice.update(invoice.id, update);
+      onUpdated?.(update);
       toast({ description: "Marked paid by check." });
     } catch (e) {
       INVOICE_QUERY_KEYS.forEach((key) => queryClient.invalidateQueries({ queryKey: key }));
@@ -38,6 +39,7 @@ export default function InvoicePaymentControl({ invoice }) {
     applyOptimistic(update);
     try {
       await base44.entities.Invoice.update(invoice.id, update);
+      onUpdated?.(update);
       toast({ description: "Reverted to unpaid." });
     } catch (e) {
       INVOICE_QUERY_KEYS.forEach((key) => queryClient.invalidateQueries({ queryKey: key }));
