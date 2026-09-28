@@ -2,14 +2,14 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, FileText, Trash2, CheckCircle, Undo2 } from "lucide-react";
+import { Plus, Search, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { MobileSelect } from "@/components/ui/mobile-select";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
+import InvoicePaymentControl from "@/components/InvoicePaymentControl";
 import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
@@ -54,43 +54,6 @@ export default function Invoices() {
   });
 
   const outstanding = invoices.filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft").reduce((s, i) => s + (Number(i.total) || 0), 0);
-
-  const markPaidByCheck = async (invoice) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const prev = invoices;
-    queryClient.setQueryData(["invoices"], (old) => (old || []).map((x) => x.id === invoice.id ? { ...x, payment_status: "paid", status: "paid", amount_paid: x.total, paid_date: today, payment_method: "check" } : x));
-    try {
-      await base44.entities.Invoice.update(invoice.id, {
-        payment_status: "paid",
-        status: "paid",
-        amount_paid: invoice.total,
-        paid_date: today,
-        payment_method: "check",
-      });
-      toast({ description: "Marked paid by check." });
-    } catch (e) {
-      queryClient.setQueryData(["invoices"], prev);
-      toast({ variant: "destructive", description: "Could not mark invoice paid." });
-    }
-  };
-
-  const revertToUnpaid = async (invoice) => {
-    const prev = invoices;
-    queryClient.setQueryData(["invoices"], (old) => (old || []).map((x) => x.id === invoice.id ? { ...x, payment_status: "unpaid", status: "sent", amount_paid: 0, paid_date: "", payment_method: "" } : x));
-    try {
-      await base44.entities.Invoice.update(invoice.id, {
-        payment_status: "unpaid",
-        status: "sent",
-        amount_paid: 0,
-        paid_date: "",
-        payment_method: "",
-      });
-      toast({ description: "Reverted to unpaid." });
-    } catch (e) {
-      queryClient.setQueryData(["invoices"], prev);
-      toast({ variant: "destructive", description: "Could not revert invoice." });
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -143,43 +106,7 @@ export default function Invoices() {
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                        {i.payment_status === "paid" ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="inline-flex items-center rounded-full hover:opacity-80 transition-opacity cursor-pointer min-h-11 sm:min-h-0"
-                              title="Click to revert to unpaid"
-                              aria-label={`Revert ${i.name || i.number || "invoice"} to unpaid`}
-                            >
-                              <StatusBadge status="paid" label={i.payment_method === "check" ? "Paid by check" : "Paid"} />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem onClick={() => revertToUnpaid(i)}>
-                              <Undo2 className="w-4 h-4 mr-2" /> Revert to unpaid
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="inline-flex items-center rounded-full hover:opacity-80 transition-opacity cursor-pointer min-h-11 sm:min-h-0"
-                              title="Click to mark paid"
-                              aria-label={`Mark ${i.name || i.number || "invoice"} as paid`}
-                            >
-                              <StatusBadge status={i.payment_status} />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem onClick={() => markPaidByCheck(i)}>
-                              <CheckCircle className="w-4 h-4 mr-2" /> Mark paid (check)
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                        <InvoicePaymentControl invoice={i} />
                       </div>
                       <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                     </div>

@@ -5,6 +5,8 @@ import { FileText, DollarSign, TrendingUp, ArrowRight, Users, ClipboardList } fr
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
+import OpenedIndicator from "@/components/OpenedIndicator";
+import InvoicePaymentControl from "@/components/InvoicePaymentControl";
 import { formatMoney } from "@/lib/invoice";
 
 export default function Dashboard() {
@@ -13,8 +15,10 @@ export default function Dashboard() {
   const { data: customers = [], isLoading: loadingCustomers } = useQuery({ queryKey: ["customers", "count"], queryFn: () => base44.entities.Customer.list("name", 500) });
   const loading = loadingInvoices || loadingEstimates || loadingCustomers;
 
-  const outstanding = invoices
-    .filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft")
+  const outstandingInvoices = invoices
+    .filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft");
+
+  const outstanding = outstandingInvoices
     .reduce((s, i) => s + (Number(i.total) || 0), 0);
 
   const now = new Date();
@@ -54,24 +58,27 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-semibold">Recent invoices</h2>
+            <h2 className="font-heading font-semibold">Outstanding invoices</h2>
             <Button asChild variant="ghost" size="sm"><Link to="/invoices">View all <ArrowRight className="w-4 h-4 ml-1" /></Link></Button>
           </div>
-          {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">No invoices yet.</p>
+          {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : outstandingInvoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">No outstanding invoices.</p>
           ) : (
             <div className="space-y-2">
-              {invoices.slice(0, 6).map((i) => (
-                <Link key={i.id} to={`/invoices/${i.id}`} className="flex items-center justify-between p-2.5 min-h-11 rounded-lg hover:bg-accent transition-colors">
-                  <div className="min-w-0">
+              {outstandingInvoices.slice(0, 6).map((i) => (
+                <div key={i.id} className="flex items-center justify-between gap-3 p-2.5 min-h-11 rounded-lg hover:bg-accent transition-colors">
+                  <Link to={`/invoices/${i.id}`} className="min-w-0 flex-1">
                     <div className="font-medium text-sm truncate">{i.name || i.number}</div>
                     <div className="text-xs text-muted-foreground">{i.number}</div>
+                  </Link>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
+                      <InvoicePaymentControl invoice={i} />
+                    </div>
+                    <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                    <StatusBadge status={i.payment_status} />
-                  </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
@@ -87,16 +94,19 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-2">
               {estimates.slice(0, 6).map((e) => (
-                <Link key={e.id} to={`/estimates/${e.id}`} className="flex items-center justify-between p-2.5 min-h-11 rounded-lg hover:bg-accent transition-colors">
-                  <div className="min-w-0">
+                <div key={e.id} className="flex items-center justify-between gap-3 p-2.5 min-h-11 rounded-lg hover:bg-accent transition-colors">
+                  <Link to={`/estimates/${e.id}`} className="min-w-0 flex-1">
                     <div className="font-medium text-sm truncate">{e.name || e.number || "Untitled estimate"}</div>
                     <div className="text-xs text-muted-foreground">{e.number}</div>
+                  </Link>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
+                      <StatusBadge status={e.status} />
+                    </div>
+                    <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
-                    <StatusBadge status={e.status} />
-                  </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
