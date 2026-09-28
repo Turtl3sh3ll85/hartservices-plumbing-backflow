@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { FileText, ClipboardList, Loader2, CreditCard, ArrowLeft, Mail } from "lucide-react";
+import { FileText, ClipboardList, Loader2, CreditCard, ArrowLeft, Mail, FileDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -10,6 +10,7 @@ import { Image } from "@/components/ui/image";
 import { useSettings } from "@/hooks/useSettings";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
+import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 import BackflowReports from "@/components/portal/BackflowReports";
 
 const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
@@ -38,6 +39,19 @@ export default function MyDocuments() {
   const backflowReports = portal.backflow_reports || [];
 
   const visibleInvoices = hidePaid ? invoices.filter((i) => i.payment_status !== "paid") : invoices;
+  const [downloading, setDownloading] = useState(null);
+
+  const customerFor = (doc) => customers.find((c) => c.id === doc.customer_id) || customers[0];
+  const downloadPdf = async (doc, kind) => {
+    const key = `${kind}:${doc.id}`;
+    setDownloading(key);
+    try {
+      const customer = customerFor(doc);
+      if (kind === "invoice") await downloadInvoicePdf({ invoice: doc, customer, settings });
+      else await downloadEstimatePdf({ estimate: doc, customer, settings });
+    } catch (e) { /* ignore */ }
+    setDownloading(null);
+  };
 
   if (!email) {
     return (
@@ -122,6 +136,9 @@ export default function MyDocuments() {
                         <div className="flex items-center gap-3 shrink-0">
                           <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
                           <StatusBadge status={i.payment_status} />
+                          <Button size="sm" variant="outline" onClick={() => downloadPdf(i, "invoice")} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
+                            {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                          </Button>
                           {i.payment_status === "paid" ? (
                             <Button asChild size="sm" variant="outline"><Link to={`/pay/${i.id}`}>View</Link></Button>
                           ) : (
@@ -151,6 +168,9 @@ export default function MyDocuments() {
                         <div className="flex items-center gap-3 shrink-0">
                           <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
                           <StatusBadge status={e.status} />
+                          <Button size="sm" variant="outline" onClick={() => downloadPdf(e, "estimate")} disabled={downloading === `estimate:${e.id}`} aria-label="Download estimate PDF">
+                            {downloading === `estimate:${e.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                          </Button>
                           <Button asChild size="sm" variant="outline"><Link to={`/accept/${e.id}`}>{e.status === "converted" ? "View" : "Review"}</Link></Button>
                         </div>
                       </div>
