@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { FileText, DollarSign, TrendingUp, Plus, ArrowRight, Users, ClipboardList } from "lucide-react";
+import { FileText, DollarSign, TrendingUp, ArrowRight, Users, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
@@ -36,10 +36,7 @@ export default function Dashboard() {
           <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground text-sm mt-1">Track estimates and invoices for your plumbing business.</p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline"><Link to="/estimates/new"><Plus className="w-4 h-4 mr-1" /> New estimate</Link></Button>
-          <Button asChild><Link to="/invoices/new"><Plus className="w-4 h-4 mr-1" /> New invoice</Link></Button>
-        </div>
+
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
