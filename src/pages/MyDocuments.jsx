@@ -12,7 +12,6 @@ import StatusBadge from "@/components/StatusBadge";
 import PaidAmountLabel from "@/components/PaidAmountLabel";
 import { formatMoney } from "@/lib/invoice";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
-import BackflowReports from "@/components/portal/BackflowReports";
 import InvoicePaymentSchedule from "@/components/portal/InvoicePaymentSchedule";
 
 const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
@@ -38,8 +37,6 @@ export default function MyDocuments() {
   const invoices = portal.invoices || [];
   const estimates = portal.estimates || [];
   const customers = portal.customers || [];
-  const backflowReports = portal.backflow_reports || [];
-
   const visibleInvoices = hidePaid ? invoices.filter((i) => i.payment_status !== "paid") : invoices;
   const [downloading, setDownloading] = useState(null);
 
@@ -86,7 +83,7 @@ export default function MyDocuments() {
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-8">
         <div>
           <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">Your invoices, estimates, and backflow test reports.</p>
+          <p className="text-muted-foreground text-sm mt-1">Your invoices and estimates.</p>
         </div>
 
         {isLoading ? (
@@ -186,7 +183,6 @@ export default function MyDocuments() {
               )}
             </div>
 
-            <BackflowReports reports={backflowReports} />
           </>
         )}
       </main>
