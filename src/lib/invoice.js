@@ -15,6 +15,17 @@ export function calcTotals(lineItems = [], taxRate = 0, ccFeeEnabled = false) {
   return { subtotal, tax, cc_fee, total };
 }
 
+export function groupLineItemsBySection(lineItems = []) {
+  const order = [];
+  const groups = {};
+  (lineItems || []).forEach((li) => {
+    const s = li.section || "";
+    if (!(s in groups)) { groups[s] = []; order.push(s); }
+    groups[s].push(li);
+  });
+  return order.map((s) => ({ section: s, items: groups[s] }));
+}
+
 export function formatMoney(n) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n) || 0);
 }

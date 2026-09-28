@@ -1,4 +1,4 @@
-import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
+import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection } from "@/lib/invoice";
 import { TERMS, ACKNOWLEDGMENT } from "@/lib/serviceTerms";
 
 function installmentAmount(item, total) {
@@ -122,26 +122,38 @@ export async function downloadInvoicePdf({ invoice, customer, settings }) {
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  for (const li of (invoice.line_items || [])) {
-    const desc = String(li.description || "—").split("\n");
-    let textIndent = 0;
-    if (li.image_url) {
-      const dataUrl = await loadImageDataUrl(li.image_url);
-      if (dataUrl) {
-        try {
-          const props = doc.getImageProperties(dataUrl);
-          const th = 24;
-          const tw = (props.width / props.height) * th;
-          doc.addImage(dataUrl, "PNG", colX.desc, y - 16, tw, th);
-          textIndent = tw + 6;
-        } catch { /* ignore */ }
-      }
+  for (const { section, items } of groupLineItemsBySection(invoice.line_items)) {
+    if (section) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(90);
+      doc.text(section, colX.desc, y);
+      doc.setTextColor(0);
+      y += 14;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
     }
-    doc.text(desc[0], colX.desc + textIndent, y);
-    doc.text(String(li.quantity ?? ""), colX.qty, y, { align: "right" });
-    doc.text(formatMoney(li.unit_price), colX.price, y, { align: "right" });
-    doc.text(formatMoney(lineTotal(li)), colX.total, y, { align: "right" });
-    y += 16;
+    for (const li of items) {
+      const desc = String(li.description || "—").split("\n");
+      let textIndent = 0;
+      if (li.image_url) {
+        const dataUrl = await loadImageDataUrl(li.image_url);
+        if (dataUrl) {
+          try {
+            const props = doc.getImageProperties(dataUrl);
+            const th = 24;
+            const tw = (props.width / props.height) * th;
+            doc.addImage(dataUrl, "PNG", colX.desc, y - 16, tw, th);
+            textIndent = tw + 6;
+          } catch { /* ignore */ }
+        }
+      }
+      doc.text(desc[0], colX.desc + textIndent, y);
+      doc.text(String(li.quantity ?? ""), colX.qty, y, { align: "right" });
+      doc.text(formatMoney(li.unit_price), colX.price, y, { align: "right" });
+      doc.text(formatMoney(lineTotal(li)), colX.total, y, { align: "right" });
+      y += 16;
+    }
   }
 
   y += 6;
