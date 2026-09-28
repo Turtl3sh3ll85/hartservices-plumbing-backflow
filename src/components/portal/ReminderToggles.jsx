@@ -12,7 +12,7 @@ const TOGGLES = [
   { key: "backflow_tests", label: "Backflow tests", desc: "Annual backflow test reminders." },
 ];
 
-export default function ReminderToggles({ customer }) {
+export default function ReminderToggles({ email, customer }) {
   const { toast } = useToast();
   const [vals, setVals] = useState({
     salt_reminders: !!customer.salt_reminders,
@@ -25,7 +25,8 @@ export default function ReminderToggles({ customer }) {
     const prev = vals[key];
     setVals((v) => ({ ...v, [key]: checked }));
     try {
-      await base44.entities.Customer.update(customer.id, { [key]: checked });
+      const res = await base44.functions.invoke("updateCustomerRemindersByEmail", { email, toggles: { [key]: checked } });
+      if (!res.data || res.data.error) throw new Error(res.data?.error || "Could not update");
     } catch (e) {
       setVals((v) => ({ ...v, [key]: prev }));
       toast({ variant: "destructive", description: "Could not update preference." });

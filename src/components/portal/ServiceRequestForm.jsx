@@ -14,7 +14,7 @@ const TYPE_OPTIONS = [
   { value: "appointment", label: "Schedule appointment" },
 ];
 
-export default function ServiceRequestForm({ customerId }) {
+export default function ServiceRequestForm({ email }) {
   const { toast } = useToast();
   const [form, setForm] = useState({ request_type: "service", subject: "", details: "", preferred_date: "" });
   const [saving, setSaving] = useState(false);
@@ -23,7 +23,8 @@ export default function ServiceRequestForm({ customerId }) {
     if (!form.subject.trim()) { toast({ description: "Add a short subject." }); return; }
     setSaving(true);
     try {
-      await base44.entities.ServiceRequest.create({ customer_id: customerId, ...form, status: "new" });
+      const res = await base44.functions.invoke("createServiceRequestByEmail", { email, ...form });
+      if (!res.data || res.data.error) throw new Error(res.data?.error || "Failed to send");
       toast({ title: "Request sent", description: "The office will follow up shortly." });
       setForm({ request_type: "service", subject: "", details: "", preferred_date: "" });
     } catch (e) {

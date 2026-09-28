@@ -14,7 +14,6 @@ const allNav = [
   { to: "/invoices", label: "Invoices", icon: FileText, roles: ["admin", "tech", "accountant"] },
   { to: "/users", label: "Users", icon: UserCog, roles: ["admin"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
-  { to: "/portal", label: "My Documents", icon: FileText, roles: ["customer"] },
 ];
 
 function BrandMark({ settings, size = "md" }) {

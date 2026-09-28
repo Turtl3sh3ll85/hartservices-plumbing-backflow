@@ -1,16 +1,10 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Download, Loader2 } from "lucide-react";
 
-export default function BackflowReports({ customerId }) {
-  const { data: reports = [], isLoading } = useQuery({
-    queryKey: ["backflow-reports", customerId],
-    queryFn: () => base44.entities.BackflowTestReport.filter({ customer_id: customerId }, "-test_date", 100),
-    enabled: !!customerId,
-  });
+export default function BackflowReports({ reports }) {
   const [downloading, setDownloading] = useState(null);
 
   const download = async (r) => {
@@ -28,9 +22,7 @@ export default function BackflowReports({ customerId }) {
   return (
     <div>
       <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Backflow test reports</h2>
-      {isLoading ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground">Loading…</Card>
-      ) : reports.length === 0 ? (
+      {!reports || reports.length === 0 ? (
         <Card className="p-6 text-center text-sm text-muted-foreground">No backflow test reports on file yet.</Card>
       ) : (
         <Card className="overflow-hidden p-0">

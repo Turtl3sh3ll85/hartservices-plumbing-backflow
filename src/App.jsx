@@ -18,6 +18,7 @@ import RoleGuard from '@/components/RoleGuard';
 
 // Add page imports here (lazy-loaded for code splitting)
 const RoleHome = lazy(() => import('@/components/RoleHome'));
+const LandingPage = lazy(() => import('@/components/LandingPage'));
 const Customers = lazy(() => import('@/pages/Customers'));
 const Invoices = lazy(() => import('@/pages/Invoices'));
 const InvoiceEditor = lazy(() => import('@/pages/InvoiceEditor'));
@@ -87,10 +88,19 @@ const AuthenticatedApp = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+          {/* Public customer portal — email-keyed, no login required */}
+          <Route path="/portal" element={<MyDocuments />} />
+
+          {/* Home — public landing for guests, dashboard for staff, redirect for customers */}
+          <Route element={<ProtectedRoute unauthenticatedElement={<LandingPage />} />}>
             <Route element={<Layout />}>
               <Route path="/" element={<RoleHome />} />
-              <Route path="/portal" element={<RoleGuard roles={["customer"]}><MyDocuments /></RoleGuard>} />
+            </Route>
+          </Route>
+
+          {/* Staff-only routes */}
+          <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+            <Route element={<Layout />}>
               <Route path="/invoices" element={<RoleGuard roles={["admin", "tech", "accountant"]}><Invoices /></RoleGuard>} />
               <Route path="/invoices/new" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
               <Route path="/invoices/:id" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
@@ -102,7 +112,6 @@ const AuthenticatedApp = () => {
               <Route path="/settings" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
               <Route path="/users" element={<RoleGuard roles={["admin"]}><Users /></RoleGuard>} />
               <Route path="/users/:id" element={<RoleGuard roles={["admin"]}><UserDetail /></RoleGuard>} />
-
             </Route>
           </Route>
           <Route path="*" element={<PageNotFound />} />

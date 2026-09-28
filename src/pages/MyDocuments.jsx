@@ -1,169 +1,178 @@
-import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { useAuth } from "@/lib/AuthContext";
-import { FileText, ClipboardList, Loader2, CreditCard, EyeOff } from "lucide-react";
+import { FileText, ClipboardList, Loader2, CreditCard, ArrowLeft, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Image } from "@/components/ui/image";
+import { useSettings } from "@/hooks/useSettings";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
 import ReminderToggles from "@/components/portal/ReminderToggles";
 import ServiceRequestForm from "@/components/portal/ServiceRequestForm";
 import BackflowReports from "@/components/portal/BackflowReports";
 
-export default function MyDocuments() {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [hidePaid, setHidePaid] = useState(false);
-  const [linking, setLinking] = useState(false);
-  const [linkFailed, setLinkFailed] = useState(false);
+const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
 
-  // Backend function bypasses RLS and matches customer_email case-insensitively,
-  // so the customer sees their documents even when the email casing in the auth
-  // session differs from the stored customer_email.
+export default function MyDocuments() {
+  const [searchParams] = useSearchParams();
+  const email = (searchParams.get("email") || "").trim().toLowerCase();
+  const navigate = useNavigate();
+  const { settings } = useSettings();
+  const [hidePaid, setHidePaid] = useState(false);
+
   const { data: portal = {}, isLoading, error: portalError } = useQuery({
-    queryKey: ["myPortalDocuments"],
+    queryKey: ["customerPortal", email],
     queryFn: async () => {
-      const res = await base44.functions.invoke("getMyPortalDocuments", {});
+      const res = await base44.functions.invoke("getCustomerPortalByEmail", { email });
       if (!res.data) throw new Error(res.error || "Failed to load documents");
+      if (res.data.error) throw new Error(res.data.error);
       return res.data;
     },
+    enabled: !!email,
   });
+
   const invoices = portal.invoices || [];
   const estimates = portal.estimates || [];
   const customers = portal.customers || [];
+  const backflowReports = portal.backflow_reports || [];
 
   const myCustomer = useMemo(() => {
     if (customers.length === 0) return null;
     return customers.slice().sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date))[0];
   }, [customers]);
 
-  // Auto-link a customer profile in the background if none exists yet.
-  // This must NOT block invoice/estimate display — those render as soon as loaded.
-  useEffect(() => {
-    if (isLoading || linking || linkFailed || myCustomer || !user?.email) return;
-    setLinking(true);
-    base44.entities.Customer.create({
-      name: user.full_name || user.email,
-      email: user.email,
-    })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["myPortalDocuments"] }))
-      .catch(() => setLinkFailed(true))
-      .finally(() => setLinking(false));
-  }, [isLoading, linking, linkFailed, myCustomer, user, queryClient]);
+  const visibleInvoices = hidePaid ? invoices.filter((i) => i.payment_status !== "paid") : invoices;
 
-  const myInvoices = invoices;
-  const myEstimates = estimates;
-  const visibleInvoices = hidePaid ? myInvoices.filter((i) => i.payment_status !== "paid") : myInvoices;
-
-  if (isLoading) {
+  if (!email) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (portalError && invoices.length === 0 && estimates.length === 0) {
-    return (
-      <div className="text-center py-20 space-y-2">
-        <p className="text-destructive text-sm">Error loading documents: {portalError.message || String(portalError)}</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 px-4 text-center">
+        <p className="text-muted-foreground mb-4">No email provided.</p>
+        <Button asChild variant="outline"><Link to="/"><ArrowLeft className="w-4 h-4 mr-1.5" /> Back to home</Link></Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">My documents</h1>
-        <p className="text-muted-foreground text-sm mt-1">Your invoices, estimates, service requests, and reminders.</p>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-          <h2 className="font-heading font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Invoices</h2>
-          {myInvoices.length > 0 && (
-            <label className="flex items-center gap-2 text-sm text-muted-foreground select-none cursor-pointer">
-              <Switch checked={hidePaid} onCheckedChange={setHidePaid} aria-label="Hide paid invoices" />
-              <span className="inline-flex items-center gap-1"><EyeOff className="w-3.5 h-3.5" /> Hide paid</span>
-            </label>
-          )}
+    <div className="min-h-screen bg-muted/30">
+      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur border-b">
+        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button onClick={() => navigate("/")} className="flex items-center gap-1.5 -ml-1 px-1 min-h-11 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" aria-label="Back to home">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="w-7 h-7 rounded-lg overflow-hidden bg-card border shrink-0">
+              <Image src={settings?.logo_url || LOGO_URL} alt="Logo" className="w-full h-full object-contain" />
+            </div>
+            <span className="font-heading font-semibold text-sm truncate">{settings?.business_name || "HartServices"}</span>
+          </div>
+          <span className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+            <Mail className="w-3.5 h-3.5" /> {email}
+          </span>
         </div>
-        {visibleInvoices.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted-foreground">
-            {myInvoices.length === 0 ? "No invoices yet." : "All invoices are hidden."}
+      </header>
+
+      <main className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+        <div>
+          <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">My documents</h1>
+          <p className="text-muted-foreground text-sm mt-1">Your invoices, estimates, service requests, and reminders.</p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : portalError ? (
+          <Card className="p-6 text-center text-sm text-destructive">
+            {portalError.message || String(portalError)}
+            <div className="mt-4">
+              <Button asChild variant="outline" size="sm"><Link to="/"><ArrowLeft className="w-4 h-4 mr-1.5" /> Try a different email</Link></Button>
+            </div>
+          </Card>
+        ) : customers.length === 0 ? (
+          <Card className="p-6 text-center text-sm text-muted-foreground space-y-2">
+            <p>We couldn't find any records for <span className="font-medium text-foreground">{email}</span>.</p>
+            <p>If this isn't the email we have on file, please contact our office.</p>
+            <div className="mt-4">
+              <Button asChild variant="outline" size="sm"><Link to="/"><ArrowLeft className="w-4 h-4 mr-1.5" /> Back to home</Link></Button>
+            </div>
           </Card>
         ) : (
-          <Card className="overflow-hidden p-0">
-            <div className="divide-y">
-              {visibleInvoices.map((i) => {
-                return (
-                  <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{i.name || "Invoice"}</div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {i.name || i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
+          <>
+            <div>
+              <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                <h2 className="font-heading font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Invoices</h2>
+                {invoices.length > 0 && (
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground select-none cursor-pointer">
+                    <Switch checked={hidePaid} onCheckedChange={setHidePaid} aria-label="Hide paid invoices" />
+                    <span className="inline-flex items-center gap-1">Hide paid</span>
+                  </label>
+                )}
+              </div>
+              {visibleInvoices.length === 0 ? (
+                <Card className="p-6 text-center text-sm text-muted-foreground">
+                  {invoices.length === 0 ? "No invoices yet." : "All invoices are hidden."}
+                </Card>
+              ) : (
+                <Card className="overflow-hidden p-0">
+                  <div className="divide-y">
+                    {visibleInvoices.map((i) => (
+                      <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{i.name || "Invoice"}</div>
+                          <div className="text-sm text-muted-foreground truncate">
+                            {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
+                          <StatusBadge status={i.payment_status} />
+                          {i.payment_status === "paid" ? (
+                            <Button asChild size="sm" variant="outline"><Link to={`/pay/${i.id}`}>View</Link></Button>
+                          ) : (
+                            <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> Pay</Link></Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                      <StatusBadge status={i.payment_status} />
-                      {i.payment_status === "paid" ? (
-                        <Button asChild size="sm" variant="outline"><Link to={`/pay/${i.id}`}>View</Link></Button>
-                      ) : (
-                        <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> Pay</Link></Button>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                );
-              })}
+                </Card>
+              )}
             </div>
-          </Card>
-        )}
-      </div>
 
-      <div>
-        <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Estimates</h2>
-        {myEstimates.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted-foreground">No estimates yet.</Card>
-        ) : (
-          <Card className="overflow-hidden p-0">
-            <div className="divide-y">
-              {myEstimates.map((e) => {
-                return (
-                  <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{e.name || "Estimate"}</div>
-                      <div className="text-sm text-muted-foreground truncate">{e.name || e.number}</div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
-                      <StatusBadge status={e.status} />
-                      <Button asChild size="sm" variant="outline"><Link to={`/accept/${e.id}`}>{e.status === "converted" ? "View" : "Review"}</Link></Button>
-                    </div>
+            <div>
+              <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Estimates</h2>
+              {estimates.length === 0 ? (
+                <Card className="p-6 text-center text-sm text-muted-foreground">No estimates yet.</Card>
+              ) : (
+                <Card className="overflow-hidden p-0">
+                  <div className="divide-y">
+                    {estimates.map((e) => (
+                      <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{e.name || "Estimate"}</div>
+                          <div className="text-sm text-muted-foreground truncate">{e.number}</div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
+                          <StatusBadge status={e.status} />
+                          <Button asChild size="sm" variant="outline"><Link to={`/accept/${e.id}`}>{e.status === "converted" ? "View" : "Review"}</Link></Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
+                </Card>
+              )}
             </div>
-          </Card>
-        )}
-      </div>
 
-      {myCustomer ? (
-        <>
-          <ServiceRequestForm customerId={myCustomer.id} />
-          <ReminderToggles customer={myCustomer} />
-          <BackflowReports customerId={myCustomer.id} />
-        </>
-      ) : (
-        <Card className="p-6 text-center text-sm text-muted-foreground">
-          {linkFailed
-            ? "We couldn't link your customer profile. Please contact us so we can add you."
-            : "Linking your customer profile…"}
-        </Card>
-      )}
+            <ServiceRequestForm email={email} />
+            <ReminderToggles email={email} customer={myCustomer} />
+            <BackflowReports reports={backflowReports} />
+          </>
+        )}
+      </main>
     </div>
   );
 }
