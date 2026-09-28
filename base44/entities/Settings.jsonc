@@ -46,10 +46,6 @@
       "type": "string",
       "title": "Google Sheet ID for item catalog"
     },
-    "wave_sheet_id": {
-      "type": "string",
-      "title": "Google Sheet ID for Wave transactions"
-    },
     "weekly_summary_enabled": {
       "type": "boolean",
       "default": false,
