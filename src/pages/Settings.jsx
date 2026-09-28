@@ -125,7 +125,7 @@ export default function Settings() {
 
       <Card className="p-6 space-y-3">
         <div className="text-sm font-medium">Wave transactions (Google Sheets)</div>
-        <p className="text-sm text-muted-foreground">Use the <span className="font-medium">Wave Connect</span> Google Sheets add-on to export your transactions into a sheet, then paste that sheet's ID here. The Expenses page syncs from it.</p>
+        <p className="text-sm text-muted-foreground">Wave Connect can't export transactions, so populate this sheet yourself — e.g. open your Wave Data Export CSV in Google Sheets, or maintain transactions manually. The Expenses page syncs from it.</p>
         <div className="space-y-1.5"><Label>Wave transactions Sheet ID</Label><Input value={form.wave_sheet_id} onChange={(e) => setForm({ ...form, wave_sheet_id: e.target.value })} placeholder="1AbC…xyz" /></div>
       </Card>
 
