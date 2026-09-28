@@ -111,7 +111,7 @@ export default function Customers() {
       ) : filtered.length === 0 ? (
         <EmptyState icon={Users} title="No customers yet" description="Add your first customer to start creating jobs and invoices." action={<Button onClick={startNew}><Plus className="w-4 h-4 mr-1" /> New customer</Button>} />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((c) => (
             <Card key={c.id} className="p-5 flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">

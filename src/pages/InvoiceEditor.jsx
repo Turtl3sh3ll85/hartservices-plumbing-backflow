@@ -230,7 +230,7 @@ export default function InvoiceEditor() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-2xl mx-auto sm:max-w-3xl">
       <Button asChild variant="ghost" size="sm" className="-ml-2"><Link to={listRoute}><ArrowLeft className="w-4 h-4 mr-1" /> Back to {isEstimate ? "estimates" : "invoices"}</Link></Button>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

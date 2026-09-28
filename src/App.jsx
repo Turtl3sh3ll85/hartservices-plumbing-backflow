@@ -1,9 +1,9 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -35,9 +35,18 @@ const LoadingSpinner = () => (
   </div>
 );
 
+const pageVariants = {
+  fade: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
+  slide: { initial: { x: 24, opacity: 0 }, animate: { x: 0, opacity: 1 }, exit: { x: -24, opacity: 0 } },
+};
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
+  const prevPathRef = useRef(location.pathname);
+  const isPush = location.pathname.startsWith(prevPathRef.current + "/") && location.pathname.length > prevPathRef.current.length;
+  const animType = isPush ? "slide" : "fade";
+  useEffect(() => { prevPathRef.current = location.pathname; }, [location.pathname]);
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -63,7 +72,14 @@ const AuthenticatedApp = () => {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+        <motion.div
+          key={location.pathname}
+          initial={pageVariants[animType].initial}
+          animate={pageVariants[animType].animate}
+          exit={pageVariants[animType].exit}
+          transition={{ duration: 0.2 }}
+        >
+        <Routes location={location}>
           <Route path="/pay/:invoiceId" element={<PayInvoice />} />
           <Route path="/accept/:estimateId" element={<AcceptEstimate />} />
           <Route path="/login" element={<Login />} />
@@ -88,6 +104,7 @@ const AuthenticatedApp = () => {
           </Route>
           <Route path="*" element={<PageNotFound />} />
         </Routes>
+        </motion.div>
       </AnimatePresence>
     </Suspense>
   );

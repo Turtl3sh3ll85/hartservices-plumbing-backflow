@@ -141,7 +141,7 @@ export default function Jobs() {
       ) : filtered.length === 0 ? (
         <EmptyState icon={Wrench} title="No jobs found" description="Create a job to attach estimates, contracts, photos, and invoices." action={<Button onClick={startNew}><Plus className="w-4 h-4 mr-1" /> New job</Button>} />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((j) => {
             const c = customerMap[j.customer_id];
             return (
