@@ -6,6 +6,10 @@
       "type": "string",
       "title": "Customer"
     },
+    "customer_email": {
+      "type": "string",
+      "title": "Customer Email"
+    },
     "number": {
       "type": "string",
       "title": "Invoice Number"
@@ -152,5 +156,86 @@
   "required": [
     "customer_id",
     "name"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.customer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "tech"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "tech"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "tech"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "tech"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    }
+  }
 }

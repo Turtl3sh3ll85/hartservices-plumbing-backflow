@@ -154,9 +154,9 @@ export default function InvoiceEditor() {
       return [optimistic, ...arr];
     });
     try {
-      const basePayload = { ...form, customer_id: selectedCustomerId, ...totals, status: send ? "sent" : form.status };
+      const basePayload = { ...form, customer_id: selectedCustomerId, customer_email: customerMap[selectedCustomerId]?.email || "", ...totals, status: send ? "sent" : form.status };
       const payload = isEstimate
-        ? { customer_id: basePayload.customer_id, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, total: basePayload.total, payment_schedule: basePayload.payment_schedule, status: basePayload.status, notes: basePayload.notes }
+        ? { customer_id: basePayload.customer_id, customer_email: basePayload.customer_email, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, total: basePayload.total, payment_schedule: basePayload.payment_schedule, status: basePayload.status, notes: basePayload.notes }
         : basePayload;
       const entity = isEstimate ? base44.entities.Estimate : base44.entities.Invoice;
       let resultId = savedId;
