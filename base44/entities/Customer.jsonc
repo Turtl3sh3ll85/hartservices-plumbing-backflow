@@ -38,6 +38,26 @@
     "notes": {
       "type": "string",
       "title": "Notes"
+    },
+    "salt_reminders": {
+      "type": "boolean",
+      "default": false,
+      "title": "Salt Reminders"
+    },
+    "ac_filter_reminders": {
+      "type": "boolean",
+      "default": false,
+      "title": "AC Filter Reminders"
+    },
+    "sprinkler_tuneups": {
+      "type": "boolean",
+      "default": false,
+      "title": "Sprinkler Tune-Ups"
+    },
+    "backflow_tests": {
+      "type": "boolean",
+      "default": false,
+      "title": "Backflow Tests"
     }
   },
   "required": [

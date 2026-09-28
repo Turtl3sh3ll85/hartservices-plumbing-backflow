@@ -1,0 +1,47 @@
+{
+  "name": "ServiceRequest",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "title": "Customer"
+    },
+    "request_type": {
+      "type": "string",
+      "enum": [
+        "service",
+        "appointment"
+      ],
+      "default": "service",
+      "title": "Request Type"
+    },
+    "subject": {
+      "type": "string",
+      "title": "Subject"
+    },
+    "details": {
+      "type": "string",
+      "title": "Details"
+    },
+    "preferred_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Preferred Date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "scheduled",
+        "completed",
+        "cancelled"
+      ],
+      "default": "new",
+      "title": "Status"
+    }
+  },
+  "required": [
+    "customer_id",
+    "request_type"
+  ]
+}

@@ -1,15 +1,21 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { FileText, ClipboardList, Loader2, CreditCard } from "lucide-react";
+import { FileText, ClipboardList, Loader2, CreditCard, EyeOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
+import ReminderToggles from "@/components/portal/ReminderToggles";
+import ServiceRequestForm from "@/components/portal/ServiceRequestForm";
+import BackflowReports from "@/components/portal/BackflowReports";
 
 export default function MyDocuments() {
   const { user } = useAuth();
+  const [hidePaid, setHidePaid] = useState(false);
   const { data: invoices = [], isLoading: li } = useQuery({ queryKey: ["invoices"], queryFn: () => base44.entities.Invoice.list("-created_date", 200) });
   const { data: estimates = [], isLoading: le } = useQuery({ queryKey: ["estimates"], queryFn: () => base44.entities.Estimate.list("-created_date", 200) });
   const { data: customers = [], isLoading: lc } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
@@ -20,6 +26,7 @@ export default function MyDocuments() {
   );
   const myInvoices = invoices.filter((i) => i.customer_id === myCustomer?.id);
   const myEstimates = estimates.filter((e) => e.customer_id === myCustomer?.id);
+  const visibleInvoices = hidePaid ? myInvoices.filter((i) => i.payment_status !== "paid") : myInvoices;
 
   if (loading) {
     return (
@@ -41,17 +48,27 @@ export default function MyDocuments() {
     <div className="space-y-8">
       <div>
         <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">My documents</h1>
-        <p className="text-muted-foreground text-sm mt-1">Your invoices and estimates. Pay invoices or review estimates below.</p>
+        <p className="text-muted-foreground text-sm mt-1">Your invoices, estimates, service requests, and reminders.</p>
       </div>
 
       <div>
-        <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><FileText className="w-4 h-4" /> Invoices</h2>
-        {myInvoices.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted-foreground">No invoices yet.</Card>
+        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+          <h2 className="font-heading font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Invoices</h2>
+          {myInvoices.length > 0 && (
+            <label className="flex items-center gap-2 text-sm text-muted-foreground select-none cursor-pointer">
+              <Switch checked={hidePaid} onCheckedChange={setHidePaid} aria-label="Hide paid invoices" />
+              <span className="inline-flex items-center gap-1"><EyeOff className="w-3.5 h-3.5" /> Hide paid</span>
+            </label>
+          )}
+        </div>
+        {visibleInvoices.length === 0 ? (
+          <Card className="p-6 text-center text-sm text-muted-foreground">
+            {myInvoices.length === 0 ? "No invoices yet." : "All invoices are hidden."}
+          </Card>
         ) : (
           <Card className="overflow-hidden p-0">
             <div className="divide-y">
-              {myInvoices.map((i) => {
+              {visibleInvoices.map((i) => {
                 return (
                   <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
                     <div className="min-w-0">
@@ -103,6 +120,10 @@ export default function MyDocuments() {
           </Card>
         )}
       </div>
+
+      <ServiceRequestForm customerId={myCustomer.id} />
+      <ReminderToggles customer={myCustomer} />
+      <BackflowReports customerId={myCustomer.id} />
     </div>
   );
 }

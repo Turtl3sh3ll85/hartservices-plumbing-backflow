@@ -1,0 +1,35 @@
+{
+  "name": "BackflowTestReport",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "title": "Customer"
+    },
+    "title": {
+      "type": "string",
+      "title": "Report Title"
+    },
+    "test_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Test Date"
+    },
+    "file_uri": {
+      "type": "string",
+      "title": "File URI"
+    },
+    "file_name": {
+      "type": "string",
+      "title": "File Name"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "customer_id",
+    "title"
+  ]
+}
