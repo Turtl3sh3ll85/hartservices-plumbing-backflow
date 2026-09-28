@@ -8,24 +8,24 @@ export default function InvoicePaymentSchedule({ invoice }) {
   const total = Number(invoice.total) || 0;
 
   return (
-    <div className="mt-2 w-full rounded-lg border bg-muted/30 p-3 space-y-1.5">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Payment schedule</div>
+    <div className="mt-2 ml-6 mr-1 rounded-md border-l-2 border-primary/30 bg-muted/20 px-3 py-2 space-y-1">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Payment schedule</div>
       {schedule.map((p, i) => {
         const amt = installmentAmount(p, total);
         const paid = !!p.paid;
         return (
-          <div key={i} className="flex items-center justify-between gap-3 text-sm">
+          <div key={i} className="flex items-center justify-between gap-3 text-xs">
             <span className="min-w-0 truncate">
               <span className="font-medium">{p.label || `Payment ${i + 1}`}</span>
             </span>
             <span className="flex items-center gap-2 shrink-0">
               <span className="tabular-nums text-muted-foreground">{formatMoney(amt)}</span>
               {paid ? (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  <CheckCircle className="w-3.5 h-3.5" /> Paid
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                  <CheckCircle className="w-3 h-3" /> Paid
                 </span>
               ) : (
-                <span className="inline-flex items-center text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full">
                   Due
                 </span>
               )}
