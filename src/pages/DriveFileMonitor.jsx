@@ -5,9 +5,11 @@ import { Inbox, Loader2, RefreshCw, CheckCircle2, Paperclip } from "lucide-react
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AttachInvoiceDialog from "@/components/AttachInvoiceDialog";
+import FileLightbox from "@/components/FileLightbox";
 
 export default function DriveFileMonitor() {
   const [attachFile, setAttachFile] = useState(null);
+  const [lightboxFile, setLightboxFile] = useState(null);
 
   const { data: { files = [] } = {}, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["driveFolderFiles"],
@@ -43,13 +45,20 @@ export default function DriveFileMonitor() {
           {files.map((f) => (
             <Card key={f.id} className="p-4 space-y-3">
               <div className="flex items-start gap-3">
-                {f.thumbnailLink ? (
-                  <img src={f.thumbnailLink} alt={f.name} className="w-14 h-14 rounded-lg object-cover border shrink-0" />
-                ) : (
-                  <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    {f.iconLink ? <img src={f.iconLink} alt="" className="w-7 h-7" /> : <Inbox className="w-6 h-6 text-muted-foreground" />}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setLightboxFile(f)}
+                  className="shrink-0 rounded-lg overflow-hidden border hover:ring-2 hover:ring-primary transition"
+                  aria-label={`Enlarge ${f.name}`}
+                >
+                  {f.thumbnailLink ? (
+                    <img src={f.thumbnailLink} alt={f.name} className="w-14 h-14 object-cover" />
+                  ) : (
+                    <div className="w-14 h-14 bg-muted flex items-center justify-center">
+                      {f.iconLink ? <img src={f.iconLink} alt="" className="w-7 h-7" /> : <Inbox className="w-6 h-6 text-muted-foreground" />}
+                    </div>
+                  )}
+                </button>
                 <div className="min-w-0 flex-1">
                   <div className="font-medium truncate text-sm">{f.name}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">
@@ -72,6 +81,7 @@ export default function DriveFileMonitor() {
       )}
 
       {attachFile && <AttachInvoiceDialog file={attachFile} onClose={() => setAttachFile(null)} />}
+      <FileLightbox file={lightboxFile} onClose={() => setLightboxFile(null)} />
     </div>
   );
 }
