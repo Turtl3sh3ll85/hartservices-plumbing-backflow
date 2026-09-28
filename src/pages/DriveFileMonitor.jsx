@@ -118,18 +118,6 @@ export default function DriveFileMonitor() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className={`min-h-11 sm:min-h-8 ${f.truckstock ? "border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-400" : ""}`}
-                    onClick={() => handleToggleTruckstock(f)}
-                    disabled={togglingTruck === f.id}
-                    aria-label={f.truckstock ? "Remove truck stock mark" : "Mark as truck stock"}
-                    title={f.truckstock ? "Marked as truck stock" : "Mark as truck stock"}
-                  >
-                    {togglingTruck === f.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
-                    <span className="hidden sm:inline ml-1">{f.truckstock ? "Truck stock" : "Mark truck stock"}</span>
-                  </Button>
                   {f.attached ? (
                     <>
                       <span className="hidden sm:inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
@@ -145,6 +133,18 @@ export default function DriveFileMonitor() {
                     </>
                   ) : (
                     <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={`min-h-11 sm:min-h-8 ${f.truckstock ? "border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-400" : ""}`}
+                        onClick={() => handleToggleTruckstock(f)}
+                        disabled={togglingTruck === f.id}
+                        aria-label={f.truckstock ? "Remove truck stock mark" : "Mark as truck stock"}
+                        title={f.truckstock ? "Marked as truck stock" : "Mark as truck stock"}
+                      >
+                        {togglingTruck === f.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
+                        <span className="hidden sm:inline ml-1">{f.truckstock ? "Truck stock" : "Mark truck stock"}</span>
+                      </Button>
                       <Button size="sm" variant="outline" className="min-h-11 sm:min-h-8" onClick={() => setAttachFile(f)}>
                         <Paperclip className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Attach</span>
                       </Button>
