@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import { formatMoney, lineTotal } from "@/lib/invoice";
 import LineItemPhotos from "@/components/LineItemPhotos";
+import LineItemDescriptionPicker from "@/components/LineItemDescriptionPicker";
 
 export default function LineItemRow({
   li,
@@ -32,35 +33,24 @@ export default function LineItemRow({
   return (
     <div className="space-y-1">
       <div className="grid grid-cols-12 gap-2 items-center">
-        <div className="col-span-12 sm:col-span-4 space-y-1">
-          {catalog.length > 0 && (
-            <MobileSelect
-              value=""
-              onValueChange={(v) => {
-                const item = catalog[Number(v)];
-                if (item) onMerge({
-                  description: item.description,
-                  unit_price: item.unit_price,
-                  quantity: item.quantity || li.quantity || 1,
-                  image_url: item.image_url || li.image_url || "",
-                  details: item.details || li.details || "",
-                });
-              }}
-              placeholder="Pick from catalog…"
-              triggerClassName="h-9 w-full"
-              ariaLabel="Pick from catalog"
-              groups={grouped.map(([cat, entries]) => ({
-                label: cat,
-                options: entries.map(({ c, idx }) => ({ value: String(idx), label: `${c.description} — ${formatMoney(c.unit_price)}` })),
-              }))}
+        <div className="col-span-12 sm:col-span-4">
+          {catalog.length > 0 ? (
+            <LineItemDescriptionPicker
+              li={li}
+              catalog={catalog}
+              grouped={grouped}
+              onMerge={onMerge}
+              onUpdate={onUpdate}
+              editable={editable}
+            />
+          ) : (
+            <Input
+              placeholder="e.g. Replace kitchen sink faucet"
+              value={li.description || ""}
+              onChange={(e) => onUpdate("description", e.target.value)}
+              disabled={!editable}
             />
           )}
-          <Input
-            placeholder="e.g. Replace kitchen sink faucet"
-            value={li.description || ""}
-            onChange={(e) => onUpdate("description", e.target.value)}
-            disabled={!editable}
-          />
         </div>
         <Input
           className="col-span-6 sm:col-span-1 text-right"

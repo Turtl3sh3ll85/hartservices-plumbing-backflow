@@ -2,11 +2,12 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, FileText, Trash2 } from "lucide-react";
+import { Plus, Search, FileText, Trash2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { MobileSelect } from "@/components/ui/mobile-select";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
 import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -52,6 +53,24 @@ export default function Invoices() {
   });
 
   const outstanding = invoices.filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft").reduce((s, i) => s + (Number(i.total) || 0), 0);
+
+  const markPaidByCheck = async (invoice) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const prev = invoices;
+    queryClient.setQueryData(["invoices"], (old) => (old || []).map((x) => x.id === invoice.id ? { ...x, payment_status: "paid", status: "paid", amount_paid: x.total, paid_date: today } : x));
+    try {
+      await base44.entities.Invoice.update(invoice.id, {
+        payment_status: "paid",
+        status: "paid",
+        amount_paid: invoice.total,
+        paid_date: today,
+      });
+      toast({ description: "Marked paid by check." });
+    } catch (e) {
+      queryClient.setQueryData(["invoices"], prev);
+      toast({ variant: "destructive", description: "Could not mark invoice paid." });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -103,7 +122,27 @@ export default function Invoices() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                      <StatusBadge status={i.payment_status} />
+                      {i.payment_status === "paid" ? (
+                        <StatusBadge status="paid" />
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex items-center rounded-full hover:opacity-80 transition-opacity cursor-pointer min-h-11 sm:min-h-0"
+                              title="Click to mark paid"
+                              aria-label={`Mark ${i.name || i.number || "invoice"} as paid`}
+                            >
+                              <StatusBadge status={i.payment_status} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => markPaidByCheck(i)}>
+                              <CheckCircle className="w-4 h-4 mr-2" /> Mark paid (check)
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </Link>
                   <Button
