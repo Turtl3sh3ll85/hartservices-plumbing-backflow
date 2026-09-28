@@ -157,6 +157,7 @@ export default function PayInvoice() {
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">Invoice</div>
                 <div className="font-heading text-xl font-semibold mt-0.5">{invoice.name}</div>
                 <div className="text-sm text-muted-foreground">{invoice.number}</div>
+                <div className="text-xs text-muted-foreground mt-1">Invoices are due within 7 days of issuance unless otherwise noted.</div>
               </div>
               {invoice.due_date && (
                 <div className="text-sm text-right">

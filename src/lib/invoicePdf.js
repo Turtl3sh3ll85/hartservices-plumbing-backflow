@@ -79,6 +79,10 @@ export async function downloadInvoicePdf({ invoice, customer, settings }) {
   if (invoice.due_date) {
     doc.text(`Due: ${new Date(invoice.due_date).toLocaleDateString()}`, W - M, M + 38, { align: "right" });
   }
+  doc.setFontSize(7);
+  doc.setTextColor(120);
+  doc.text("Invoices are due within 7 days of issuance unless otherwise noted.", W - M, M + 50, { align: "right" });
+  doc.setTextColor(0);
 
   y = Math.max(y, M + 48) + 8;
   doc.setDrawColor(220);
