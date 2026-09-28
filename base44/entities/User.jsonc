@@ -6,6 +6,7 @@
       "enum": [
         "admin",
         "tech",
+        "accountant",
         "customer"
       ]
     }

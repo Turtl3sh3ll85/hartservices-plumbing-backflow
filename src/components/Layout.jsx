@@ -2,17 +2,18 @@ import { useEffect, useRef } from "react";
 import { Outlet, NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, Users, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, Users, UserCog, ArrowLeft } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/lib/AuthContext";
 import { Image } from "@/components/ui/image";
 import PullToRefresh from "@/components/PullToRefresh";
 
 const allNav = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ["admin", "tech"] },
-  { to: "/estimates", label: "Estimates", icon: ClipboardList, roles: ["admin", "tech"] },
-  { to: "/invoices", label: "Invoices", icon: FileText, roles: ["admin", "tech"] },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ["admin", "tech", "accountant"] },
+  { to: "/estimates", label: "Estimates", icon: ClipboardList, roles: ["admin", "tech", "accountant"] },
+  { to: "/invoices", label: "Invoices", icon: FileText, roles: ["admin", "tech", "accountant"] },
   { to: "/customers", label: "Customers", icon: Users, roles: ["admin"] },
+  { to: "/users", label: "Users", icon: UserCog, roles: ["admin"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
   { to: "/portal", label: "My Documents", icon: FileText, roles: ["customer"] },
 ];

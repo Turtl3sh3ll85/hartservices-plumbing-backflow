@@ -23,6 +23,7 @@ const Invoices = lazy(() => import('@/pages/Invoices'));
 const InvoiceEditor = lazy(() => import('@/pages/InvoiceEditor'));
 const Estimates = lazy(() => import('@/pages/Estimates'));
 const Settings = lazy(() => import('@/pages/Settings'));
+const Users = lazy(() => import('@/pages/Users'));
 const PayInvoice = lazy(() => import('@/pages/PayInvoice'));
 const AcceptEstimate = lazy(() => import('@/pages/AcceptEstimate'));
 const MyDocuments = lazy(() => import('@/pages/MyDocuments'));
@@ -88,14 +89,15 @@ const AuthenticatedApp = () => {
             <Route element={<Layout />}>
               <Route path="/" element={<RoleHome />} />
               <Route path="/portal" element={<RoleGuard roles={["customer"]}><MyDocuments /></RoleGuard>} />
-              <Route path="/invoices" element={<RoleGuard roles={["admin", "tech"]}><Invoices /></RoleGuard>} />
-              <Route path="/invoices/new" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />
-              <Route path="/invoices/:id" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />
-              <Route path="/estimates" element={<RoleGuard roles={["admin", "tech"]}><Estimates /></RoleGuard>} />
-              <Route path="/estimates/new" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />
-              <Route path="/estimates/:id" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />
+              <Route path="/invoices" element={<RoleGuard roles={["admin", "tech", "accountant"]}><Invoices /></RoleGuard>} />
+              <Route path="/invoices/new" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
+              <Route path="/invoices/:id" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
+              <Route path="/estimates" element={<RoleGuard roles={["admin", "tech", "accountant"]}><Estimates /></RoleGuard>} />
+              <Route path="/estimates/new" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
+              <Route path="/estimates/:id" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
               <Route path="/customers" element={<RoleGuard roles={["admin"]}><Customers /></RoleGuard>} />
               <Route path="/settings" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
+              <Route path="/users" element={<RoleGuard roles={["admin"]}><Users /></RoleGuard>} />
             </Route>
           </Route>
           <Route path="*" element={<PageNotFound />} />
