@@ -358,7 +358,7 @@ export default function InvoiceEditor() {
       <Card className="p-5 space-y-4">
         <SectionTitle icon={ClipboardList}>Line items</SectionTitle>
         <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} modifiersCatalog={modifiersCatalog} />
-        {!isEstimate && <p className="text-sm text-muted-foreground italic">Invoices are due within 7 days of issuance unless otherwise noted.</p>}
+        <p className="text-sm text-muted-foreground italic">{isEstimate ? "Estimates are valid for 30 days unless otherwise noted." : "Invoices are due within 7 days of issuance unless otherwise noted."}</p>
       </Card>
 
       <Card className="p-5 space-y-4">
