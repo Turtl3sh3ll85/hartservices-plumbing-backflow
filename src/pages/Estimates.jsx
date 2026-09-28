@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, ClipboardList } from "lucide-react";
+import { Plus, Search, ClipboardList, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -10,16 +10,39 @@ import { MobileSelect } from "@/components/ui/mobile-select";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import EmptyState from "@/components/EmptyState";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useToast } from "@/components/ui/use-toast";
 import { formatMoney } from "@/lib/invoice";
 
 export default function Estimates() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: estimates = [], isLoading: loadingEstimates } = useQuery({ queryKey: ["estimates"], queryFn: () => base44.entities.Estimate.list("-created_date", 200) });
   const { data: customers = [], isLoading: loadingCustomers } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
   const loading = loadingEstimates || loadingCustomers;
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const customerMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    const prev = estimates;
+    queryClient.setQueryData(["estimates"], (old) => (old || []).filter((x) => x.id !== pendingDelete.id));
+    try {
+      await base44.entities.Estimate.delete(pendingDelete.id);
+      toast({ description: "Estimate deleted." });
+      setPendingDelete(null);
+    } catch (e) {
+      queryClient.setQueryData(["estimates"], prev);
+      toast({ variant: "destructive", description: "Could not delete estimate." });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const filtered = estimates.filter((e) => {
     const c = customerMap[e.customer_id];
@@ -68,23 +91,48 @@ export default function Estimates() {
             {filtered.map((e) => {
               const c = customerMap[e.customer_id];
               return (
-                <Link key={e.id} to={`/estimates/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11 hover:bg-accent transition-colors">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
-                    <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}</div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
-                      <StatusBadge status={e.status} />
+                <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11 hover:bg-accent transition-colors">
+                  <Link to={`/estimates/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 flex-1 min-w-0 min-h-11 -m-4 p-4">
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
+                      <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}</div>
                     </div>
-                    <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
-                  </div>
-                </Link>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
+                        <StatusBadge status={e.status} />
+                      </div>
+                      <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
+                    </div>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                    onClick={() => setPendingDelete(e)}
+                    aria-label={`Delete ${e.name || e.number || "estimate"}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               );
             })}
           </div>
         </Card>
+      )}
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => !o && setPendingDelete(null)}
+        title="Delete estimate?"
+        description={`"${pendingDelete?.name || pendingDelete?.number || "This estimate"}" will be permanently deleted. This cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDelete}
+      />
+      {deleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
+          <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+        </div>
       )}
     </div>
   );
