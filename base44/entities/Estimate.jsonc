@@ -28,6 +28,10 @@
             "type": "string",
             "title": "Description"
           },
+          "details": {
+            "type": "string",
+            "title": "Details"
+          },
           "quantity": {
             "type": "number",
             "title": "Quantity"
@@ -39,6 +43,13 @@
           "image_url": {
             "type": "string",
             "title": "Thumbnail URL"
+          },
+          "photos": {
+            "type": "array",
+            "title": "Photos",
+            "items": {
+              "type": "string"
+            }
           },
           "section": {
             "type": "string",

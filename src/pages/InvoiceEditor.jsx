@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus } from "lucide-react";
+import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus, ClipboardList, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,17 @@ import StatusBadge from "@/components/StatusBadge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
+
+function SectionTitle({ icon: Icon, children }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary shrink-0">
+        <Icon className="w-4 h-4" />
+      </div>
+      <h2 className="font-heading text-base font-semibold tracking-tight">{children}</h2>
+    </div>
+  );
+}
 
 export default function InvoiceEditor() {
   const { id } = useParams();
@@ -257,6 +268,7 @@ export default function InvoiceEditor() {
       )}
 
       <Card className="p-5 space-y-4">
+        <SectionTitle icon={Contact}>Document details</SectionTitle>
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Customer</Label>
@@ -283,13 +295,16 @@ export default function InvoiceEditor() {
           <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Replace bathroom vanity &amp; repair leak under sink" />
         </div>
 
-        <div className="space-y-2">
-          <Label>Line items</Label>
-          <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} modifiersCatalog={modifiersCatalog} />
-        </div>
+      </Card>
 
+      <Card className="p-5 space-y-4">
+        <SectionTitle icon={ClipboardList}>Line items</SectionTitle>
+        <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} modifiersCatalog={modifiersCatalog} />
         {!isEstimate && <p className="text-sm text-muted-foreground italic">Invoices are due within 7 days of issuance unless otherwise noted.</p>}
+      </Card>
 
+      <Card className="p-5 space-y-4">
+        <SectionTitle icon={FileText}>Notes &amp; options</SectionTitle>
         <div className="space-y-1.5">
           <Label>Notes</Label>
           <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />

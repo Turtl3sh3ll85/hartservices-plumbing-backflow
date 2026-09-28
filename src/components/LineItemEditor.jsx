@@ -5,11 +5,13 @@ import LineItemRow from "@/components/LineItemRow";
 
 const blankItem = (section = "") => ({
   description: "",
+  details: "",
   quantity: 1,
   unit_price: 0,
   markup: 0,
   markup_mode: "preset",
   modifiers: [],
+  photos: [],
   section,
 });
 
@@ -79,8 +81,8 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
         const indices = lineItems.map((li, i) => i).filter((i) => (lineItems[i].section || "") === sectionName);
         const isNamed = sectionName !== "";
         return (
-          <div key={groupIndex} className="rounded-lg border bg-card p-3 sm:p-4 space-y-3">
-            <div className="flex items-center gap-2 border-b pb-2">
+          <div key={groupIndex} className="rounded-xl border bg-card overflow-hidden shadow-sm">
+            <div className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-primary/10 border-b">
               <Input
                 className="font-heading font-semibold text-base h-9 max-w-xs border-0 bg-transparent px-1 focus-visible:ring-1"
                 value={sectionName}
@@ -94,27 +96,29 @@ export default function LineItemEditor({ lineItems = [], onChange, editable = tr
                 </Button>
               )}
             </div>
-            <div className="space-y-2">
-              {indices.map((i) => (
-                <LineItemRow
-                  key={i}
-                  li={lineItems[i]}
-                  editable={editable}
-                  catalog={catalog}
-                  modifiersCatalog={modifiersCatalog}
-                  onUpdate={(field, value) => update(i, field, value)}
-                  onMerge={(patch) => merge(i, patch)}
-                  onRemove={() => remove(i)}
-                  onAddModifier={(v) => addModifier(i, v)}
-                  onRemoveModifier={(mi) => removeModifier(i, mi)}
-                />
-              ))}
+            <div className="p-3 sm:p-4 space-y-3">
+              <div className="space-y-2">
+                {indices.map((i) => (
+                  <LineItemRow
+                    key={i}
+                    li={lineItems[i]}
+                    editable={editable}
+                    catalog={catalog}
+                    modifiersCatalog={modifiersCatalog}
+                    onUpdate={(field, value) => update(i, field, value)}
+                    onMerge={(patch) => merge(i, patch)}
+                    onRemove={() => remove(i)}
+                    onAddModifier={(v) => addModifier(i, v)}
+                    onRemoveModifier={(mi) => removeModifier(i, mi)}
+                  />
+                ))}
+              </div>
+              {editable && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => add(sectionName)}>
+                  <Plus className="w-4 h-4 mr-1" /> Add line item{isNamed ? ` to ${sectionName}` : ""}
+                </Button>
+              )}
             </div>
-            {editable && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => add(sectionName)}>
-                <Plus className="w-4 h-4 mr-1" /> Add line item{isNamed ? ` to ${sectionName}` : ""}
-              </Button>
-            )}
           </div>
         );
       })}

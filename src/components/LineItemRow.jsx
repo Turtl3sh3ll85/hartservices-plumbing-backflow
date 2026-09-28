@@ -1,9 +1,11 @@
 import { RotateCcw, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import { formatMoney, lineTotal } from "@/lib/invoice";
 import LineItemThumbnail from "@/components/LineItemThumbnail";
+import LineItemPhotos from "@/components/LineItemPhotos";
 
 export default function LineItemRow({
   li,
@@ -45,6 +47,7 @@ export default function LineItemRow({
                   unit_price: item.unit_price,
                   quantity: item.quantity || li.quantity || 1,
                   image_url: item.image_url || li.image_url || "",
+                  details: item.details || li.details || "",
                 });
               }}
               placeholder="Pick from catalog…"
@@ -130,6 +133,20 @@ export default function LineItemRow({
               <Trash2 className="w-4 h-4 text-destructive" />
             </Button>
           )}
+        </div>
+      </div>
+      <div className="sm:grid sm:grid-cols-12 sm:gap-2">
+        <div className="hidden sm:block sm:col-span-1" />
+        <div className="sm:col-span-11 space-y-2">
+          <Textarea
+            placeholder="Add a longer description / notes for this line item (optional)"
+            value={li.details || ""}
+            onChange={(e) => onUpdate("details", e.target.value)}
+            disabled={!editable}
+            rows={2}
+            className="text-sm"
+          />
+          <LineItemPhotos photos={li.photos || []} onChange={(p) => onUpdate("photos", p)} disabled={!editable} />
         </div>
       </div>
       {(modifiersCatalog.length > 0 || mods.length > 0) && (
