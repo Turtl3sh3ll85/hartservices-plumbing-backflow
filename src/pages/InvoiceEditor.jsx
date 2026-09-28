@@ -219,8 +219,6 @@ export default function InvoiceEditor() {
         resultId = created.id;
         savedRecord = created;
         setSavedId(resultId);
-        // For new invoices and estimates, ensure the customer has a customer-role account
-        base44.functions.invoke("sendAccountOfferEmail", { customer_id: selectedCustomerId }).catch(() => {});
       }
       queryClient.setQueryData([listKey], (old) => (old || []).map((x) => (x.id === tempId ? { ...savedRecord, id: resultId } : x)));
       if (pendingAttachments.length) {
@@ -252,6 +250,7 @@ export default function InvoiceEditor() {
 
       if (send) {
         try {
+          await base44.functions.invoke("sendAccountOfferEmail", { customer_id: selectedCustomerId });
           const res = await base44.functions.invoke("sendDocumentEmail", { type: isEstimate ? "estimate" : "invoice", id: resultId });
           const sent = (res.data?.sent || []).filter((s) => s.ok).map((s) => s.to);
           const failed = (res.data?.sent || []).filter((s) => !s.ok);
