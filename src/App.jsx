@@ -24,6 +24,7 @@ const InvoiceEditor = lazy(() => import('@/pages/InvoiceEditor'));
 const Estimates = lazy(() => import('@/pages/Estimates'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Users = lazy(() => import('@/pages/Users'));
+const UserDetail = lazy(() => import('@/pages/UserDetail'));
 const PayInvoice = lazy(() => import('@/pages/PayInvoice'));
 const AcceptEstimate = lazy(() => import('@/pages/AcceptEstimate'));
 const MyDocuments = lazy(() => import('@/pages/MyDocuments'));
@@ -98,6 +99,7 @@ const AuthenticatedApp = () => {
               <Route path="/customers" element={<RoleGuard roles={["admin"]}><Customers /></RoleGuard>} />
               <Route path="/settings" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
               <Route path="/users" element={<RoleGuard roles={["admin"]}><Users /></RoleGuard>} />
+              <Route path="/users/:id" element={<RoleGuard roles={["admin"]}><UserDetail /></RoleGuard>} />
             </Route>
           </Route>
           <Route path="*" element={<PageNotFound />} />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -73,10 +74,10 @@ export default function Users() {
         <div className="grid grid-cols-1 gap-3">
           {users.map((u) => (
             <Card key={u.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
+              <Link to={`/users/${u.id}`} className="min-w-0 hover:underline">
                 <div className="font-medium truncate">{u.full_name || u.email}</div>
                 <div className="text-sm text-muted-foreground truncate">{u.email}</div>
-              </div>
+              </Link>
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="flex-1 sm:w-48">
                   <MobileSelect
