@@ -41,10 +41,10 @@ export default function DriveFileMonitor() {
       ) : files.length === 0 ? (
         <Card className="p-6 text-center text-sm text-muted-foreground">No files in the monitored folder.</Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-2">
           {files.map((f) => (
-            <Card key={f.id} className="p-4 space-y-3">
-              <div className="flex items-start gap-3">
+            <Card key={f.id} className="p-3">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setLightboxFile(f)}
@@ -52,10 +52,10 @@ export default function DriveFileMonitor() {
                   aria-label={`Enlarge ${f.name}`}
                 >
                   {f.thumbnailLink ? (
-                    <img src={f.thumbnailLink} alt={f.name} className="w-14 h-14 object-cover" />
+                    <img src={f.thumbnailLink} alt={f.name} className="w-12 h-12 object-cover" />
                   ) : (
-                    <div className="w-14 h-14 bg-muted flex items-center justify-center">
-                      {f.iconLink ? <img src={f.iconLink} alt="" className="w-7 h-7" /> : <Inbox className="w-6 h-6 text-muted-foreground" />}
+                    <div className="w-12 h-12 bg-muted flex items-center justify-center">
+                      {f.iconLink ? <img src={f.iconLink} alt="" className="w-6 h-6" /> : <Inbox className="w-5 h-5 text-muted-foreground" />}
                     </div>
                   )}
                 </button>
@@ -65,16 +65,16 @@ export default function DriveFileMonitor() {
                     {new Date(f.modifiedTime).toLocaleDateString()}
                   </div>
                 </div>
+                {f.attached ? (
+                  <div className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <CheckCircle2 className="w-4 h-4" /> <span className="hidden sm:inline">Attached</span>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" className="shrink-0" onClick={() => setAttachFile(f)}>
+                    <Paperclip className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Attach</span>
+                  </Button>
+                )}
               </div>
-              {f.attached ? (
-                <div className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="w-4 h-4" /> Attached to invoice
-                </div>
-              ) : (
-                <Button size="sm" className="w-full" onClick={() => setAttachFile(f)}>
-                  <Paperclip className="w-4 h-4 mr-1" /> Attach to invoice
-                </Button>
-              )}
             </Card>
           ))}
         </div>
