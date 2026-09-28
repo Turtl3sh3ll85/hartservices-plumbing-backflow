@@ -41,8 +41,8 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const brand = settings?.business_name || "FlowPro Plumbing";
-  const short = brand.split(" ")[0];
+  const brand = settings?.business_name || "";
+  const short = brand ? brand.split(" ")[0] : "";
   const nav = allNav.filter((item) => item.roles.includes(user?.role));
   const TAB_ROUTES_KEY = "proinvoice_tabRoutes";
   const tabRoutes = useRef({});
