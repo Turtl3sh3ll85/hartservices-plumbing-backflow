@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Receipt, Loader2, Upload, Trash2, DollarSign, Tag, FileText } from "lucide-react";
+import { Receipt, Loader2, Upload, Trash2, DollarSign, Tag, FileText, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -108,10 +108,20 @@ export default function Expenses() {
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Import expenses from a Wave CSV export, then categorize and assign to invoices.</p>
         </div>
-        <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
-        <Button onClick={() => fileRef.current?.click()} disabled={importing}>
-          {importing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />} Import CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
+          <a
+            href="https://my.waveapps.com/transactions/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4"
+          >
+            <ExternalLink className="w-4 h-4" /> Get CSV from Wave
+          </a>
+          <Button onClick={() => fileRef.current?.click()} disabled={importing}>
+            {importing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />} Import CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
