@@ -6,7 +6,7 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const uid = user.id;
-    const entities = ['Customer', 'Job', 'Invoice', 'Estimate', 'Contract', 'Attachment', 'FollowUp', 'InvoiceAttachment'];
+    const entities = ['Customer', 'Invoice', 'Estimate', 'InvoiceAttachment'];
     const results = {};
     for (const name of entities) {
       try {

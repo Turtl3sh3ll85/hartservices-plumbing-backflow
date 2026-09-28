@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams, useLocation, Link } from "react-router-dom";
+import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus } from "lucide-react";
@@ -21,7 +21,6 @@ import { calcTotals, formatMoney, nextNumber } from "@/lib/invoice";
 
 export default function InvoiceEditor() {
   const { id } = useParams();
-  const [params] = useSearchParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
   const location = useLocation();
@@ -32,11 +31,10 @@ export default function InvoiceEditor() {
   const listRoute = isEstimate ? "/estimates" : "/invoices";
 
   const queryClient = useQueryClient();
-  const { data: jobs = [], isLoading: loadingJobs } = useQuery({ queryKey: ["jobs"], queryFn: () => base44.entities.Job.list("-created_date", 200) });
   const { data: customers = [] } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
   const { data: settings = null, isLoading: loadingSettings } = useQuery({ queryKey: ["settings"], queryFn: async () => { const st = await base44.entities.Settings.list().catch(() => []); return st[0] || null; } });
   const [form, setForm] = useState({
-    job_id: params.get("job") || "",
+    customer_id: "",
     number: "",
     name: "",
     line_items: [{ description: "", quantity: 1, unit_price: 0 }],
@@ -76,18 +74,17 @@ export default function InvoiceEditor() {
   useEffect(() => {
     if (populatedIdRef.current === id) return;
     if (isEdit) {
-      if (loadingDoc || loadingJobs || !doc) return;
+      if (loadingDoc || !doc) return;
       setForm((f) => ({ ...f, ...doc, line_items: doc.line_items || [], payment_schedule: doc.payment_schedule || [] }));
       setSavedId(id);
-      const j = jobs.find((x) => x.id === doc.job_id);
-      if (j) setSelectedCustomerId(j.customer_id || "");
+      setSelectedCustomerId(doc.customer_id || "");
       populatedIdRef.current = id;
     } else {
       if (loadingAllDocs || loadingSettings) return;
       setForm((f) => ({ ...f, number: nextNumber(isEstimateRoute ? "EST" : "INV", allDocs.map((i) => i.number)), tax_rate: settings?.default_tax_rate || 0 }));
       populatedIdRef.current = id;
     }
-  }, [isEdit, loadingDoc, loadingJobs, doc, jobs, loadingAllDocs, loadingSettings, allDocs, settings, id]);
+  }, [isEdit, loadingDoc, doc, loadingAllDocs, loadingSettings, allDocs, settings, id]);
 
   const { data: catalogData } = useQuery({
     queryKey: ["sheetLineItems"],
@@ -108,9 +105,7 @@ export default function InvoiceEditor() {
   const catalog = catalogData || [];
   const modifiersCatalog = modifiersData || [];
 
-  const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
-  const selectedJob = jobMap[form.job_id];
   const totals = calcTotals(form.line_items, form.tax_rate);
 
   const pickGoogleContact = async (c) => {
@@ -120,13 +115,11 @@ export default function InvoiceEditor() {
       queryClient.setQueryData(["customers"], (prev) => [...(prev || []), cust]);
     }
     setSelectedCustomerId(cust.id);
-    setForm((f) => ({ ...f, job_id: "" }));
   };
 
   const pickManualCustomer = (cust) => {
     queryClient.setQueryData(["customers"], (prev) => [...(prev || []), cust]);
     setSelectedCustomerId(cust.id);
-    setForm((f) => ({ ...f, job_id: "" }));
   };
 
   const setLineItems = (li) => setForm({ ...form, line_items: li });
@@ -148,19 +141,12 @@ export default function InvoiceEditor() {
 
   const save = async (send = false) => {
     if (!form.name) { toast({ description: `Name the ${docLabel}.` }); return; }
-    if (!selectedCustomerId && !form.job_id) { toast({ description: "Select a customer." }); return; }
+    if (!selectedCustomerId) { toast({ description: "Select a customer." }); return; }
     setSaving(true);
     try {
-      let jobId = form.job_id;
-      if (!jobId) {
-        const jb = await base44.entities.Job.create({ title: form.name, customer_id: selectedCustomerId, status: "scheduled" });
-        jobId = jb.id;
-        queryClient.setQueryData(["jobs"], (prev) => [jb, ...(prev || [])]);
-        setForm((f) => ({ ...f, job_id: jb.id }));
-      }
-      const basePayload = { ...form, job_id: jobId, ...totals, status: send ? "sent" : form.status };
+      const basePayload = { ...form, customer_id: selectedCustomerId, ...totals, status: send ? "sent" : form.status };
       const payload = isEstimate
-        ? { job_id: basePayload.job_id, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, total: basePayload.total, payment_schedule: basePayload.payment_schedule, status: basePayload.status, notes: basePayload.notes }
+        ? { customer_id: basePayload.customer_id, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, total: basePayload.total, payment_schedule: basePayload.payment_schedule, status: basePayload.status, notes: basePayload.notes }
         : basePayload;
       const entity = isEstimate ? base44.entities.Estimate : base44.entities.Invoice;
       let resultId = savedId;
@@ -260,7 +246,7 @@ export default function InvoiceEditor() {
             {selectedCustomerId ? (
               <div className="flex items-center justify-between gap-2 p-2.5 rounded-md border bg-muted/30">
                 <span className="font-medium text-sm truncate">{customerMap[selectedCustomerId]?.name || "Selected customer"}</span>
-                <Button type="button" variant="ghost" size="sm" onClick={() => { setSelectedCustomerId(""); setForm((f) => ({ ...f, job_id: "" })); }}>Change</Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedCustomerId("")}>Change</Button>
               </div>
             ) : (
               <div className="flex gap-2">
@@ -279,13 +265,6 @@ export default function InvoiceEditor() {
           <Label>Invoice name * <span className="text-muted-foreground font-normal">(describe the tasks performed)</span></Label>
           <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Replace bathroom vanity &amp; repair leak under sink" />
         </div>
-
-        {selectedJob && (
-          <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
-            <span className="font-medium text-foreground">{customerMap[selectedJob.customer_id]?.name || ""}</span>
-            {selectedJob.job_street && <span> · {selectedJob.job_street}, {selectedJob.job_city}</span>}
-          </div>
-        )}
 
         <div className="space-y-2">
           <Label>Line items</Label>

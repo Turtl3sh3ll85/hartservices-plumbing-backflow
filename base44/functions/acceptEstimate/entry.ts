@@ -23,7 +23,7 @@ export default async function(req) {
     const number = `INV-${new Date().getFullYear()}-${String(max + 1).padStart(4, "0")}`;
 
     const invoice = await base44.asServiceRole.entities.Invoice.create({
-      job_id: estimate.job_id,
+      customer_id: estimate.customer_id,
       number,
       name: estimate.name || estimate.number || "Converted estimate",
       line_items: estimate.line_items || [],

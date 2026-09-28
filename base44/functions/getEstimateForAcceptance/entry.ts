@@ -10,20 +10,16 @@ export default async function(req) {
     const estimate = await base44.asServiceRole.entities.Estimate.get(estimate_id);
     if (!estimate) return Response.json({ error: "Estimate not found" }, { status: 404 });
 
-    let job = null;
     let customer = null;
-    if (estimate.job_id) {
-      try { job = await base44.asServiceRole.entities.Job.get(estimate.job_id); } catch (e) {}
-      if (job && job.customer_id) {
-        try { customer = await base44.asServiceRole.entities.Customer.get(job.customer_id); } catch (e) {}
-      }
+    if (estimate.customer_id) {
+      try { customer = await base44.asServiceRole.entities.Customer.get(estimate.customer_id); } catch (e) {}
     }
     let settings = null;
     try {
       const allSettings = await base44.asServiceRole.entities.Settings.list();
       settings = allSettings[0] || null;
     } catch (e) {}
-    return Response.json({ estimate, job, customer, settings });
+    return Response.json({ estimate, customer, settings });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

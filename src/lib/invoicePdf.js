@@ -26,7 +26,7 @@ async function loadImageDataUrl(url) {
   });
 }
 
-export async function downloadInvoicePdf({ invoice, job, customer, settings }) {
+export async function downloadInvoicePdf({ invoice, customer, settings }) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const W = doc.internal.pageSize.getWidth();
   const M = 48;
@@ -89,7 +89,7 @@ export async function downloadInvoicePdf({ invoice, job, customer, settings }) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.text("BILL TO", M, y);
-  doc.text("JOB NAME", W / 2, y);
+  doc.text("DESCRIPTION", W / 2, y);
   y += 12;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -102,11 +102,8 @@ export async function downloadInvoicePdf({ invoice, job, customer, settings }) {
   billLines.forEach((l) => { doc.text(l, M, y); y += 13; });
 
   let y2 = y - billLines.length * 13;
-  const jobLines = [
-    job?.title,
-    job && fullAddress(job, "job_"),
-  ].filter(Boolean);
-  jobLines.forEach((l) => { doc.text(l, W / 2, y2); y2 += 13; });
+  const descLines = [invoice?.name].filter(Boolean);
+  descLines.forEach((l) => { doc.text(String(l).split("\n")[0], W / 2, y2); y2 += 13; });
   y = Math.max(y, y2) + 14;
 
   // Line items table

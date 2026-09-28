@@ -13,20 +13,17 @@ import { formatMoney } from "@/lib/invoice";
 
 export default function Estimates() {
   const { data: estimates = [], isLoading: loadingEstimates } = useQuery({ queryKey: ["estimates"], queryFn: () => base44.entities.Estimate.list("-created_date", 200) });
-  const { data: jobs = [], isLoading: loadingJobs } = useQuery({ queryKey: ["jobs"], queryFn: () => base44.entities.Job.list("-created_date", 200) });
   const { data: customers = [], isLoading: loadingCustomers } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
-  const loading = loadingEstimates || loadingJobs || loadingCustomers;
+  const loading = loadingEstimates || loadingCustomers;
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const jobMap = useMemo(() => Object.fromEntries(jobs.map((j) => [j.id, j])), [jobs]);
   const customerMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);
 
   const filtered = estimates.filter((e) => {
-    const j = jobMap[e.job_id];
-    const c = j ? customerMap[j.customer_id] : null;
+    const c = customerMap[e.customer_id];
     const q = query.toLowerCase();
-    const matchesQuery = !q || [e.name, e.number, j?.title, c?.name].join(" ").toLowerCase().includes(q);
+    const matchesQuery = !q || [e.name, e.number, c?.name].join(" ").toLowerCase().includes(q);
     const matchesStatus = statusFilter === "all" || e.status === statusFilter;
     return matchesQuery && matchesStatus;
   });
@@ -41,7 +38,7 @@ export default function Estimates() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, number, job, customer…" className="pl-9" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, number, customer…" className="pl-9" />
         </div>
         <MobileSelect
           value={statusFilter}
@@ -63,18 +60,17 @@ export default function Estimates() {
       {loading ? (
         <p className="text-muted-foreground">Loading…</p>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={ClipboardList} title="No estimates found" description="Create an estimate for a job, then convert it to an invoice when approved." action={<Button asChild><Link to="/estimates/new"><Plus className="w-4 h-4 mr-1" /> New estimate</Link></Button>} />
+        <EmptyState icon={ClipboardList} title="No estimates found" description="Create an estimate for a customer, then convert it to an invoice when approved." action={<Button asChild><Link to="/estimates/new"><Plus className="w-4 h-4 mr-1" /> New estimate</Link></Button>} />
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="divide-y">
             {filtered.map((e) => {
-              const j = jobMap[e.job_id];
-              const c = j ? customerMap[j.customer_id] : null;
+              const c = customerMap[e.customer_id];
               return (
                 <Link key={e.id} to={`/estimates/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11 hover:bg-accent transition-colors">
                   <div className="min-w-0">
                     <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
-                    <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}{j ? ` · ${j.title}` : ""}</div>
+                    <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>

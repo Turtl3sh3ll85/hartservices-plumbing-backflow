@@ -19,8 +19,6 @@ import RoleGuard from '@/components/RoleGuard';
 // Add page imports here (lazy-loaded for code splitting)
 const RoleHome = lazy(() => import('@/components/RoleHome'));
 const Customers = lazy(() => import('@/pages/Customers'));
-const Jobs = lazy(() => import('@/pages/Jobs'));
-const JobDetail = lazy(() => import('@/pages/JobDetail'));
 const Invoices = lazy(() => import('@/pages/Invoices'));
 const InvoiceEditor = lazy(() => import('@/pages/InvoiceEditor'));
 const Estimates = lazy(() => import('@/pages/Estimates'));
@@ -90,8 +88,6 @@ const AuthenticatedApp = () => {
             <Route element={<Layout />}>
               <Route path="/" element={<RoleHome />} />
               <Route path="/portal" element={<RoleGuard roles={["customer"]}><MyDocuments /></RoleGuard>} />
-              <Route path="/jobs" element={<RoleGuard roles={["admin", "tech"]}><Jobs /></RoleGuard>} />
-              <Route path="/jobs/:id" element={<RoleGuard roles={["admin", "tech"]}><JobDetail /></RoleGuard>} />
               <Route path="/invoices" element={<RoleGuard roles={["admin", "tech"]}><Invoices /></RoleGuard>} />
               <Route path="/invoices/new" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />
               <Route path="/invoices/:id" element={<RoleGuard roles={["admin", "tech"]}><InvoiceEditor /></RoleGuard>} />

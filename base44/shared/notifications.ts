@@ -9,7 +9,7 @@ export async function getBusinessContext(base44) {
   return { settings, brand, to };
 }
 
-export async function notifyInvoiceOpened(base44, { invoice, customer, job }) {
+export async function notifyInvoiceOpened(base44, { invoice, customer }) {
   try {
     const { brand, to } = await getBusinessContext(base44);
     if (!to) return { sent: false, reason: "no business email" };
@@ -20,7 +20,6 @@ export async function notifyInvoiceOpened(base44, { invoice, customer, job }) {
       <h2 style="color:#1d4ed8;margin-bottom:8px">${brand}</h2>
       <p><strong>${customerName}</strong> just opened invoice <strong>${invoice.name || invoice.number || ""}</strong>${invoice.number ? ` (${invoice.number})` : ""}.</p>
       <p>Amount: <strong>$${total}</strong>${invoice.payment_status === "partial" ? " (partially paid)" : ""}</p>
-      ${job?.title ? `<p style="color:#6b7280">Job: ${job.title}</p>` : ""}
       <p style="color:#6b7280;font-size:13px;margin-top:24px">This is an automated notification from ${brand}.</p>
     </div>`;
     await base44.asServiceRole.integrations.Core.SendEmail({ to, subject, html, from_name: brand });
@@ -30,7 +29,7 @@ export async function notifyInvoiceOpened(base44, { invoice, customer, job }) {
   }
 }
 
-export async function notifyPaymentReceived(base44, { invoice, customer, job, amount, paidInFull }) {
+export async function notifyPaymentReceived(base44, { invoice, customer, amount, paidInFull }) {
   try {
     const { brand, to } = await getBusinessContext(base44);
     if (!to) return { sent: false, reason: "no business email" };
@@ -42,7 +41,6 @@ export async function notifyPaymentReceived(base44, { invoice, customer, job, am
       <h2 style="color:#1d4ed8;margin-bottom:8px">${brand}</h2>
       <p>A payment of <strong>$${amountStr}</strong> was just received from <strong>${customerName}</strong> for invoice <strong>${invoice.name || invoice.number || ""}</strong>${invoice.number ? ` (${invoice.number})` : ""}.</p>
       <p>Invoice total: $${totalStr} — ${paidInFull ? "paid in full" : "partially paid"}</p>
-      ${job?.title ? `<p style="color:#6b7280">Job: ${job.title}</p>` : ""}
       <p style="color:#6b7280;font-size:13px;margin-top:24px">This is an automated notification from ${brand}.</p>
     </div>`;
     await base44.asServiceRole.integrations.Core.SendEmail({ to, subject, html, from_name: brand });

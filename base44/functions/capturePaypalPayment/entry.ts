@@ -58,16 +58,12 @@ export default async function(req) {
     }
 
     // Notify the business that a payment was received
-    let job = null;
     let customer = null;
-    if (invoice.job_id) {
-      try { job = await base44.asServiceRole.entities.Job.get(invoice.job_id); } catch (e) {}
-      if (job && job.customer_id) {
-        try { customer = await base44.asServiceRole.entities.Customer.get(job.customer_id); } catch (e) {}
-      }
+    if (invoice.customer_id) {
+      try { customer = await base44.asServiceRole.entities.Customer.get(invoice.customer_id); } catch (e) {}
     }
     try {
-      await notifyPaymentReceived(base44, { invoice, customer, job, amount: capturedAmount, paidInFull });
+      await notifyPaymentReceived(base44, { invoice, customer, amount: capturedAmount, paidInFull });
     } catch (e) {}
 
     return Response.json({ success: true, amount: capturedAmount, paid_in_full: paidInFull });

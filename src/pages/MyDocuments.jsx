@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -13,17 +12,14 @@ export default function MyDocuments() {
   const { user } = useAuth();
   const { data: invoices = [], isLoading: li } = useQuery({ queryKey: ["invoices"], queryFn: () => base44.entities.Invoice.list("-created_date", 200) });
   const { data: estimates = [], isLoading: le } = useQuery({ queryKey: ["estimates"], queryFn: () => base44.entities.Estimate.list("-created_date", 200) });
-  const { data: jobs = [], isLoading: lj } = useQuery({ queryKey: ["jobs"], queryFn: () => base44.entities.Job.list("-created_date", 200) });
   const { data: customers = [], isLoading: lc } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
-  const loading = li || le || lj || lc;
+  const loading = li || le || lc;
 
   const myCustomer = customers.find(
     (c) => c.email && user?.email && c.email.toLowerCase() === user.email.toLowerCase()
   );
-  const myJobIds = new Set(jobs.filter((j) => j.customer_id === myCustomer?.id).map((j) => j.id));
-  const myInvoices = invoices.filter((i) => myJobIds.has(i.job_id));
-  const myEstimates = estimates.filter((e) => myJobIds.has(e.job_id));
-  const jobMap = useMemo(() => Object.fromEntries(jobs.map((j) => [j.id, j])), [jobs]);
+  const myInvoices = invoices.filter((i) => i.customer_id === myCustomer?.id);
+  const myEstimates = estimates.filter((e) => e.customer_id === myCustomer?.id);
 
   if (loading) {
     return (
@@ -56,11 +52,10 @@ export default function MyDocuments() {
           <Card className="overflow-hidden p-0">
             <div className="divide-y">
               {myInvoices.map((i) => {
-                const j = jobMap[i.job_id];
                 return (
                   <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
                     <div className="min-w-0">
-                      <div className="font-medium truncate">{j?.title || i.name || "Invoice"}</div>
+                      <div className="font-medium truncate">{i.name || "Invoice"}</div>
                       <div className="text-sm text-muted-foreground truncate">
                         {i.name || i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
                       </div>
@@ -90,11 +85,10 @@ export default function MyDocuments() {
           <Card className="overflow-hidden p-0">
             <div className="divide-y">
               {myEstimates.map((e) => {
-                const j = jobMap[e.job_id];
                 return (
                   <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
                     <div className="min-w-0">
-                      <div className="font-medium truncate">{j?.title || e.name || "Estimate"}</div>
+                      <div className="font-medium truncate">{e.name || "Estimate"}</div>
                       <div className="text-sm text-muted-foreground truncate">{e.name || e.number}</div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">

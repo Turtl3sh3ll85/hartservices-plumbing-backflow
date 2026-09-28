@@ -2,9 +2,9 @@
   "name": "Invoice",
   "type": "object",
   "properties": {
-    "job_id": {
+    "customer_id": {
       "type": "string",
-      "title": "Job"
+      "title": "Customer"
     },
     "number": {
       "type": "string",
@@ -150,7 +150,7 @@
     }
   },
   "required": [
-    "job_id",
+    "customer_id",
     "name"
   ]
 }

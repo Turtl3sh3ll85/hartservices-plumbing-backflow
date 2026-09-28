@@ -11,19 +11,16 @@ export default async function(req) {
     }
     const brand = settings.business_name || "FlowPro Plumbing";
     const origin = new URL(req.url).origin;
-    const [invoices, jobs, customers] = await Promise.all([
+    const [invoices, customers] = await Promise.all([
       base44.asServiceRole.entities.Invoice.list("-created_date", 500),
-      base44.asServiceRole.entities.Job.list("-created_date", 500),
       base44.asServiceRole.entities.Customer.list("name", 500),
     ]);
-    const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
     const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
     const open = invoices.filter(isOpenInvoice);
 
     const byCustomer = new Map();
     for (const inv of open) {
-      const job = jobMap[inv.job_id];
-      const cid = job?.customer_id;
+      const cid = inv.customer_id;
       if (!cid) continue;
       if (!byCustomer.has(cid)) byCustomer.set(cid, []);
       byCustomer.get(cid).push(inv);

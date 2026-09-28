@@ -129,7 +129,6 @@ export default function Customers() {
                 {c.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 shrink-0" /><span>{c.phone}</span></div>}
                 {c.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4 shrink-0" /><span className="truncate">{c.email}</span></div>}
               </div>
-              <Button asChild variant="outline" size="sm" className="mt-1 w-full"><Link to={`/jobs?customer=${c.id}`}>View jobs</Link></Button>
             </Card>
           ))}
         </div>

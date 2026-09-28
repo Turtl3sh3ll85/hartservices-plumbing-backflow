@@ -13,20 +13,17 @@ import { formatMoney } from "@/lib/invoice";
 
 export default function Invoices() {
   const { data: invoices = [], isLoading: loadingInvoices } = useQuery({ queryKey: ["invoices"], queryFn: () => base44.entities.Invoice.list("-created_date", 200) });
-  const { data: jobs = [], isLoading: loadingJobs } = useQuery({ queryKey: ["jobs"], queryFn: () => base44.entities.Job.list("-created_date", 200) });
   const { data: customers = [], isLoading: loadingCustomers } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
-  const loading = loadingInvoices || loadingJobs || loadingCustomers;
+  const loading = loadingInvoices || loadingCustomers;
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const jobMap = useMemo(() => Object.fromEntries(jobs.map((j) => [j.id, j])), [jobs]);
   const customerMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);
 
   const filtered = invoices.filter((i) => {
-    const j = jobMap[i.job_id];
-    const c = j ? customerMap[j.customer_id] : null;
+    const c = customerMap[i.customer_id];
     const q = query.toLowerCase();
-    const matchesQuery = !q || [i.name, i.number, j?.title, c?.name].join(" ").toLowerCase().includes(q);
+    const matchesQuery = !q || [i.name, i.number, c?.name].join(" ").toLowerCase().includes(q);
     const matchesStatus = statusFilter === "all" || i.payment_status === statusFilter || i.status === statusFilter;
     return matchesQuery && matchesStatus;
   });
@@ -46,7 +43,7 @@ export default function Invoices() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, number, job, customer…" className="pl-9" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, number, customer…" className="pl-9" />
         </div>
         <MobileSelect
           value={statusFilter}
@@ -73,13 +70,12 @@ export default function Invoices() {
         <Card className="overflow-hidden p-0">
           <div className="divide-y">
             {filtered.map((i) => {
-              const j = jobMap[i.job_id];
-              const c = j ? customerMap[j.customer_id] : null;
+              const c = customerMap[i.customer_id];
               return (
                 <Link key={i.id} to={`/invoices/${i.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11 hover:bg-accent transition-colors">
                   <div className="min-w-0">
-                    <div className="font-medium truncate">{j?.title || "No job"}</div>
-                    <div className="text-sm text-muted-foreground truncate">{i.name || "Untitled invoice"} · {i.number}{c ? ` · ${c.name}` : ""}</div>
+                    <div className="font-medium truncate">{i.name || "Untitled invoice"}</div>
+                    <div className="text-sm text-muted-foreground truncate">{i.number}{c ? ` · ${c.name}` : ""}</div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>

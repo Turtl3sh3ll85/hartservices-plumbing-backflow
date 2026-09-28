@@ -11,13 +11,9 @@ export default async function(req) {
     const invoice = await base44.asServiceRole.entities.Invoice.get(invoice_id);
     if (!invoice) return Response.json({ error: "Invoice not found" }, { status: 404 });
 
-    let job = null;
     let customer = null;
-    if (invoice.job_id) {
-      try { job = await base44.asServiceRole.entities.Job.get(invoice.job_id); } catch (e) {}
-      if (job && job.customer_id) {
-        try { customer = await base44.asServiceRole.entities.Customer.get(job.customer_id); } catch (e) {}
-      }
+    if (invoice.customer_id) {
+      try { customer = await base44.asServiceRole.entities.Customer.get(invoice.customer_id); } catch (e) {}
     }
     let settings = null;
     try {
@@ -34,11 +30,11 @@ export default async function(req) {
     if (!invoice.opened) {
       try {
         await base44.asServiceRole.entities.Invoice.update(invoice_id, { opened: true });
-        await notifyInvoiceOpened(base44, { invoice, customer, job });
+        await notifyInvoiceOpened(base44, { invoice, customer });
       } catch (e) {}
     }
 
-    return Response.json({ invoice, job, customer, settings, attachments });
+    return Response.json({ invoice, customer, settings, attachments });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

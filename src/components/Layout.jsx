@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Outlet, NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, Wrench, Users, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, Users, ArrowLeft } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/lib/AuthContext";
 import { Image } from "@/components/ui/image";
@@ -10,7 +10,6 @@ import PullToRefresh from "@/components/PullToRefresh";
 
 const allNav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ["admin", "tech"] },
-  { to: "/jobs", label: "Jobs", icon: Wrench, roles: ["admin", "tech"] },
   { to: "/estimates", label: "Estimates", icon: ClipboardList, roles: ["admin", "tech"] },
   { to: "/invoices", label: "Invoices", icon: FileText, roles: ["admin", "tech"] },
   { to: "/customers", label: "Customers", icon: Users, roles: ["admin"] },

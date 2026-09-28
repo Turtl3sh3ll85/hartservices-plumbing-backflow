@@ -77,7 +77,7 @@ export default function PayInvoice() {
   const downloadPdf = async () => {
     setDownloading(true);
     try {
-      await downloadInvoicePdf({ invoice, job, customer, settings: biz });
+      await downloadInvoicePdf({ invoice, customer, settings: biz });
     } finally {
       setDownloading(false);
     }
@@ -91,7 +91,7 @@ export default function PayInvoice() {
     );
   }
 
-  const { invoice, job, customer, settings, attachments } = data || {};
+  const { invoice, customer, settings, attachments } = data || {};
   const biz = settings || {};
   const brand = biz.business_name || "FlowPro Plumbing";
   const schedule = invoice?.payment_schedule || [];
@@ -172,19 +172,12 @@ export default function PayInvoice() {
             </div>
           </div>
 
-          {(customer || job) && (
-            <div className="p-6 border-b grid sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Bill to</div>
-                {customer && <div className="font-medium">{customer.name}</div>}
-                {customer?.company && <div className="text-muted-foreground">{customer.company}</div>}
-                {customer && fullAddress(customer) && <div className="text-muted-foreground">{fullAddress(customer)}</div>}
-              </div>
-              <div className="sm:text-right">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Job site</div>
-                {job?.title && <div className="font-medium">{job.title}</div>}
-                {job && fullAddress(job, "job_") && <div className="text-muted-foreground">{fullAddress(job, "job_")}</div>}
-              </div>
+          {customer && (
+            <div className="p-6 border-b text-sm">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Bill to</div>
+              <div className="font-medium">{customer.name}</div>
+              {customer?.company && <div className="text-muted-foreground">{customer.company}</div>}
+              {fullAddress(customer) && <div className="text-muted-foreground">{fullAddress(customer)}</div>}
             </div>
           )}
 

@@ -4,23 +4,20 @@ import { isOpenInvoice, money } from "../../shared/invoiceReminders.ts";
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
-    const [invoices, jobs, customers, settingsList] = await Promise.all([
+    const [invoices, customers, settingsList] = await Promise.all([
       base44.asServiceRole.entities.Invoice.list("-created_date", 500),
-      base44.asServiceRole.entities.Job.list("-created_date", 500),
       base44.asServiceRole.entities.Customer.list("name", 500),
       base44.asServiceRole.entities.Settings.list(),
     ]);
     const settings = settingsList[0] || {};
     const brand = settings.business_name || "FlowPro Plumbing";
     const origin = new URL(req.url).origin;
-    const jobMap = Object.fromEntries(jobs.map((j) => [j.id, j]));
     const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
 
     const open = invoices.filter((inv) => isOpenInvoice(inv) && inv.reminders_enabled !== false);
     const sent = [];
     for (const inv of open) {
-      const job = jobMap[inv.job_id];
-      const customer = job ? customerMap[job.customer_id] : null;
+      const customer = customerMap[inv.customer_id];
       if (!customer?.email) { sent.push({ id: inv.id, skipped: "no customer email" }); continue; }
       const link = `${origin}/pay/${inv.id}`;
       const subject = `Reminder: invoice from ${brand}`;

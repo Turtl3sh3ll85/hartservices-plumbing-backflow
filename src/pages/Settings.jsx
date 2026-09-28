@@ -157,7 +157,7 @@ export default function Settings() {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete account?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete all data you've created — customers, jobs, invoices, estimates, contracts, and more. This action cannot be undone.</AlertDialogDescription>
+                <AlertDialogDescription>This will permanently delete all data you've created — customers, invoices, estimates, and more. This action cannot be undone.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>

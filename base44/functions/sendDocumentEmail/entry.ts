@@ -13,13 +13,8 @@ export default async function(req) {
 
     let customer = null;
     let settings = null;
-    if (doc.job_id) {
-      try {
-        const job = await base44.asServiceRole.entities.Job.get(doc.job_id);
-        if (job && job.customer_id) {
-          try { customer = await base44.asServiceRole.entities.Customer.get(job.customer_id); } catch (e) {}
-        }
-      } catch (e) {}
+    if (doc.customer_id) {
+      try { customer = await base44.asServiceRole.entities.Customer.get(doc.customer_id); } catch (e) {}
     }
     try {
       const allSettings = await base44.asServiceRole.entities.Settings.list();
