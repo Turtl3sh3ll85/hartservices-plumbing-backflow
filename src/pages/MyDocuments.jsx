@@ -19,7 +19,7 @@ export default function MyDocuments() {
   const [hidePaid, setHidePaid] = useState(false);
   const [linking, setLinking] = useState(false);
   const [linkFailed, setLinkFailed] = useState(false);
-  const { data: portal = {}, isLoading } = useQuery({
+  const { data: portal = {}, isLoading, error: portalError } = useQuery({
     queryKey: ["myPortalDocuments"],
     queryFn: async () => {
       const res = await base44.functions.invoke('getMyPortalDocuments', {});
@@ -64,8 +64,12 @@ export default function MyDocuments() {
 
   if (!myCustomer) {
     return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground">No customer record is linked to your account. Contact the business to be added.</p>
+      <div className="text-center py-20 space-y-2">
+        {portalError ? (
+          <p className="text-destructive text-sm">Error loading documents: {portalError.message || String(portalError)}</p>
+        ) : (
+          <p className="text-muted-foreground">No customer record is linked to your account. Contact the business to be added.</p>
+        )}
       </div>
     );
   }
@@ -90,6 +94,7 @@ export default function MyDocuments() {
         {visibleInvoices.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             {myInvoices.length === 0 ? "No invoices yet." : "All invoices are hidden."}
+            <div className="mt-2 text-xs">[debug] user={user?.email || "none"} invoices={invoices.length} customers={customers.length} error={portalError?.message || "none"}</div>
           </Card>
         ) : (
           <Card className="overflow-hidden p-0">
