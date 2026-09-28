@@ -8,6 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import InvoicePaymentControl from "@/components/InvoicePaymentControl";
 import PaidAmountLabel from "@/components/PaidAmountLabel";
+import InvoicePaymentSchedule from "@/components/portal/InvoicePaymentSchedule";
 import { formatMoney } from "@/lib/invoice";
 
 export default function Dashboard() {
@@ -67,19 +68,22 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-2">
               {outstandingInvoices.slice(0, 6).map((i) => (
-                <div key={i.id} className="flex items-center justify-between gap-3 p-2.5 min-h-11 rounded-lg hover:bg-accent transition-colors">
-                  <Link to={`/invoices/${i.id}`} className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate">{i.name || i.number}</div>
-                    <div className="text-xs text-muted-foreground">{i.number}</div>
-                  </Link>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                      <InvoicePaymentControl invoice={i} />
+                <div key={i.id} className="p-2.5 rounded-lg hover:bg-accent transition-colors">
+                  <div className="flex items-center justify-between gap-3 min-h-11">
+                    <Link to={`/invoices/${i.id}`} className="min-w-0 flex-1">
+                      <div className="font-medium text-sm truncate">{i.name || i.number}</div>
+                      <div className="text-xs text-muted-foreground">{i.number}</div>
+                    </Link>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
+                        <InvoicePaymentControl invoice={i} />
+                      </div>
+                      <PaidAmountLabel invoice={i} />
+                      <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                     </div>
-                    <PaidAmountLabel invoice={i} />
-                    <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                   </div>
+                  <InvoicePaymentSchedule invoice={i} />
                 </div>
               ))}
             </div>
