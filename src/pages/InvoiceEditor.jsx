@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus, ClipboardList, FileText } from "lucide-react";
+import { ArrowLeft, Save, Send, Copy, Check, Link as LinkIcon, Contact, Plus, ClipboardList, FileText, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -356,7 +356,10 @@ export default function InvoiceEditor() {
       </Card>
 
       <Card className="p-5 space-y-4">
-        <SectionTitle icon={ClipboardList}>Line items</SectionTitle>
+        <div className="flex items-center justify-between gap-2">
+          <SectionTitle icon={ClipboardList}>Line items</SectionTitle>
+          <Button type="button" variant="outline" size="sm" onClick={() => setSheetOpen(true)}><FileSpreadsheet className="w-4 h-4 mr-1" /> Add from sheet</Button>
+        </div>
         <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} modifiersCatalog={modifiersCatalog} />
         <p className="text-sm text-muted-foreground italic">{isEstimate ? "Estimates are valid for 30 days unless otherwise noted." : "Invoices are due within 7 days of issuance unless otherwise noted."}</p>
       </Card>
