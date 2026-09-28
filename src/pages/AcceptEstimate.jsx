@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Droplet, CheckCircle2, Loader2, ShieldCheck, FileText, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
-import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
+import { formatMoney, lineTotal } from "@/lib/invoice";
 import ServiceTerms from "@/components/ServiceTerms";
+import BillTo from "@/components/BillTo";
 
 export default function AcceptEstimate() {
   const { estimateId } = useParams();
@@ -95,10 +96,7 @@ export default function AcceptEstimate() {
 
           {customer && (
             <div className="p-6 border-b text-sm">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Bill to</div>
-              <div className="font-medium">{customer.name}</div>
-              {customer?.company && <div className="text-muted-foreground">{customer.company}</div>}
-              {fullAddress(customer) && <div className="text-muted-foreground">{fullAddress(customer)}</div>}
+              <BillTo customer={customer} />
             </div>
           )}
 

@@ -105,12 +105,22 @@ async function buildDocumentPdf({ doc, customer, settings, kind }) {
   docPdf.setFont("helvetica", "normal");
   docPdf.setFontSize(10);
 
-  const billLines = [
-    customer?.name,
-    customer?.company,
-    customer && fullAddress(customer),
-  ].filter(Boolean);
-  billLines.forEach((l) => { docPdf.text(l, M, y); y += 13; });
+  const billLines = [];
+  if (customer?.company) {
+    billLines.push({ text: customer.company, bold: true });
+    if (customer.name) billLines.push({ text: customer.name, bold: false });
+  } else if (customer?.name) {
+    billLines.push({ text: customer.name, bold: true });
+  }
+  if (customer?.email) billLines.push({ text: customer.email, bold: false });
+  if (customer?.phone) billLines.push({ text: customer.phone, bold: false });
+  if (customer && fullAddress(customer)) billLines.push({ text: fullAddress(customer), bold: false });
+  billLines.forEach((l) => {
+    docPdf.setFont("helvetica", l.bold ? "bold" : "normal");
+    docPdf.setFontSize(l.bold ? 10 : 9);
+    docPdf.text(l.text, M, y);
+    y += 13;
+  });
 
   let y2 = y - billLines.length * 13;
   const descLines = [doc?.name].filter(Boolean);

@@ -4,9 +4,10 @@ import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Droplet, CheckCircle2, Loader2, CreditCard, ShieldCheck, CheckCircle, FileDown, Paperclip, FileText, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
-import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection } from "@/lib/invoice";
+import { formatMoney, lineTotal, groupLineItemsBySection } from "@/lib/invoice";
 import { downloadInvoicePdf } from "@/lib/invoicePdf";
 import ServiceTerms from "@/components/ServiceTerms";
+import BillTo from "@/components/BillTo";
 
 function installmentAmount(item, total) {
   return item.type === "percentage"
@@ -175,10 +176,7 @@ export default function PayInvoice() {
 
           {customer && (
             <div className="p-6 border-b text-sm">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Bill to</div>
-              <div className="font-medium">{customer.name}</div>
-              {customer?.company && <div className="text-muted-foreground">{customer.company}</div>}
-              {fullAddress(customer) && <div className="text-muted-foreground">{fullAddress(customer)}</div>}
+              <BillTo customer={customer} />
             </div>
           )}
 

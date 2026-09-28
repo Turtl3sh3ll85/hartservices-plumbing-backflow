@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
 import BackflowReportsAdmin from "@/components/admin/BackflowReportsAdmin";
+import BillTo from "@/components/BillTo";
 
 export default function UserDetail() {
   const { id } = useParams();
@@ -63,6 +64,12 @@ export default function UserDetail() {
         <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">{user.full_name || user.email}</h1>
         <p className="text-muted-foreground text-sm mt-1">{user.email} · <span className="capitalize">{user.role}</span></p>
       </div>
+
+      {customer && (
+        <Card className="p-6">
+          <BillTo customer={customer} className="text-sm" />
+        </Card>
+      )}
 
       <div>
         <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><FileText className="w-4 h-4" /> Invoices</h2>
