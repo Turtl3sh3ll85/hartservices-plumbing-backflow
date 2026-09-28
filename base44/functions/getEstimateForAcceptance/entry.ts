@@ -19,6 +19,19 @@ export default async function(req) {
       const allSettings = await base44.asServiceRole.entities.Settings.list();
       settings = allSettings[0] || null;
     } catch (e) {}
+
+    // Stamp the open timestamp every time; mark opened the first time
+    const now = new Date().toISOString();
+    try {
+      if (!estimate.opened) {
+        await base44.asServiceRole.entities.Estimate.update(estimate_id, { opened: true, last_opened_date: now });
+        estimate.opened = true;
+      } else {
+        await base44.asServiceRole.entities.Estimate.update(estimate_id, { last_opened_date: now });
+      }
+      estimate.last_opened_date = now;
+    } catch (e) {}
+
     return Response.json({ estimate, customer, settings });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

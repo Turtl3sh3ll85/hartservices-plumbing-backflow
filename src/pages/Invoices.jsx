@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import StatusBadge from "@/components/StatusBadge";
+import OpenedIndicator from "@/components/OpenedIndicator";
 import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
@@ -120,9 +121,10 @@ export default function Invoices() {
                       <div className="font-medium truncate">{i.name || "Untitled invoice"}</div>
                       <div className="text-sm text-muted-foreground truncate">{i.number}{c ? ` · ${c.name}` : ""}</div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                      {i.payment_status === "paid" ? (
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
+                        {i.payment_status === "paid" ? (
                         <StatusBadge status="paid" />
                       ) : (
                         <DropdownMenu>
@@ -143,6 +145,8 @@ export default function Invoices() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
+                      </div>
+                      <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                     </div>
                   </Link>
                   <Button

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import StatusBadge from "@/components/StatusBadge";
+import OpenedIndicator from "@/components/OpenedIndicator";
 import EmptyState from "@/components/EmptyState";
 import { formatMoney } from "@/lib/invoice";
 
@@ -72,9 +73,12 @@ export default function Estimates() {
                     <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
                     <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}</div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
-                    <StatusBadge status={e.status} />
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
+                      <StatusBadge status={e.status} />
+                    </div>
+                    <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
                   </div>
                 </Link>
               );

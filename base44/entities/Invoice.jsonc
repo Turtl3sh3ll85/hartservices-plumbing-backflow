@@ -164,6 +164,11 @@
       "default": false,
       "title": "Opened by customer"
     },
+    "last_opened_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Opened Date"
+    },
     "reminders_enabled": {
       "type": "boolean",
       "default": true,

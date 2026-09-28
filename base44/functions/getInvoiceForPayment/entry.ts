@@ -27,13 +27,16 @@ export default async function(req) {
       attachments = all.filter((a) => !a.internal);
     } catch (e) {}
 
-    // Notify the business the first time the customer opens this invoice
-    if (!invoice.opened) {
-      try {
-        await base44.asServiceRole.entities.Invoice.update(invoice_id, { opened: true });
+    // Stamp the open timestamp every time; notify the business the first time
+    const now = new Date().toISOString();
+    try {
+      if (!invoice.opened) {
+        await base44.asServiceRole.entities.Invoice.update(invoice_id, { opened: true, last_opened_date: now });
         await notifyInvoiceOpened(base44, { invoice, customer });
-      } catch (e) {}
-    }
+      } else {
+        await base44.asServiceRole.entities.Invoice.update(invoice_id, { last_opened_date: now });
+      }
+    } catch (e) {}
 
     return Response.json({ invoice, customer, settings, attachments });
   } catch (error) {

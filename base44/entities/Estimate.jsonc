@@ -116,6 +116,16 @@
       "type": "string",
       "title": "Converted Invoice ID"
     },
+    "opened": {
+      "type": "boolean",
+      "default": false,
+      "title": "Opened by customer"
+    },
+    "last_opened_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Opened Date"
+    },
     "notes": {
       "type": "string",
       "title": "Notes"
