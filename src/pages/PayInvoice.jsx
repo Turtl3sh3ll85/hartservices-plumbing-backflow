@@ -184,24 +184,26 @@ export default function PayInvoice() {
           <div className="p-6">
             <div className="space-y-3">
               {groupLineItemsBySection(invoice.line_items).map(({ section, items }, gi) => (
-                <div key={gi} className="space-y-2">
-                  {section && <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-1">{section}</div>}
-                  {items.map((li, i) => (
-                    <div key={i} className="flex justify-between text-sm py-1.5 gap-3">
-                      <div className="flex items-start gap-3 min-w-0">
-                        {li.image_url && (
-                          <div className="w-12 h-12 rounded-md overflow-hidden border bg-muted shrink-0">
-                            <Image src={li.image_url} alt="" className="w-full h-full object-cover" />
+                <div key={gi} className={section ? "rounded-lg border overflow-hidden" : ""}>
+                  {section && <div className="bg-primary/10 px-3 py-2 font-heading font-semibold text-primary">{section}</div>}
+                  <div className={section ? "p-3 space-y-2" : "space-y-2"}>
+                    {items.map((li, i) => (
+                      <div key={i} className="flex justify-between text-sm py-1.5 gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          {li.image_url && (
+                            <div className="w-12 h-12 rounded-md overflow-hidden border bg-muted shrink-0">
+                              <Image src={li.image_url} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="font-medium">{li.description || "—"}</div>
+                            <div className="text-xs text-muted-foreground">{li.quantity} × {formatMoney(li.unit_price)}</div>
                           </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="font-medium">{li.description || "—"}</div>
-                          <div className="text-xs text-muted-foreground">{li.quantity} × {formatMoney(li.unit_price)}</div>
                         </div>
+                        <div className="tabular-nums shrink-0">{formatMoney(lineTotal(li))}</div>
                       </div>
-                      <div className="tabular-nums shrink-0">{formatMoney(lineTotal(li))}</div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

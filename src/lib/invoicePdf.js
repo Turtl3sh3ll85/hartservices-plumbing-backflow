@@ -123,13 +123,16 @@ export async function downloadInvoicePdf({ invoice, customer, settings }) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   for (const { section, items } of groupLineItemsBySection(invoice.line_items)) {
+    const boxTop = section ? y - 4 : null;
     if (section) {
+      doc.setFillColor(235, 240, 250);
+      doc.rect(M, y - 10, W - M * 2, 16, "F");
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(90);
-      doc.text(section, colX.desc, y);
+      doc.setFontSize(10);
+      doc.setTextColor(40, 60, 120);
+      doc.text(section, M + 6, y);
       doc.setTextColor(0);
-      y += 14;
+      y += 16;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
     }
@@ -153,6 +156,11 @@ export async function downloadInvoicePdf({ invoice, customer, settings }) {
       doc.text(formatMoney(li.unit_price), colX.price, y, { align: "right" });
       doc.text(formatMoney(lineTotal(li)), colX.total, y, { align: "right" });
       y += 16;
+    }
+    if (section) {
+      doc.setDrawColor(200);
+      doc.rect(M, boxTop, W - M * 2, y - boxTop);
+      y += 8;
     }
   }
 
