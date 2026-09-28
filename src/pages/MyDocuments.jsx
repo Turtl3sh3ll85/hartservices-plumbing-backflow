@@ -23,6 +23,7 @@ export default function MyDocuments() {
     queryKey: ["myPortalDocuments"],
     queryFn: async () => {
       const res = await base44.functions.invoke('getMyPortalDocuments', {});
+      if (!res.data) throw new Error(res.error || 'Failed to load documents');
       return res.data;
     }
   });
@@ -94,7 +95,7 @@ export default function MyDocuments() {
         {visibleInvoices.length === 0 ? (
           <Card className="p-6 text-center text-sm text-muted-foreground">
             {myInvoices.length === 0 ? "No invoices yet." : "All invoices are hidden."}
-            <div className="mt-2 text-xs">[debug] user={user?.email || "none"} invoices={invoices.length} customers={customers.length} error={portalError?.message || "none"}</div>
+            <div className="mt-2 text-xs">[debug] user={user?.email || "none"} resolved={portal.resolved_email || "none"} invoices={invoices.length} customers={customers.length} error={portalError?.message || "none"}</div>
           </Card>
         ) : (
           <Card className="overflow-hidden p-0">

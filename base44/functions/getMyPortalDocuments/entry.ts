@@ -23,6 +23,7 @@ export default async function(req) {
       invoices: myInvoices,
       estimates: myEstimates,
       customers: myCustomers,
+      resolved_email: email,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
