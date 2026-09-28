@@ -65,18 +65,28 @@ export default function MyDocuments() {
 
   if (!myCustomer) {
     return (
-      <div className="text-center py-20 space-y-2">
-        {portalError ? (
-          <p className="text-destructive text-sm">Error loading documents: {portalError.message || String(portalError)}</p>
-        ) : (
-          <p className="text-muted-foreground">No customer record is linked to your account. Contact the business to be added.</p>
-        )}
+      <div className="space-y-4">
+        <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 rounded-lg p-3 text-xs">
+          <div className="font-semibold mb-1">Diagnostic info (please copy and paste this to the chat):</div>
+          <div className="font-mono break-all">user={user?.email || "none"} | resolved={portal.resolved_email || "none"} | invoices={invoices.length} | customers={customers.length} | estimates={estimates.length} | error={portalError?.message || "none"} | linkFailed={String(linkFailed)}</div>
+        </div>
+        <div className="text-center py-20 space-y-2">
+          {portalError ? (
+            <p className="text-destructive text-sm">Error loading documents: {portalError.message || String(portalError)}</p>
+          ) : (
+            <p className="text-muted-foreground">No customer record is linked to your account. Contact the business to be added.</p>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
+      <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 rounded-lg p-3 text-xs">
+        <div className="font-semibold mb-1">Diagnostic info (please copy and paste this to the chat):</div>
+        <div className="font-mono break-all">user={user?.email || "none"} | resolved={portal.resolved_email || "none"} | invoices={invoices.length} | customers={customers.length} | estimates={estimates.length} | error={portalError?.message || "none"}</div>
+      </div>
       <div>
         <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">My documents</h1>
         <p className="text-muted-foreground text-sm mt-1">Your invoices, estimates, service requests, and reminders.</p>
