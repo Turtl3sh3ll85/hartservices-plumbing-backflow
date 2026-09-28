@@ -39,7 +39,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-white">
       <div className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center text-center mb-8">
@@ -47,7 +47,9 @@ export default function Login() {
               <Image src={LOGO_URL} alt="HartServices Plumbing & Backflow" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Welcome to HartServices Plumbing &amp; Backflow Customer Portal
+              Welcome to<br />
+              HartServices Plumbing &amp; Backflow<br />
+              Customer Portal
             </h1>
           </div>
 
