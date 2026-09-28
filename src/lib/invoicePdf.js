@@ -1,4 +1,3 @@
-import jsPDF from "jspdf";
 import { formatMoney, lineTotal, fullAddress } from "@/lib/invoice";
 import { TERMS, ACKNOWLEDGMENT } from "@/lib/serviceTerms";
 
@@ -27,6 +26,7 @@ async function loadImageDataUrl(url) {
 }
 
 export async function downloadInvoicePdf({ invoice, customer, settings }) {
+  const { default: jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const W = doc.internal.pageSize.getWidth();
   const M = 48;

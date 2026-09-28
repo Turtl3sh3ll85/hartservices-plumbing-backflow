@@ -143,6 +143,16 @@ export default function InvoiceEditor() {
     if (!form.name) { toast({ description: `Name the ${docLabel}.` }); return; }
     if (!selectedCustomerId) { toast({ description: "Select a customer." }); return; }
     setSaving(true);
+    const listKey = isEstimate ? "estimates" : "invoices";
+    const tempId = savedId || `temp-${Date.now()}`;
+    const optimistic = { ...form, customer_id: selectedCustomerId, ...totals, status: send ? "sent" : form.status, id: tempId };
+    const prevList = queryClient.getQueryData([listKey]);
+    queryClient.setQueryData([listKey], (old) => {
+      const arr = old || [];
+      const idx = arr.findIndex((x) => x.id === (savedId || tempId));
+      if (idx >= 0) return arr.map((x) => (x.id === savedId ? { ...x, ...optimistic } : x));
+      return [optimistic, ...arr];
+    });
     try {
       const basePayload = { ...form, customer_id: selectedCustomerId, ...totals, status: send ? "sent" : form.status };
       const payload = isEstimate
@@ -150,13 +160,16 @@ export default function InvoiceEditor() {
         : basePayload;
       const entity = isEstimate ? base44.entities.Estimate : base44.entities.Invoice;
       let resultId = savedId;
+      let savedRecord;
       if (isEdit || savedId) {
-        await entity.update(savedId, payload);
+        savedRecord = await entity.update(savedId, payload);
       } else {
         const created = await entity.create(payload);
         resultId = created.id;
+        savedRecord = created;
         setSavedId(resultId);
       }
+      queryClient.setQueryData([listKey], (old) => (old || []).map((x) => (x.id === tempId ? { ...savedRecord, id: resultId } : x)));
       if (pendingAttachments.length) {
         const flushed = [];
         for (const p of pendingAttachments) {
@@ -203,7 +216,10 @@ export default function InvoiceEditor() {
         }
       }
       navigate(`/${isEstimate ? "estimates" : "invoices"}/${resultId}`);
-    } catch (e) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
+    } catch (e) {
+      queryClient.setQueryData([listKey], prevList);
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
     setSaving(false);
   };
 
