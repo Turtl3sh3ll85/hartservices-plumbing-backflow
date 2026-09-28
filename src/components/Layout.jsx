@@ -2,9 +2,10 @@ import { useEffect, useRef } from "react";
 import { Outlet, NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, UserCog, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, UserCog, ArrowLeft, LogOut } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/lib/AuthContext";
+import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import PullToRefresh from "@/components/PullToRefresh";
 
@@ -29,7 +30,7 @@ function BrandMark({ settings, size = "md" }) {
 
 export default function Layout() {
   const { settings } = useSettings();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -144,20 +145,20 @@ export default function Layout() {
 
       <div className="flex-1 flex flex-col min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         <header
-          className="md:hidden min-h-14 flex items-center gap-2.5 px-4 border-b bg-card sticky top-0 z-10"
+          className="min-h-14 flex items-center gap-2.5 px-4 border-b bg-card sticky top-0 z-10"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           {isChildRoute ? (
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-1.5 -ml-1 px-1 min-h-11 min-w-11 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="md:hidden flex items-center gap-1.5 -ml-1 px-1 min-h-11 min-w-11 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Back"
             >
               <ArrowLeft className="w-5 h-5" />
               <span>Back</span>
             </button>
           ) : (
-            <>
+            <div className="md:hidden flex items-center gap-2.5 min-w-0">
               <BrandMark settings={settings} size="sm" />
               <span className="font-heading font-semibold shrink-0">{short}</span>
               {activeItem && (
@@ -166,8 +167,28 @@ export default function Layout() {
                   <span className="text-sm font-medium text-muted-foreground truncate min-w-0">{activeItem.label}</span>
                 </>
               )}
-            </>
+            </div>
           )}
+          <div className="hidden md:flex items-center gap-3 ml-1 min-w-0">
+            {activeItem && (
+              <span className="text-sm font-medium text-muted-foreground truncate">{activeItem.label}</span>
+            )}
+          </div>
+          <div className="ml-auto flex items-center gap-3">
+            {user?.email && (
+              <span className="hidden sm:block text-xs text-muted-foreground truncate max-w-[200px]">{user.email}</span>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => logout()}
+              className="text-muted-foreground hover:text-destructive gap-1.5"
+              aria-label="Log out"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Log out</span>
+            </Button>
+          </div>
         </header>
         <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overscroll-none">
           <PullToRefresh onRefresh={async () => { await queryClient.invalidateQueries(); }}>
