@@ -60,7 +60,7 @@ export default function DriveFileMonitor() {
                   )}
                 </button>
                 <div className="min-w-0 flex-1">
-                  <div className="font-medium truncate text-sm">{f.name}</div>
+                  <div className="font-medium text-sm break-words leading-snug">{f.name}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {new Date(f.modifiedTime).toLocaleDateString()}
                   </div>
