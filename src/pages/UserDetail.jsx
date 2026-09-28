@@ -81,8 +81,8 @@ export default function UserDetail() {
         <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
           <Link to="/users"><ArrowLeft className="w-4 h-4 mr-1" /> Users</Link>
         </Button>
-        <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight hidden">{customer?.company || user.full_name || user.email}</h1>
-        <p className="text-muted-foreground text-sm mt-1 hidden">{user.email} · <span className="capitalize">{user.role}</span></p>
+        
+        
       </div>
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
