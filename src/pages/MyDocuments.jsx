@@ -19,19 +19,22 @@ export default function MyDocuments() {
   const [hidePaid, setHidePaid] = useState(false);
   const [linking, setLinking] = useState(false);
   const [linkFailed, setLinkFailed] = useState(false);
-  const { data: invoices = [], isLoading: li } = useQuery({ queryKey: ["invoices"], queryFn: () => base44.entities.Invoice.list("-created_date", 200) });
-  const { data: estimates = [], isLoading: le } = useQuery({ queryKey: ["estimates"], queryFn: () => base44.entities.Estimate.list("-created_date", 200) });
-  const { data: customers = [], isLoading: lc } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("-updated_date", 500) });
-  const loading = li || le || lc;
+  const { data: portal = {}, isLoading } = useQuery({
+    queryKey: ["myPortalDocuments"],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getMyPortalDocuments', {});
+      return res.data;
+    }
+  });
+  const invoices = portal.invoices || [];
+  const estimates = portal.estimates || [];
+  const customers = portal.customers || [];
+  const loading = isLoading;
 
   const myCustomer = useMemo(() => {
-    if (!user?.email) return null;
-    const email = user.email.trim().toLowerCase();
-    const matches = customers.filter((c) => c.email && c.email.trim().toLowerCase() === email);
-    if (matches.length === 0) return null;
-    // When several customers share the same email, use the most recently updated one.
-    return matches.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date))[0];
-  }, [customers, user]);
+    if (customers.length === 0) return null;
+    return customers.slice().sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date))[0];
+  }, [customers]);
 
   // Auto-link: if no customer record matches the signed-in user's email, create one
   // so the portal always has a linked customer record.
@@ -42,14 +45,13 @@ export default function MyDocuments() {
       name: user.full_name || user.email,
       email: user.email,
     })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["customers"] }))
+      .then(() => queryClient.invalidateQueries({ queryKey: ["myPortalDocuments"] }))
       .catch(() => setLinkFailed(true))
       .finally(() => setLinking(false));
   }, [loading, linking, linkFailed, myCustomer, user, queryClient]);
 
-  const userEmail = user?.email?.trim().toLowerCase();
-  const myInvoices = invoices.filter((i) => i.customer_email && i.customer_email.trim().toLowerCase() === userEmail);
-  const myEstimates = estimates.filter((e) => e.customer_email && e.customer_email.trim().toLowerCase() === userEmail);
+  const myInvoices = invoices;
+  const myEstimates = estimates;
   const visibleInvoices = hidePaid ? myInvoices.filter((i) => i.payment_status !== "paid") : myInvoices;
 
   if (loading || linking) {
