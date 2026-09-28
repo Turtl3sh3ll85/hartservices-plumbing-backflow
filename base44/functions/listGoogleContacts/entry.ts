@@ -8,7 +8,7 @@ export default async function(req) {
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('googleworkspace');
 
-    const url = 'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers&pageSize=1000';
+    const url = 'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,organizations&pageSize=1000';
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!res.ok) {
       const text = await res.text();
@@ -20,6 +20,7 @@ export default async function(req) {
         name: p.names?.[0]?.displayName || '',
         email: p.emailAddresses?.[0]?.value || '',
         phone: p.phoneNumbers?.[0]?.value || '',
+        company: p.organizations?.[0]?.name || '',
       }))
       .filter((c) => c.name || c.email);
 

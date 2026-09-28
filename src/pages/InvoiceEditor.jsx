@@ -125,8 +125,11 @@ export default function InvoiceEditor() {
   const pickGoogleContact = async (c) => {
     let cust = customers.find((cu) => cu.email && c.email && cu.email.toLowerCase() === c.email.toLowerCase());
     if (!cust) {
-      cust = await base44.entities.Customer.create({ name: c.name || c.email, email: c.email || "", phone: c.phone || "" });
+      cust = await base44.entities.Customer.create({ name: c.name || c.email, email: c.email || "", phone: c.phone || "", company: c.company || "" });
       queryClient.setQueryData(["customers"], (prev) => [...(prev || []), cust]);
+    } else if (c.company && !cust.company) {
+      cust = await base44.entities.Customer.update(cust.id, { company: c.company });
+      queryClient.setQueryData(["customers"], (prev) => (prev || []).map((cu) => (cu.id === cust.id ? cust : cu)));
     }
     setSelectedCustomerId(cust.id);
   };

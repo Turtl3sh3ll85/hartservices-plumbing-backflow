@@ -28,7 +28,7 @@ export default function GoogleContactsDialog({ open, onOpenChange, onPick }) {
   }, [open]);
 
   const filtered = query
-    ? contacts.filter((c) => `${c.name} ${c.email} ${c.phone}`.toLowerCase().includes(query.toLowerCase()))
+    ? contacts.filter((c) => `${c.name} ${c.email} ${c.phone} ${c.company || ""}`.toLowerCase().includes(query.toLowerCase()))
     : contacts;
 
   return (
@@ -55,6 +55,7 @@ export default function GoogleContactsDialog({ open, onOpenChange, onPick }) {
                   <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0"><User className="w-4 h-4 text-muted-foreground" /></div>
                   <div className="min-w-0">
                     <div className="font-medium text-sm truncate">{c.name || c.email}</div>
+                    {c.company && <div className="text-xs text-foreground/70 truncate font-medium">{c.company}</div>}
                     <div className="text-xs text-muted-foreground truncate">{c.email}{c.phone ? ` · ${c.phone}` : ""}</div>
                   </div>
                 </button>
