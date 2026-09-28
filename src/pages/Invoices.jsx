@@ -100,31 +100,33 @@ export default function Invoices() {
             {filtered.map((i) => {
               const c = customerMap[i.customer_id];
               return (
-                <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11 hover:bg-accent transition-colors">
-                  <Link to={`/invoices/${i.id}`} className="flex flex-wrap items-center justify-between gap-3 flex-1 min-w-0 min-h-11 -m-4 p-4">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{i.name || "Untitled invoice"}</div>
-                      <div className="text-sm text-muted-foreground truncate">{i.number}{c ? ` · ${c.name}` : ""}</div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                        <InvoicePaymentControl invoice={i} />
+                <div key={i.id} className="p-4 hover:bg-accent transition-colors">
+                  <div className="flex items-center justify-between gap-3 min-h-11">
+                    <Link to={`/invoices/${i.id}`} className="flex flex-1 items-center justify-between gap-3 min-w-0 min-h-11 -m-4 p-4">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{i.name || "Untitled invoice"}</div>
+                        <div className="text-sm text-muted-foreground truncate">{i.number}{c ? ` · ${c.name}` : ""}</div>
                       </div>
-                      <PaidAmountLabel invoice={i} />
-                      <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
-                    </div>
-                  </Link>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
+                          <InvoicePaymentControl invoice={i} />
+                        </div>
+                        <PaidAmountLabel invoice={i} />
+                        <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
+                      </div>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                      onClick={() => setPendingDelete(i)}
+                      aria-label={`Delete ${i.name || i.number || "invoice"}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                   <InvoicePaymentSchedule invoice={i} />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-                    onClick={() => setPendingDelete(i)}
-                    aria-label={`Delete ${i.name || i.number || "invoice"}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
               );
             })}
