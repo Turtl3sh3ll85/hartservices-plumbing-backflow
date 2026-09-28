@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
+import BackflowReportsAdmin from "@/components/admin/BackflowReportsAdmin";
 
 export default function UserDetail() {
   const { id } = useParams();
@@ -154,6 +155,8 @@ export default function UserDetail() {
           </Card>
         )}
       </div>
+
+      {customer && <BackflowReportsAdmin customerId={customer.id} />}
     </div>
   );
 }
