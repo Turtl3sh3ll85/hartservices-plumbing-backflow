@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { FileText, ClipboardList, CalendarClock, Loader2, ArrowLeft } from "lucide-react";
+import { FileText, ClipboardList, Loader2, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
@@ -36,12 +36,6 @@ export default function UserDetail() {
     enabled: !!email,
   });
   const customer = customers[0];
-
-  const { data: serviceRequests = [], isLoading: loadingSR } = useQuery({
-    queryKey: ["userServiceRequests", customer?.id],
-    queryFn: () => base44.entities.ServiceRequest.filter({ customer_id: customer.id }),
-    enabled: !!customer?.id,
-  });
 
   if (loadingUsers) {
     return (
@@ -119,36 +113,6 @@ export default function UserDetail() {
                     <StatusBadge status={e.status} />
                     <Button asChild size="sm" variant="outline"><Link to={`/estimates/${e.id}`}>Open</Link></Button>
                   </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-      </div>
-
-      <div>
-        <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Scheduled Events</h2>
-        {loadingSR ? (
-          <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-        ) : serviceRequests.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted-foreground">No scheduled events.</Card>
-        ) : (
-          <Card className="overflow-hidden p-0">
-            <div className="divide-y">
-              {serviceRequests.map((sr) => (
-                <div key={sr.id} className="p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="font-medium truncate">{sr.subject || sr.request_type}</div>
-                    <StatusBadge status={sr.status} />
-                  </div>
-                  {sr.preferred_date && (
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {new Date(sr.preferred_date).toLocaleDateString()}
-                    </div>
-                  )}
-                  {sr.details && (
-                    <div className="text-sm text-muted-foreground mt-1 line-clamp-2">{sr.details}</div>
-                  )}
                 </div>
               ))}
             </div>
