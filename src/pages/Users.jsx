@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { UserCog, Trash2 } from "lucide-react";
+import { UserCog, Trash2, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import InviteUserDialog from "@/components/InviteUserDialog";
 import { useToast } from "@/components/ui/use-toast";
 
 const ROLE_OPTIONS = [
@@ -26,6 +28,7 @@ export default function Users() {
   const { user: currentUser } = useAuth();
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: () => base44.entities.User.list(),
@@ -71,9 +74,14 @@ export default function Users() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Users</h1>
-        <p className="text-muted-foreground text-sm mt-1">Assign each user a role — customers see their documents, accountants see the books.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Users</h1>
+          <p className="text-muted-foreground text-sm mt-1">Assign each user a role — customers see their documents, accountants see the books.</p>
+        </div>
+        <Button onClick={() => setInviteOpen(true)}>
+          <UserPlus className="w-4 h-4 mr-1.5" /> Invite user
+        </Button>
       </div>
 
       {isLoading ? (
@@ -123,6 +131,7 @@ export default function Users() {
         destructive
         onConfirm={confirmDelete}
       />
+      <InviteUserDialog open={inviteOpen} onOpenChange={setInviteOpen} onInvited={() => queryClient.invalidateQueries(["users"])} />
       {deleting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
           <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
