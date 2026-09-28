@@ -1,15 +1,52 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Inbox, Loader2, RefreshCw, CheckCircle2, Paperclip } from "lucide-react";
+import { Inbox, Loader2, RefreshCw, CheckCircle2, Paperclip, Unlink, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import AttachInvoiceDialog from "@/components/AttachInvoiceDialog";
 import FileLightbox from "@/components/FileLightbox";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function DriveFileMonitor() {
   const [attachFile, setAttachFile] = useState(null);
   const [lightboxFile, setLightboxFile] = useState(null);
+  const [unattaching, setUnattaching] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const { toast } = useToast();
+
+  const handleUnattach = async (f) => {
+    setUnattaching(f.id);
+    try {
+      const res = await base44.functions.invoke("unattachDriveFile", { drive_file_id: f.id });
+      if (res.error) throw new Error(res.error);
+      toast({ description: "File unattached from invoice." });
+      await refetch();
+    } catch (e) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setUnattaching(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    const f = deleteTarget;
+    if (!f) return;
+    setDeleting(f.id);
+    try {
+      const res = await base44.functions.invoke("deleteDriveFile", { drive_file_id: f.id });
+      if (res.error) throw new Error(res.error);
+      toast({ description: "File deleted from Drive." });
+      await refetch();
+    } catch (e) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setDeleting(null);
+      setDeleteTarget(null);
+    }
+  };
 
   const { data: { files = [] } = {}, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["driveFolderFiles"],
@@ -65,15 +102,32 @@ export default function DriveFileMonitor() {
                     {new Date(f.modifiedTime).toLocaleDateString()}
                   </div>
                 </div>
-                {f.attached ? (
-                  <div className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400 shrink-0">
-                    <CheckCircle2 className="w-4 h-4" /> <span className="hidden sm:inline">Attached</span>
-                  </div>
-                ) : (
-                  <Button size="sm" variant="outline" className="shrink-0" onClick={() => setAttachFile(f)}>
-                    <Paperclip className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Attach</span>
-                  </Button>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {f.attached ? (
+                    <>
+                      <span className="hidden sm:inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="w-4 h-4" /> Attached
+                      </span>
+                      <Button size="sm" variant="outline" className="min-h-11 sm:min-h-8" onClick={() => setAttachFile(f)}>
+                        <Paperclip className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Attach to another</span>
+                      </Button>
+                      <Button size="sm" variant="outline" className="min-h-11 sm:min-h-8" onClick={() => handleUnattach(f)} disabled={unattaching === f.id} aria-label="Unattach from invoice">
+                        {unattaching === f.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlink className="w-4 h-4" />}
+                        <span className="hidden sm:inline ml-1">Unattach</span>
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button size="sm" variant="outline" className="min-h-11 sm:min-h-8" onClick={() => setAttachFile(f)}>
+                        <Paperclip className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Attach</span>
+                      </Button>
+                      <Button size="sm" variant="outline" className="min-h-11 sm:min-h-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(f)} disabled={deleting === f.id} aria-label="Delete file">
+                        {deleting === f.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        <span className="hidden sm:inline ml-1">Delete</span>
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </Card>
           ))}
@@ -82,6 +136,15 @@ export default function DriveFileMonitor() {
 
       {attachFile && <AttachInvoiceDialog file={attachFile} onClose={() => setAttachFile(null)} />}
       <FileLightbox file={lightboxFile} onClose={() => setLightboxFile(null)} />
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Delete file from Drive?"
+        description={`"${deleteTarget?.name}" will be permanently deleted from the monitored Google Drive folder.`}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
