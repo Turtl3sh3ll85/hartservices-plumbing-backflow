@@ -69,7 +69,16 @@ async function buildDocumentPdf({ doc, customer, settings, kind }) {
   if (bizContact) { docPdf.text(bizContact, textX, y); y += 12; }
   docPdf.setFontSize(8);
   docPdf.text("Jon Hart is licensed by the Texas State Board of Plumbing Examiners", textX, y);
-  y += 12;
+  y += 11;
+  if (isInvoice) {
+    docPdf.setFontSize(7);
+    docPdf.setTextColor(120);
+    docPdf.text("Invoices are due within 7 days of issuance unless otherwise noted.", textX, y);
+    docPdf.setTextColor(0);
+    y += 12;
+  } else {
+    y += 1;
+  }
 
   // Document title (right aligned)
   docPdf.setFont("helvetica", "bold");
@@ -80,12 +89,6 @@ async function buildDocumentPdf({ doc, customer, settings, kind }) {
   docPdf.text(doc.number || "", W - M, M + 24, { align: "right" });
   if (doc.due_date) {
     docPdf.text(`Due: ${new Date(doc.due_date).toLocaleDateString()}`, W - M, M + 38, { align: "right" });
-  }
-  if (isInvoice) {
-    docPdf.setFontSize(7);
-    docPdf.setTextColor(120);
-    docPdf.text("Invoices are due within 7 days of issuance unless otherwise noted.", W - M, M + 50, { align: "right" });
-    docPdf.setTextColor(0);
   }
 
   y = Math.max(y, M + 48) + 8;
