@@ -20,13 +20,24 @@ export default async function(req) {
       return Response.json({ created: false, reason: "already has account" });
     }
 
-    // Create the user account with the customer role (sends the platform invite email)
+    // Invite as "user" (the only non-staff role the platform accepts), then
+    // promote to the app's "customer" role immediately.
     try {
-      await base44.auth.inviteUser(email, "customer");
-      return Response.json({ created: true, to: email });
+      await base44.users.inviteUser(email, "user");
     } catch (e) {
-      return Response.json({ created: false, error: e.message });
+      return Response.json({ created: false, error: `invite failed: ${e.message}` });
     }
+
+    try {
+      const users = await base44.asServiceRole.entities.User.filter({ email });
+      if (users && users.length > 0) {
+        await base44.asServiceRole.entities.User.update(users[0].id, { role: "customer" });
+      }
+    } catch (e) {
+      // Account was created; the signup workflow will set the role if this fails
+    }
+
+    return Response.json({ created: true, to: email });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
