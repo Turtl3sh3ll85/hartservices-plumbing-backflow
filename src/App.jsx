@@ -25,6 +25,7 @@ const Estimates = lazy(() => import('@/pages/Estimates'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Users = lazy(() => import('@/pages/Users'));
 const UserDetail = lazy(() => import('@/pages/UserDetail'));
+const DriveFileMonitor = lazy(() => import('@/pages/DriveFileMonitor'));
 const PayInvoice = lazy(() => import('@/pages/PayInvoice'));
 const AcceptEstimate = lazy(() => import('@/pages/AcceptEstimate'));
 const MyDocuments = lazy(() => import('@/pages/MyDocuments'));
@@ -100,6 +101,7 @@ const AuthenticatedApp = () => {
               <Route path="/settings" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
               <Route path="/users" element={<RoleGuard roles={["admin"]}><Users /></RoleGuard>} />
               <Route path="/users/:id" element={<RoleGuard roles={["admin"]}><UserDetail /></RoleGuard>} />
+              <Route path="/drive-inbox" element={<RoleGuard roles={["admin"]}><DriveFileMonitor /></RoleGuard>} />
             </Route>
           </Route>
           <Route path="*" element={<PageNotFound />} />
