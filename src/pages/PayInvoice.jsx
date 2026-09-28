@@ -203,6 +203,9 @@ export default function PayInvoice() {
             <div className="border-t mt-4 pt-4 space-y-1.5">
               <div className="flex justify-between text-sm text-muted-foreground"><span>Subtotal</span><span className="tabular-nums">{formatMoney(invoice.subtotal)}</span></div>
               <div className="flex justify-between text-sm text-muted-foreground"><span>Tax</span><span className="tabular-nums">{formatMoney(invoice.tax)}</span></div>
+              {invoice.cc_fee > 0 && (
+                <div className="flex justify-between text-sm text-muted-foreground"><span>Credit Card Fee (3.5%)</span><span className="tabular-nums">{formatMoney(invoice.cc_fee)}</span></div>
+              )}
               <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total due</span><span className="tabular-nums">{formatMoney(invoice.total)}</span></div>
             </div>
           </div>

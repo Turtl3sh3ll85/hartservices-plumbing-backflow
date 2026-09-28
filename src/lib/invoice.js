@@ -6,11 +6,13 @@ export function lineTotal(li) {
   return marked + mods;
 }
 
-export function calcTotals(lineItems = [], taxRate = 0) {
+export function calcTotals(lineItems = [], taxRate = 0, ccFeeEnabled = false) {
   const subtotal = (lineItems || []).reduce((s, li) => s + lineTotal(li), 0);
   const tax = subtotal * ((Number(taxRate) || 0) / 100);
-  const total = subtotal + tax;
-  return { subtotal, tax, total };
+  const base = subtotal + tax;
+  const cc_fee = ccFeeEnabled ? +(base * 0.035).toFixed(2) : 0;
+  const total = base + cc_fee;
+  return { subtotal, tax, cc_fee, total };
 }
 
 export function formatMoney(n) {

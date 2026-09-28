@@ -59,6 +59,16 @@
       "type": "number",
       "title": "Tax"
     },
+    "cc_fee_enabled": {
+      "type": "boolean",
+      "default": false,
+      "title": "Credit Card Fee Enabled"
+    },
+    "cc_fee": {
+      "type": "number",
+      "default": 0,
+      "title": "Credit Card Fee"
+    },
     "total": {
       "type": "number",
       "title": "Total"

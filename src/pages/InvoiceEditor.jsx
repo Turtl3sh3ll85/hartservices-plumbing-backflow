@@ -48,6 +48,7 @@ export default function InvoiceEditor() {
     notes: "",
     payment_schedule: [],
     reminders_enabled: true,
+    cc_fee_enabled: false,
   });
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState(id || null);
@@ -106,7 +107,7 @@ export default function InvoiceEditor() {
   const modifiersCatalog = modifiersData || [];
 
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
-  const totals = calcTotals(form.line_items, form.tax_rate);
+  const totals = calcTotals(form.line_items, form.tax_rate, !isEstimate && !!form.cc_fee_enabled);
 
   const pickGoogleContact = async (c) => {
     let cust = customers.find((cu) => cu.email && c.email && cu.email.toLowerCase() === c.email.toLowerCase());
@@ -304,8 +305,21 @@ export default function InvoiceEditor() {
           </div>
         )}
 
+        {!isEstimate && (
+          <div className="flex items-center justify-between gap-4 py-1">
+            <div>
+              <div className="text-sm font-medium">Credit Card Fee 3.5%</div>
+              <p className="text-sm text-muted-foreground">Add a 3.5% surcharge so the customer covers card processing fees.</p>
+            </div>
+            <Switch checked={!!form.cc_fee_enabled} onCheckedChange={(v) => setForm({ ...form, cc_fee_enabled: v })} />
+          </div>
+        )}
+
         <div className="border-t pt-4 space-y-1.5">
           <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{formatMoney(totals.subtotal)}</span></div>
+          {totals.cc_fee > 0 && (
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Credit Card Fee (3.5%)</span><span className="tabular-nums">{formatMoney(totals.cc_fee)}</span></div>
+          )}
           <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total</span><span className="tabular-nums">{formatMoney(totals.total)}</span></div>
         </div>
 
