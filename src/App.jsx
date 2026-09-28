@@ -26,6 +26,7 @@ const Settings = lazy(() => import('@/pages/Settings'));
 const Users = lazy(() => import('@/pages/Users'));
 const UserDetail = lazy(() => import('@/pages/UserDetail'));
 const DriveFileMonitor = lazy(() => import('@/pages/DriveFileMonitor'));
+const Expenses = lazy(() => import('@/pages/Expenses'));
 const PayInvoice = lazy(() => import('@/pages/PayInvoice'));
 const AcceptEstimate = lazy(() => import('@/pages/AcceptEstimate'));
 const MyDocuments = lazy(() => import('@/pages/MyDocuments'));
@@ -94,6 +95,7 @@ const AuthenticatedApp = () => {
               <Route path="/invoices" element={<RoleGuard roles={["admin", "tech", "accountant"]}><Invoices /></RoleGuard>} />
               <Route path="/invoices/new" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
               <Route path="/invoices/:id" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
+              <Route path="/expenses" element={<RoleGuard roles={["admin", "accountant"]}><Expenses /></RoleGuard>} />
               <Route path="/estimates" element={<RoleGuard roles={["admin", "tech", "accountant"]}><Estimates /></RoleGuard>} />
               <Route path="/estimates/new" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
               <Route path="/estimates/:id" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
