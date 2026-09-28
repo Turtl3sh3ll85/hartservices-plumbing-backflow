@@ -123,7 +123,7 @@ export async function downloadInvoicePdf({ invoice, customer, settings }) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   for (const { section, items } of groupLineItemsBySection(invoice.line_items)) {
-    const boxTop = section ? y - 4 : null;
+    const boxTop = section ? y - 10 : null;
     if (section) {
       doc.setFillColor(235, 240, 250);
       doc.rect(M, y - 10, W - M * 2, 16, "F");
