@@ -114,65 +114,51 @@ async function buildDocumentPdf({ doc, customer, settings, kind }) {
   descLines.forEach((l) => { docPdf.text(String(l).split("\n")[0], W / 2, y2); y2 += 13; });
   y = Math.max(y, y2) + 14;
 
-  // Line items table
-  const colX = { desc: M, qty: W - M - 220, price: W - M - 130, total: W - M };
-  docPdf.setFont("helvetica", "bold");
-  docPdf.setFontSize(9);
-  docPdf.setTextColor(120);
-  docPdf.text("DESCRIPTION", colX.desc, y);
-  docPdf.text("QTY", colX.qty, y, { align: "right" });
-  docPdf.text("PRICE", colX.price, y, { align: "right" });
-  docPdf.text("AMOUNT", colX.total, y, { align: "right" });
-  docPdf.setTextColor(0);
-  y += 6;
-  docPdf.line(M, y, W - M, y);
-  y += 14;
-
-  docPdf.setFont("helvetica", "normal");
-  docPdf.setFontSize(10);
+  // Line items — mirror the on-screen electronic view (grouped sections, qty × price subtext)
+  const totalX = W - M;
   for (const { section, items } of groupLineItemsBySection(doc.line_items)) {
-    const boxTop = section ? y - 10 : null;
     if (section) {
       docPdf.setFillColor(235, 240, 250);
       docPdf.rect(M, y - 10, W - M * 2, 16, "F");
       docPdf.setFont("helvetica", "bold");
       docPdf.setFontSize(10);
       docPdf.setTextColor(40, 60, 120);
-      docPdf.text(section, M + 6, y);
+      docPdf.text(section, M + 8, y);
       docPdf.setTextColor(0);
-      y += 16;
-      docPdf.setFont("helvetica", "normal");
-      docPdf.setFontSize(10);
+      y += 18;
     }
     for (const li of items) {
-      const desc = String(li.description || "—").split("\n");
+      const desc = String(li.description || "—").split("\n")[0];
       let textIndent = 0;
       if (li.image_url) {
         const dataUrl = await loadImageDataUrl(li.image_url);
         if (dataUrl) {
           try {
             const props = docPdf.getImageProperties(dataUrl);
-            const th = 24;
+            const th = 26;
             const tw = (props.width / props.height) * th;
-            docPdf.addImage(dataUrl, "PNG", colX.desc, y - 16, tw, th);
-            textIndent = tw + 6;
+            docPdf.addImage(dataUrl, "PNG", M, y - 18, tw, th);
+            textIndent = tw + 8;
           } catch { /* ignore */ }
         }
       }
-      docPdf.text(desc[0], colX.desc + textIndent, y);
-      docPdf.text(String(li.quantity ?? ""), colX.qty, y, { align: "right" });
-      docPdf.text(formatMoney(li.unit_price), colX.price, y, { align: "right" });
-      docPdf.text(formatMoney(lineTotal(li)), colX.total, y, { align: "right" });
-      y += 16;
+      docPdf.setFont("helvetica", "bold");
+      docPdf.setFontSize(10);
+      docPdf.text(desc, M + textIndent, y);
+      docPdf.setFont("helvetica", "normal");
+      docPdf.setFontSize(8);
+      docPdf.setTextColor(120);
+      docPdf.text(`${li.quantity ?? ""} × ${formatMoney(li.unit_price)}`, M + textIndent, y + 11);
+      docPdf.setTextColor(0);
+      docPdf.setFont("helvetica", "normal");
+      docPdf.setFontSize(10);
+      docPdf.text(formatMoney(lineTotal(li)), totalX, y, { align: "right" });
+      y += 24;
     }
-    if (section) {
-      docPdf.setDrawColor(200);
-      docPdf.rect(M, boxTop, W - M * 2, y - boxTop);
-      y += 8;
-    }
+    if (section) y += 4;
   }
 
-  y += 6;
+  y += 4;
   docPdf.line(M, y, W - M, y);
   y += 18;
 

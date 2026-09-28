@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Image } from "@/components/ui/image";
 import { useSettings } from "@/hooks/useSettings";
 import StatusBadge from "@/components/StatusBadge";
+import PaidAmountLabel from "@/components/PaidAmountLabel";
 import { formatMoney } from "@/lib/invoice";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 import BackflowReports from "@/components/portal/BackflowReports";
@@ -132,6 +133,7 @@ export default function MyDocuments() {
                           <div className="text-sm text-muted-foreground truncate">
                             {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
                           </div>
+                          <PaidAmountLabel invoice={i} />
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                           <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
