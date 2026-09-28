@@ -10,6 +10,7 @@ import { MobileSelect } from "@/components/ui/mobile-select";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import InvoicePaymentControl from "@/components/InvoicePaymentControl";
+import PaidAmountLabel from "@/components/PaidAmountLabel";
 import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
@@ -53,7 +54,7 @@ export default function Invoices() {
     return matchesQuery && matchesStatus;
   });
 
-  const outstanding = invoices.filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft").reduce((s, i) => s + (Number(i.total) || 0), 0);
+  const outstanding = invoices.filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft").reduce((s, i) => s + ((Number(i.total) || 0) - (Number(i.amount_paid) || 0)), 0);
 
   return (
     <div className="space-y-6">
@@ -79,6 +80,7 @@ export default function Invoices() {
           options={[
             { value: "all", label: "All" },
             { value: "unpaid", label: "Unpaid" },
+            { value: "partial", label: "Partial" },
             { value: "paid", label: "Paid" },
             { value: "draft", label: "Draft" },
             { value: "sent", label: "Sent" },
@@ -108,6 +110,7 @@ export default function Invoices() {
                         <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
                         <InvoicePaymentControl invoice={i} />
                       </div>
+                      <PaidAmountLabel invoice={i} />
                       <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                     </div>
                   </Link>

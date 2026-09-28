@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import InvoicePaymentControl from "@/components/InvoicePaymentControl";
+import PaidAmountLabel from "@/components/PaidAmountLabel";
 import { formatMoney } from "@/lib/invoice";
 
 export default function Dashboard() {
@@ -19,7 +20,7 @@ export default function Dashboard() {
     .filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft");
 
   const outstanding = outstandingInvoices
-    .reduce((s, i) => s + (Number(i.total) || 0), 0);
+    .reduce((s, i) => s + ((Number(i.total) || 0) - (Number(i.amount_paid) || 0)), 0);
 
   const now = new Date();
   const paidThisMonth = invoices
@@ -76,6 +77,7 @@ export default function Dashboard() {
                       <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
                       <InvoicePaymentControl invoice={i} />
                     </div>
+                    <PaidAmountLabel invoice={i} />
                     <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                   </div>
                 </div>

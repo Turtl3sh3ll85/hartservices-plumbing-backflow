@@ -32,6 +32,9 @@ export default function InvoicePaymentControl({ invoice }) {
 
   const revertToUnpaid = async () => {
     const update = { payment_status: "unpaid", status: "sent", amount_paid: 0, paid_date: "", payment_method: "" };
+    if (Array.isArray(invoice.payment_schedule) && invoice.payment_schedule.length > 0) {
+      update.payment_schedule = invoice.payment_schedule.map((s) => ({ ...s, paid: false }));
+    }
     applyOptimistic(update);
     try {
       await base44.entities.Invoice.update(invoice.id, update);
@@ -56,6 +59,31 @@ export default function InvoicePaymentControl({ invoice }) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={revertToUnpaid}>
+            <Undo2 className="w-4 h-4 mr-2" /> Revert to unpaid
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  if (invoice.payment_status === "partial") {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex items-center rounded-full hover:opacity-80 transition-opacity cursor-pointer min-h-11 sm:min-h-0"
+            title="Click to update payment status"
+            aria-label={`Update payment status for ${invoice.name || invoice.number || "invoice"}`}
+          >
+            <StatusBadge status="partial" label="Partially Paid" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuItem onClick={markPaidByCheck}>
+            <CheckCircle className="w-4 h-4 mr-2" /> Mark fully paid (check)
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={revertToUnpaid}>
             <Undo2 className="w-4 h-4 mr-2" /> Revert to unpaid
           </DropdownMenuItem>
