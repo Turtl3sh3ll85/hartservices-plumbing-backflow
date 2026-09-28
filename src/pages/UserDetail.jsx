@@ -1,16 +1,22 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { FileText, ClipboardList, Loader2, ArrowLeft } from "lucide-react";
+import { FileText, ClipboardList, Loader2, ArrowLeft, Contact } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
 import BackflowReportsAdmin from "@/components/admin/BackflowReportsAdmin";
 import BillTo from "@/components/BillTo";
+import GoogleContactsDialog from "@/components/GoogleContactsDialog";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function UserDetail() {
   const { id } = useParams();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [contactsOpen, setContactsOpen] = useState(false);
 
   const { data: users = [], isLoading: loadingUsers } = useQuery({
     queryKey: ["users"],
@@ -37,6 +43,20 @@ export default function UserDetail() {
     enabled: !!email,
   });
   const customer = customers[0];
+
+  const linkGoogleContact = async (c) => {
+    if (!email) return;
+    let cust = customers.find((cu) => cu.email && cu.email.toLowerCase() === email.toLowerCase());
+    const updates = { company: c.company || "", phone: c.phone || (cust?.phone || "") };
+    if (cust) {
+      cust = await base44.entities.Customer.update(cust.id, updates);
+    } else {
+      cust = await base44.entities.Customer.create({ name: c.name || user.full_name || email, email, ...updates });
+    }
+    queryClient.setQueryData(["userCustomer", email], [cust]);
+    queryClient.invalidateQueries({ queryKey: ["customers"] });
+    toast({ description: "Linked to Google Contact." });
+  };
 
   if (loadingUsers) {
     return (
@@ -65,11 +85,20 @@ export default function UserDetail() {
         <p className="text-muted-foreground text-sm mt-1">{user.email} · <span className="capitalize">{user.role}</span></p>
       </div>
 
-      {customer && (
-        <Card className="p-6">
-          <BillTo customer={customer} className="text-sm" />
-        </Card>
-      )}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        {customer ? (
+          <Card className="p-6 flex-1 min-w-0">
+            <BillTo customer={customer} className="text-sm" />
+          </Card>
+        ) : (
+          <p className="text-sm text-muted-foreground">No customer record linked to this user yet.</p>
+        )}
+        <Button variant="outline" size="sm" onClick={() => setContactsOpen(true)}>
+          <Contact className="w-4 h-4" /> Link Google Contact
+        </Button>
+      </div>
+
+      <GoogleContactsDialog open={contactsOpen} onOpenChange={setContactsOpen} onPick={linkGoogleContact} />
 
       <div>
         <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><FileText className="w-4 h-4" /> Invoices</h2>
