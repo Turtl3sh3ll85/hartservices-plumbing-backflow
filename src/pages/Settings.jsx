@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
 
-const empty = { business_name: "", business_email: "", business_phone: "", business_street: "", business_city: "", business_state: "", business_zip: "", logo_url: "", default_tax_rate: 0, payment_terms: "Due on receipt", google_sheet_id: "", weekly_summary_enabled: false };
+const empty = { business_name: "", business_email: "", business_phone: "", business_street: "", business_city: "", business_state: "", business_zip: "", logo_url: "", default_tax_rate: 0, payment_terms: "Due on receipt", google_sheet_id: "", wave_sheet_id: "", weekly_summary_enabled: false };
 
 export default function Settings() {
   const [form, setForm] = useState(empty);
@@ -121,6 +121,12 @@ export default function Settings() {
         <div className="text-sm font-medium">Line item catalog (Google Sheets)</div>
         <p className="text-sm text-muted-foreground">Paste a Google Sheets ID to pull line items into invoices. The first sheet should have header columns named <span className="font-medium">Description</span>, <span className="font-medium">Quantity</span>, and <span className="font-medium">Unit Price</span>.</p>
         <div className="space-y-1.5"><Label>Google Sheet ID</Label><Input value={form.google_sheet_id} onChange={(e) => setForm({ ...form, google_sheet_id: e.target.value })} placeholder="1AbC…xyz" /></div>
+      </Card>
+
+      <Card className="p-6 space-y-3">
+        <div className="text-sm font-medium">Wave transactions (Google Sheets)</div>
+        <p className="text-sm text-muted-foreground">Use the <span className="font-medium">Wave Connect</span> Google Sheets add-on to export your transactions into a sheet, then paste that sheet's ID here. The Expenses page syncs from it.</p>
+        <div className="space-y-1.5"><Label>Wave transactions Sheet ID</Label><Input value={form.wave_sheet_id} onChange={(e) => setForm({ ...form, wave_sheet_id: e.target.value })} placeholder="1AbC…xyz" /></div>
       </Card>
 
       <Card className="p-6 space-y-2">

@@ -1,12 +1,11 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Receipt, Loader2, Upload, Trash2, DollarSign, Tag, FileText, ExternalLink } from "lucide-react";
+import { Receipt, Loader2, Trash2, DollarSign, Tag, FileText, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { parseExpensesCsv } from "@/lib/parseExpensesCsv";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 const CATEGORIES = [
@@ -17,8 +16,7 @@ const CATEGORIES = [
 const fmt = (n) => (n ?? 0).toLocaleString(undefined, { style: "currency", currency: "USD" });
 
 export default function Expenses() {
-  const fileRef = useRef(null);
-  const [importing, setImporting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [updating, setUpdating] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -37,33 +35,18 @@ export default function Expenses() {
   const invoiceMap = {};
   invoices.forEach((i) => { invoiceMap[i.id] = i; });
 
-  const handleImport = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setImporting(true);
+  const handleSync = async () => {
+    setSyncing(true);
     try {
-      const text = await file.text();
-      const rows = parseExpensesCsv(text);
-      if (!rows.length) {
-        toast({ title: "No rows found", description: "Couldn't parse any expenses from this file.", variant: "destructive" });
-        return;
-      }
-      await base44.entities.Expense.bulkCreate(rows.map((r) => ({
-        date: r.date,
-        description: r.description,
-        amount: r.amount,
-        vendor: r.vendor || "",
-        category: "",
-        invoice_id: "",
-        source: "wave_csv",
-      })));
-      toast({ description: `Imported ${rows.length} expenses.` });
+      const res = await base44.functions.invoke("getWaveSheetTransactions", {});
+      const d = res.data || {};
+      if (d.error) throw new Error(d.error);
+      toast({ description: d.message || `Imported ${d.imported || 0} transactions.` });
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
     } catch (err) {
-      toast({ title: "Import failed", description: err.message, variant: "destructive" });
+      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
     } finally {
-      setImporting(false);
+      setSyncing(false);
     }
   };
 
@@ -106,23 +89,11 @@ export default function Expenses() {
           <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-2">
             <Receipt className="w-7 h-7" /> Expenses
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">Import expenses from a Wave CSV export, then categorize and assign to invoices.</p>
+          <p className="text-muted-foreground text-sm mt-1">Pull transactions from your Wave Connect Google Sheet, then categorize and assign to invoices.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
-          <a
-            href="https://my.waveapps.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="In Wave: top-right business name → Business settings → Data Export → Accounting. You'll get an email with the CSV."
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4"
-          >
-            <ExternalLink className="w-4 h-4" /> Open Wave
-          </a>
-          <Button onClick={() => fileRef.current?.click()} disabled={importing}>
-            {importing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />} Import CSV
-          </Button>
-        </div>
+        <Button onClick={handleSync} disabled={syncing}>
+          {syncing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />} Sync from Wave Sheet
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -147,7 +118,7 @@ export default function Expenses() {
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : expenses.length === 0 ? (
-        <Card className="p-10 text-center text-sm text-muted-foreground">No expenses yet. Click "Import CSV" to upload a Wave transaction export.</Card>
+        <Card className="p-10 text-center text-sm text-muted-foreground">No expenses yet. Add your Wave Connect Sheet ID in Settings, then click "Sync from Wave Sheet".</Card>
       ) : (
         <div className="space-y-2">
           {expenses.map((e) => (
