@@ -28,6 +28,10 @@ export default async function(req: Request): Promise<Response> {
     const attachments = await base44.asServiceRole.entities.InvoiceAttachment.filter({});
     const attachedIds = new Set(attachments.map((a: any) => a.drive_file_id).filter(Boolean));
 
+    // Load truck-stock tags
+    const metas = await base44.asServiceRole.entities.DriveFileMeta.filter({});
+    const truckstockIds = new Set(metas.filter((m: any) => m.truckstock).map((m: any) => m.drive_file_id));
+
     return Response.json({
       files: files.map((f: any) => ({
         id: f.id,
@@ -39,6 +43,7 @@ export default async function(req: Request): Promise<Response> {
         iconLink: f.iconLink || null,
         size: f.size || null,
         attached: attachedIds.has(f.id),
+        truckstock: truckstockIds.has(f.id),
       })),
     });
   } catch (error) {

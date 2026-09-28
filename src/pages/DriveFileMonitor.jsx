@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Inbox, Loader2, RefreshCw, CheckCircle2, Paperclip, Unlink, Trash2 } from "lucide-react";
+import { Inbox, Loader2, RefreshCw, CheckCircle2, Paperclip, Unlink, Trash2, Truck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,6 +15,7 @@ export default function DriveFileMonitor() {
   const [unattaching, setUnattaching] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [togglingTruck, setTogglingTruck] = useState(null);
   const { toast } = useToast();
 
   const handleUnattach = async (f) => {
@@ -45,6 +46,20 @@ export default function DriveFileMonitor() {
     } finally {
       setDeleting(null);
       setDeleteTarget(null);
+    }
+  };
+
+  const handleToggleTruckstock = async (f) => {
+    setTogglingTruck(f.id);
+    try {
+      const res = await base44.functions.invoke("setDriveFileTruckstock", { drive_file_id: f.id, truckstock: !f.truckstock });
+      if (res.error) throw new Error(res.error);
+      toast({ description: f.truckstock ? "Removed truck stock mark." : "Marked as truck stock." });
+      await refetch();
+    } catch (e) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setTogglingTruck(null);
     }
   };
 
@@ -103,6 +118,18 @@ export default function DriveFileMonitor() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className={`min-h-11 sm:min-h-8 ${f.truckstock ? "border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-400" : ""}`}
+                    onClick={() => handleToggleTruckstock(f)}
+                    disabled={togglingTruck === f.id}
+                    aria-label={f.truckstock ? "Remove truck stock mark" : "Mark as truck stock"}
+                    title={f.truckstock ? "Marked as truck stock" : "Mark as truck stock"}
+                  >
+                    {togglingTruck === f.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
+                    <span className="hidden sm:inline ml-1">{f.truckstock ? "Truck stock" : "Mark truck stock"}</span>
+                  </Button>
                   {f.attached ? (
                     <>
                       <span className="hidden sm:inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
