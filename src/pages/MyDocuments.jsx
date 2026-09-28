@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -10,8 +10,6 @@ import { Image } from "@/components/ui/image";
 import { useSettings } from "@/hooks/useSettings";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
-import ReminderToggles from "@/components/portal/ReminderToggles";
-import ServiceRequestForm from "@/components/portal/ServiceRequestForm";
 import BackflowReports from "@/components/portal/BackflowReports";
 
 const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
@@ -38,11 +36,6 @@ export default function MyDocuments() {
   const estimates = portal.estimates || [];
   const customers = portal.customers || [];
   const backflowReports = portal.backflow_reports || [];
-
-  const myCustomer = useMemo(() => {
-    if (customers.length === 0) return null;
-    return customers.slice().sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date))[0];
-  }, [customers]);
 
   const visibleInvoices = hidePaid ? invoices.filter((i) => i.payment_status !== "paid") : invoices;
 
@@ -77,7 +70,7 @@ export default function MyDocuments() {
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-8">
         <div>
           <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">My documents</h1>
-          <p className="text-muted-foreground text-sm mt-1">Your invoices, estimates, service requests, and reminders.</p>
+          <p className="text-muted-foreground text-sm mt-1">Your invoices, estimates, and backflow test reports.</p>
         </div>
 
         {isLoading ? (
@@ -167,8 +160,6 @@ export default function MyDocuments() {
               )}
             </div>
 
-            <ServiceRequestForm email={email} />
-            <ReminderToggles email={email} customer={myCustomer} />
             <BackflowReports reports={backflowReports} />
           </>
         )}
