@@ -31,8 +31,9 @@ export default function LineItemThumbnail({ url, onChange, disabled }) {
           <button
             type="button"
             onClick={() => onChange("")}
-            className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-sm opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
             title="Remove thumbnail"
+            aria-label="Remove thumbnail"
           >
             <X className="w-3 h-3" />
           </button>
@@ -48,6 +49,7 @@ export default function LineItemThumbnail({ url, onChange, disabled }) {
       disabled={disabled || uploading}
       className="w-12 h-12 rounded-md border border-dashed border-input flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
       title="Add thumbnail"
+      aria-label="Add thumbnail"
     >
       {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
     </button>

@@ -84,6 +84,7 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
         onClick={() => inputRef.current?.click()}
+        aria-label="Drag and drop files here or click to browse"
         className={`rounded-lg border-2 border-dashed p-4 text-center cursor-pointer transition-colors ${dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
       >
         <p className="text-xs text-muted-foreground">
