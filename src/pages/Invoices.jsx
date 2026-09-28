@@ -11,6 +11,7 @@ import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import InvoicePaymentControl from "@/components/InvoicePaymentControl";
 import PaidAmountLabel from "@/components/PaidAmountLabel";
+import InvoicePaymentSchedule from "@/components/portal/InvoicePaymentSchedule";
 import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
@@ -114,6 +115,7 @@ export default function Invoices() {
                       <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                     </div>
                   </Link>
+                  <InvoicePaymentSchedule invoice={i} />
                   <Button
                     variant="ghost"
                     size="icon"
