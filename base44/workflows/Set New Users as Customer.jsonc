@@ -1,0 +1,39 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "set_new_user_customer",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "set_role": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "setNewUserRoleCustomer",
+            "args": {
+              "user_id": "${ .trigger.user_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Set role to customer",
+            "description": "Unless already staff"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Set New Users as Customer",
+  "description": "When a user signs up, set their role to customer unless they were invited as staff (admin, tech, or accountant)",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "app_user_auth",
+      "events": [
+        "signup"
+      ]
+    }
+  }
+}
