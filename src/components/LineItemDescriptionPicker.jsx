@@ -71,6 +71,8 @@ export default function LineItemDescriptionPicker({ li, catalog = [], grouped = 
                           quantity: c.quantity || li.quantity || 1,
                           image_url: c.image_url || li.image_url || "",
                           details: c.details || li.details || "",
+                          markup: c.markup ?? li.markup ?? 0,
+                          markup_mode: c.markup_mode || li.markup_mode || "preset",
                         });
                         setOpen(false);
                       }}
