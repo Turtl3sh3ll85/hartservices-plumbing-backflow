@@ -62,5 +62,78 @@
   },
   "required": [
     "name"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "tech"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "tech"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "tech"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
