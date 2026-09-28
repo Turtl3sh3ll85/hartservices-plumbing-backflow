@@ -21,16 +21,10 @@ const allNav = [
 function BrandMark({ settings, size = "md" }) {
   const dim = size === "sm" ? "w-8 h-8" : "w-9 h-9";
   const icon = size === "sm" ? "w-4 h-4" : "w-5 h-5";
-  if (settings?.logo_url) {
-    return (
-      <div className={`${dim} rounded-xl overflow-hidden bg-card border shrink-0`}>
-        <Image src={settings.logo_url} alt="Logo" className="w-full h-full object-contain" />
-      </div>
-    );
-  }
+  const logoUrl = settings?.logo_url || "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
   return (
-    <div className={`${dim} rounded-xl bg-primary flex items-center justify-center shadow-sm shrink-0`}>
-      <Droplet className={`${icon} text-primary-foreground`} />
+    <div className={`${dim} rounded-xl overflow-hidden bg-card border shrink-0`}>
+      <Image src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
     </div>
   );
 }
