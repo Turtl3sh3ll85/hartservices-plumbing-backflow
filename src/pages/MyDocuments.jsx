@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { FileText, ClipboardList, Loader2, CreditCard, EyeOff } from "lucide-react";
@@ -15,20 +15,43 @@ import BackflowReports from "@/components/portal/BackflowReports";
 
 export default function MyDocuments() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [hidePaid, setHidePaid] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const [linkFailed, setLinkFailed] = useState(false);
   const { data: invoices = [], isLoading: li } = useQuery({ queryKey: ["invoices"], queryFn: () => base44.entities.Invoice.list("-created_date", 200) });
   const { data: estimates = [], isLoading: le } = useQuery({ queryKey: ["estimates"], queryFn: () => base44.entities.Estimate.list("-created_date", 200) });
-  const { data: customers = [], isLoading: lc } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
+  const { data: customers = [], isLoading: lc } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("-updated_date", 500) });
   const loading = li || le || lc;
 
-  const myCustomer = customers.find(
-    (c) => c.email && user?.email && c.email.toLowerCase() === user.email.toLowerCase()
-  );
+  const myCustomer = useMemo(() => {
+    if (!user?.email) return null;
+    const email = user.email.trim().toLowerCase();
+    const matches = customers.filter((c) => c.email && c.email.trim().toLowerCase() === email);
+    if (matches.length === 0) return null;
+    // When several customers share the same email, use the most recently updated one.
+    return matches.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date))[0];
+  }, [customers, user]);
+
+  // Auto-link: if no customer record matches the signed-in user's email, create one
+  // so the portal always has a linked customer record.
+  useEffect(() => {
+    if (loading || linking || linkFailed || myCustomer || !user?.email) return;
+    setLinking(true);
+    base44.entities.Customer.create({
+      name: user.full_name || user.email,
+      email: user.email,
+    })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["customers"] }))
+      .catch(() => setLinkFailed(true))
+      .finally(() => setLinking(false));
+  }, [loading, linking, linkFailed, myCustomer, user, queryClient]);
+
   const myInvoices = invoices.filter((i) => i.customer_id === myCustomer?.id);
   const myEstimates = estimates.filter((e) => e.customer_id === myCustomer?.id);
   const visibleInvoices = hidePaid ? myInvoices.filter((i) => i.payment_status !== "paid") : myInvoices;
 
-  if (loading) {
+  if (loading || linking) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
