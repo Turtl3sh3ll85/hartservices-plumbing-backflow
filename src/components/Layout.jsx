@@ -12,7 +12,7 @@ const allNav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ["admin", "tech", "accountant"] },
   { to: "/estimates", label: "Estimates", icon: ClipboardList, roles: ["admin", "tech", "accountant"] },
   { to: "/invoices", label: "Invoices", icon: FileText, roles: ["admin", "tech", "accountant"] },
-  { to: "/drive-inbox", label: "Drive Inbox", icon: Inbox, roles: ["admin"] },
+  { to: "/drive-inbox", label: "Receipts", icon: Inbox, roles: ["admin"] },
   { to: "/users", label: "Users", icon: UserCog, roles: ["admin"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
   { to: "/portal", label: "My Documents", icon: FileText, roles: ["customer"] },

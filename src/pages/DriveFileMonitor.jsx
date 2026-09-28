@@ -77,7 +77,7 @@ export default function DriveFileMonitor() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-2">
-            <Inbox className="w-7 h-7" /> Drive Inbox
+            <Inbox className="w-7 h-7" /> Receipts
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Files dropped in the monitored Google Drive folder.</p>
         </div>
