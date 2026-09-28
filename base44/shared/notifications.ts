@@ -25,6 +25,24 @@ export async function notifyInvoiceOpened(base44, { invoice, customer }) {
       <p style="color:#6b7280;font-size:13px;margin-top:24px">This is an automated notification from ${brand}.</p>
     </div>`;
     await sendGmail(base44, { to, subject, html, fromName: brand });
+    // Best-effort mobile push to admins (requires a native mobile build with push credentials)
+    try {
+      const admins = await base44.asServiceRole.entities.User.filter({ role: "admin" }, "-created_date", 50);
+      const pushTitle = `${customerName} opened an invoice`;
+      const pushContent = `Invoice ${invoice.number || invoice.name || ""} · $${total}`;
+      const actionUrl = invoice.id ? `https://hartservices.base44.app/invoices/${invoice.id}` : undefined;
+      for (const admin of admins) {
+        try {
+          await base44.asServiceRole.integrations.Core.SendPushNotification({
+            user_id: admin.id,
+            title: pushTitle,
+            content: pushContent,
+            action_label: "View invoice",
+            action_url: actionUrl,
+          });
+        } catch (e) {}
+      }
+    } catch (e) {}
     return { sent: true };
   } catch (e) {
     return { sent: false, error: e.message };
