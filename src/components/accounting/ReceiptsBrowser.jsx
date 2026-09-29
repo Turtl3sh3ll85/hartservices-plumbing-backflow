@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Loader2, Folder, FileText, Check, ExternalLink, ChevronDown, ChevronRight } from "lucide-react";
+
+const RECEIPTS_FOLDER_ID = "1MqxUfevtS1FQ-lbmS0dtawmS6o7ui51H";
 
 function FileThumb({ file }) {
   const [err, setErr] = useState(false);
@@ -89,14 +91,8 @@ function SubfolderSection({ sub, expanded, onToggle, onPick }) {
 }
 
 export default function ReceiptsBrowser({ onPick }) {
-  const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState({});
-
-  const { data: settings } = useQuery({
-    queryKey: ["settings"],
-    queryFn: async () => (await base44.entities.Settings.list())[0],
-  });
-  const folderId = settings?.receipts_folder_id;
+  const folderId = RECEIPTS_FOLDER_ID;
 
   const { data: root = { files: [], folders: [] }, isLoading: loadingRoot } = useQuery({
     queryKey: ["driveReceipts", folderId],
@@ -107,48 +103,7 @@ export default function ReceiptsBrowser({ onPick }) {
     enabled: !!folderId,
   });
 
-  const { data: folders = [], isLoading: loadingFolders } = useQuery({
-    queryKey: ["driveFolders"],
-    queryFn: async () => {
-      const res = await base44.functions.invoke("listDriveReceipts", {});
-      return res.data?.folders || [];
-    },
-    enabled: !folderId,
-  });
-
-  const saveFolder = async (id) => {
-    if (!settings) return;
-    await base44.entities.Settings.update(settings.id, { receipts_folder_id: id });
-    await queryClient.invalidateQueries({ queryKey: ["settings"] });
-  };
-
   const toggleSub = (id) => setExpanded((e) => ({ ...e, [id]: !e[id] }));
-
-  if (!folderId) {
-    return (
-      <div>
-        {loadingFolders ? (
-          <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-        ) : folders.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-6">No folders found in your Drive.</p>
-        ) : (
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground mb-2">Pick a Google Drive folder to use as your receipts folder.</p>
-            {folders.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => saveFolder(f.id)}
-                className="flex items-center gap-2 w-full text-left px-3 py-2.5 rounded-md hover:bg-accent min-h-11"
-              >
-                <Folder className="w-4 h-4 text-primary shrink-0" />
-                <span className="truncate">{f.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
@@ -176,9 +131,6 @@ export default function ReceiptsBrowser({ onPick }) {
           )}
         </>
       )}
-      <div className="flex justify-end">
-        <Button variant="ghost" size="sm" onClick={() => saveFolder("")}>Change folder</Button>
-      </div>
     </div>
   );
 }
