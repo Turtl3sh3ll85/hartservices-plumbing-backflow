@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ChevronDown, Check, X } from "lucide-react";
@@ -8,7 +9,9 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
   const [open, setOpen] = useState(false);
   const [manual, setManual] = useState(false);
   const [input, setInput] = useState("");
-  const ref = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const popRef = useRef(null);
   const current = value || "";
 
   const { data: sheetCategories = [] } = useQuery({
@@ -20,10 +23,21 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
     staleTime: 5 * 60 * 1000,
   });
 
+  useLayoutEffect(() => {
+    if (!open || !btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    const popW = 192;
+    let left = r.right - popW;
+    if (left < 8) left = 8;
+    setCoords({ top: r.bottom + 4, left });
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (popRef.current && popRef.current.contains(e.target)) return;
+      if (btnRef.current && btnRef.current.contains(e.target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -39,8 +53,9 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
   };
 
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
+        ref={btnRef}
         type="button"
         onClick={() => !disabled && setOpen((o) => !o)}
         disabled={disabled}
@@ -65,8 +80,12 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
           <ChevronDown className="w-3 h-3" />
         )}
       </button>
-      {open && (
-        <div className="absolute z-50 mt-1 right-0 w-48 rounded-md border bg-popover shadow-lg py-1 max-h-72 overflow-y-auto">
+      {open && createPortal(
+        <div
+          ref={popRef}
+          style={{ position: "fixed", top: coords.top, left: coords.left, width: 192 }}
+          className="z-[100] rounded-md border bg-popover shadow-lg py-1 max-h-72 overflow-y-auto"
+        >
           {sheetCategories.map((opt) => (
             <button
               key={opt}
@@ -106,8 +125,9 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
               </button>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
