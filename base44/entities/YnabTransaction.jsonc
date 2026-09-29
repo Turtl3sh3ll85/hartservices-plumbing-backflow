@@ -6,6 +6,10 @@
       "type": "string",
       "title": "YNAB Transaction ID"
     },
+    "account_name": {
+      "type": "string",
+      "title": "Account Name"
+    },
     "date": {
       "type": "string",
       "format": "date",

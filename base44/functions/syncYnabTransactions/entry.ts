@@ -34,6 +34,11 @@ export default async function(req) {
     if (!budgets.length) return Response.json({ error: 'No YNAB budgets found' }, { status: 400 });
     const budgetId = budgets[0].id;
 
+    // Fetch account names
+    const accountsRes = await fetch(`${YNAB_BASE}/budgets/${budgetId}/accounts`, { headers });
+    const accountsJson = await accountsRes.json();
+    const accountMap = Object.fromEntries((accountsJson?.data?.accounts || []).map((a) => [a.id, a.name]));
+
     // 2. Determine since_date
     let sinceDate = body.since_date;
     if (!sinceDate) {
@@ -71,6 +76,7 @@ export default async function(req) {
       const dollars = Math.round((Number(tx.amount) || 0) / 1000 * 100) / 100;
       const record = {
         ynab_id: tx.id,
+        account_name: accountMap[tx.account_id] || '',
         date: tx.date,
         amount: dollars,
         payee: tx.payee_name || '',
@@ -83,6 +89,7 @@ export default async function(req) {
       if (existing) {
         toUpdate.push({
           id: existing.id,
+          account_name: record.account_name,
           date: record.date,
           amount: record.amount,
           payee: record.payee,

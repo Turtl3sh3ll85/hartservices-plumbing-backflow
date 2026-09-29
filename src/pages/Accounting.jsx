@@ -1,17 +1,19 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { RefreshCw, Loader2, CheckCircle2, XCircle, Link2, Unlink, EyeOff } from "lucide-react";
+import { RefreshCw, Loader2, CheckCircle2, Link2, Unlink, EyeOff, Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
 import { computeSuggestions } from "@/lib/ynabMatching";
+import ManualMatchDialog from "@/components/ManualMatchDialog";
 
 export default function Accounting() {
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
+  const [matchTx, setMatchTx] = useState(null);
 
   const { data: transactions = [], isLoading: loadingTx } = useQuery({
     queryKey: ["ynabTransactions"],
@@ -31,8 +33,14 @@ export default function Accounting() {
 
   const paidInvoices = useMemo(() => invoices.filter((i) => i.payment_status === "paid" || i.payment_status === "partial"), [invoices]);
   const suggestions = useMemo(() => computeSuggestions(transactions, paidInvoices), [transactions, paidInvoices]);
-
   const invoiceMap = useMemo(() => Object.fromEntries(invoices.map((i) => [i.id, i])), [invoices]);
+
+  // Invoices within the last 90 days for manual matching
+  const recentInvoices = useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 90);
+    return invoices.filter((i) => i.created_date && new Date(i.created_date) >= cutoff);
+  }, [invoices]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -55,18 +63,35 @@ export default function Accounting() {
     setUpdatingId(null);
   };
 
-  const groups = useMemo(() => {
+  // Tag suggested invoice ids onto transactions
+  const tagged = useMemo(() => transactions.map((tx) => ({
+    ...tx,
+    _suggested_invoice_id: tx.matched === "unmatched" ? (suggestions[tx.ynab_id] || null) : null,
+  })), [transactions, suggestions]);
+
+  // Group by account
+  const accountGroups = useMemo(() => {
+    const map = new Map();
+    for (const tx of tagged) {
+      const name = tx.account_name || "Unknown Account";
+      if (!map.has(name)) map.set(name, []);
+      map.get(name).push(tx);
+    }
+    return Array.from(map.entries());
+  }, [tagged]);
+
+  const categorize = (list) => {
     const matched = [];
     const suggested = [];
     const unmatched = [];
-    for (const tx of transactions) {
+    for (const tx of list) {
       if (tx.matched === "matched") matched.push(tx);
       else if (tx.matched === "ignored") continue;
-      else if (suggestions[tx.ynab_id]) { tx._suggested_invoice_id = suggestions[tx.ynab_id]; suggested.push(tx); }
+      else if (tx._suggested_invoice_id) suggested.push(tx);
       else unmatched.push(tx);
     }
     return { matched, suggested, unmatched };
-  }, [transactions, suggestions]);
+  };
 
   const renderRow = (tx) => {
     const inv = tx._suggested_invoice_id ? invoiceMap[tx._suggested_invoice_id] : (tx.matched_invoice_id ? invoiceMap[tx.matched_invoice_id] : null);
@@ -106,6 +131,9 @@ export default function Accounting() {
           ) : (
             <>
               <StatusBadge status="unmatched" label="unmatched" />
+              <Button size="sm" variant="outline" onClick={() => setMatchTx(tx)}>
+                <Link2 className="w-4 h-4 mr-1" /> Match
+              </Button>
               <Button size="sm" variant="ghost" onClick={() => updateMatch(tx, "ignored")} disabled={busy} aria-label="Ignore">
                 <EyeOff className="w-4 h-4" />
               </Button>
@@ -115,6 +143,19 @@ export default function Accounting() {
       </div>
     );
   };
+
+  const renderSection = (title, list) => (
+    <Card className="overflow-hidden p-0">
+      <div className="px-4 py-2.5 border-b bg-muted/40 font-medium text-sm flex items-center justify-between">
+        <span>{title} ({list.length})</span>
+      </div>
+      {list.length === 0 ? (
+        <div className="p-4 text-sm text-muted-foreground">None.</div>
+      ) : (
+        <div className="divide-y">{list.map(renderRow)}</div>
+      )}
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -138,41 +179,33 @@ export default function Accounting() {
           No transactions yet. Click <strong>Sync now</strong> to pull from YNAB.
         </Card>
       ) : (
-        <>
-          <Card className="overflow-hidden p-0">
-            <div className="px-4 py-2.5 border-b bg-muted/40 font-medium text-sm flex items-center justify-between">
-              <span>Suggested matches ({groups.suggested.length})</span>
+        accountGroups.map(([accountName, txs]) => {
+          const cats = categorize(txs);
+          return (
+            <div key={accountName} className="space-y-3">
+              <div className="flex items-center gap-2 px-1">
+                <Wallet className="w-4 h-4 text-muted-foreground" />
+                <h2 className="font-heading text-lg font-semibold">{accountName}</h2>
+                <span className="text-sm text-muted-foreground">· {txs.length} transactions</span>
+              </div>
+              {renderSection("Suggested matches", cats.suggested)}
+              {renderSection("Unmatched", cats.unmatched)}
+              {renderSection("Matched", cats.matched)}
             </div>
-            {groups.suggested.length === 0 ? (
-              <div className="p-4 text-sm text-muted-foreground">No suggested matches.</div>
-            ) : (
-              <div className="divide-y">{groups.suggested.map(renderRow)}</div>
-            )}
-          </Card>
-
-          <Card className="overflow-hidden p-0">
-            <div className="px-4 py-2.5 border-b bg-muted/40 font-medium text-sm flex items-center justify-between">
-              <span>Unmatched ({groups.unmatched.length})</span>
-            </div>
-            {groups.unmatched.length === 0 ? (
-              <div className="p-4 text-sm text-muted-foreground">No unmatched transactions.</div>
-            ) : (
-              <div className="divide-y">{groups.unmatched.map(renderRow)}</div>
-            )}
-          </Card>
-
-          <Card className="overflow-hidden p-0">
-            <div className="px-4 py-2.5 border-b bg-muted/40 font-medium text-sm flex items-center justify-between">
-              <span>Matched ({groups.matched.length})</span>
-            </div>
-            {groups.matched.length === 0 ? (
-              <div className="p-4 text-sm text-muted-foreground">No matched transactions yet.</div>
-            ) : (
-              <div className="divide-y">{groups.matched.map(renderRow)}</div>
-            )}
-          </Card>
-        </>
+          );
+        })
       )}
+
+      <ManualMatchDialog
+        transaction={matchTx}
+        invoices={recentInvoices}
+        onMatch={async (invoiceId) => {
+          await updateMatch(matchTx, "matched", invoiceId);
+          setMatchTx(null);
+        }}
+        onClose={() => setMatchTx(null)}
+        busy={updatingId === matchTx?.id}
+      />
     </div>
   );
 }
