@@ -10,14 +10,18 @@
       "type": "string",
       "enum": [
         "business",
-        "personal"
+        "personal",
+        "routing"
       ],
       "title": "Type"
+    },
+    "merge_into": {
+      "type": "string",
+      "title": "Merge Into"
     }
   },
   "required": [
-    "account_name",
-    "type"
+    "account_name"
   ],
   "rls": {
     "read": {
