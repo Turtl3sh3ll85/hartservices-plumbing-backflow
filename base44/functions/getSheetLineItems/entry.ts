@@ -6,16 +6,17 @@ const HEADER_MAP = {
   unit_price: ["unit price", "unitprice", "price", "rate", "cost", "amount"],
   category: ["category", "type", "group", "section"],
   image_url: ["thumbnail", "thumbnail url", "image", "image url", "photo", "photo url", "picture", "img"],
-  details: ["details", "long description", "long desc", "note", "notes"],
+  details: ["description", "details", "long description", "long desc", "note", "notes"],
 };
 
-function matchHeader(header) {
+function matchHeaders(header) {
   const h = String(header || "").trim().toLowerCase();
-  if (!h) return null;
+  if (!h) return [];
+  const matches = [];
   for (const [field, names] of Object.entries(HEADER_MAP)) {
-    if (names.includes(h)) return field;
+    if (names.includes(h)) matches.push(field);
   }
-  return null;
+  return matches;
 }
 
 export default async function(req) {
@@ -58,8 +59,10 @@ export default async function(req) {
     const headers = rows[0];
     const fieldIndex = {};
     headers.forEach((h, idx) => {
-      const field = matchHeader(h);
-      if (field && fieldIndex[field] === undefined) fieldIndex[field] = idx;
+      const fields = matchHeaders(h);
+      for (const field of fields) {
+        if (fieldIndex[field] === undefined) { fieldIndex[field] = idx; break; }
+      }
     });
 
     const line_items = [];
