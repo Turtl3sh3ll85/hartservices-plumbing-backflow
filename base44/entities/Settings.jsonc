@@ -46,6 +46,10 @@
       "type": "string",
       "title": "Google Sheet ID for item catalog"
     },
+    "receipts_folder_id": {
+      "type": "string",
+      "title": "Google Drive folder ID for receipts"
+    },
     "weekly_summary_enabled": {
       "type": "boolean",
       "default": false,

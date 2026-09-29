@@ -54,6 +54,31 @@
       "default": "unmatched",
       "title": "Match Status"
     },
+    "receipts": {
+      "type": "array",
+      "title": "Pinned Receipts",
+      "items": {
+        "type": "object",
+        "properties": {
+          "drive_file_id": {
+            "type": "string",
+            "title": "Drive File ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "link": {
+            "type": "string",
+            "title": "Drive Link"
+          },
+          "thumbnail_url": {
+            "type": "string",
+            "title": "Thumbnail URL"
+          }
+        }
+      }
+    },
     "last_synced_date": {
       "type": "string",
       "format": "date-time",
