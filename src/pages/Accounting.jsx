@@ -141,9 +141,8 @@ export default function Accounting() {
             </>
           ) : (
             <>
-              <StatusBadge status="unmatched" label="unmatched" />
-              <Button size="sm" variant="outline" onClick={() => setMatchTx(tx)}>
-                <Link2 className="w-4 h-4 mr-1" /> Match
+              <Button size="sm" variant="outline" onClick={() => setMatchTx(tx)} className="border-amber-500/40 text-amber-600 hover:bg-amber-500/10">
+                <Link2 className="w-4 h-4 mr-1" /> Unmatched · Match
               </Button>
               <Button size="sm" variant="ghost" onClick={() => updateMatch(tx, "ignored")} disabled={busy} aria-label="Ignore">
                 <EyeOff className="w-4 h-4" />
