@@ -28,8 +28,8 @@ function SectionTitle({ icon: Icon, children }) {
         <Icon className="w-4 h-4" />
       </div>
       <h2 className="font-heading text-base font-semibold tracking-tight">{children}</h2>
-    </div>
-  );
+    </div>);
+
 }
 
 export default function InvoiceEditor() {
@@ -45,7 +45,7 @@ export default function InvoiceEditor() {
 
   const queryClient = useQueryClient();
   const { data: customers = [] } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
-  const { data: settings = null, isLoading: loadingSettings } = useQuery({ queryKey: ["settings"], queryFn: async () => { const st = await base44.entities.Settings.list().catch(() => []); return st[0] || null; } });
+  const { data: settings = null, isLoading: loadingSettings } = useQuery({ queryKey: ["settings"], queryFn: async () => {const st = await base44.entities.Settings.list().catch(() => []);return st[0] || null;} });
   const [form, setForm] = useState({
     customer_id: "",
     number: "",
@@ -61,7 +61,7 @@ export default function InvoiceEditor() {
     notes: "",
     payment_schedule: [],
     reminders_enabled: true,
-    cc_fee_enabled: false,
+    cc_fee_enabled: false
   });
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState(id || null);
@@ -75,13 +75,13 @@ export default function InvoiceEditor() {
 
   const { data: doc, isLoading: loadingDoc } = useQuery({
     queryKey: [isEstimateRoute ? "estimate" : "invoice", id],
-    queryFn: () => (isEstimateRoute ? base44.entities.Estimate.get(id) : base44.entities.Invoice.get(id)),
-    enabled: isEdit,
+    queryFn: () => isEstimateRoute ? base44.entities.Estimate.get(id) : base44.entities.Invoice.get(id),
+    enabled: isEdit
   });
   const { data: allDocs = [], isLoading: loadingAllDocs } = useQuery({
     queryKey: [isEstimateRoute ? "estimates-all" : "invoices-all"],
-    queryFn: () => (isEstimateRoute ? base44.entities.Estimate.list() : base44.entities.Invoice.list()),
-    enabled: !isEdit,
+    queryFn: () => isEstimateRoute ? base44.entities.Estimate.list() : base44.entities.Invoice.list(),
+    enabled: !isEdit
   });
 
   const populatedIdRef = useRef(null);
@@ -106,7 +106,7 @@ export default function InvoiceEditor() {
       const res = await base44.functions.invoke("getSheetLineItems", { sheet_id: "1x0jEtP3eJMFYi5dTDdBEtNrI8W5R7p9LqIGvCRKwKXw" });
       return res.data?.line_items || [];
     },
-    staleTime: Infinity,
+    staleTime: Infinity
   });
   const { data: modifiersData } = useQuery({
     queryKey: ["sheetModifiers"],
@@ -114,7 +114,7 @@ export default function InvoiceEditor() {
       const res = await base44.functions.invoke("getSheetModifiers", { sheet_id: "10XcNV3lHx0he2XoVV9TOS2OXEfZSqAi9rhp5KFvyt0E" });
       return res.data?.modifiers || [];
     },
-    staleTime: Infinity,
+    staleTime: Infinity
   });
   const catalog = catalogData || [];
   const modifiersCatalog = modifiersData || [];
@@ -129,7 +129,7 @@ export default function InvoiceEditor() {
       queryClient.setQueryData(["customers"], (prev) => [...(prev || []), cust]);
     } else if (c.company && !cust.company) {
       cust = await base44.entities.Customer.update(cust.id, { company: c.company });
-      queryClient.setQueryData(["customers"], (prev) => (prev || []).map((cu) => (cu.id === cust.id ? cust : cu)));
+      queryClient.setQueryData(["customers"], (prev) => (prev || []).map((cu) => cu.id === cust.id ? cust : cu));
     }
     setSelectedCustomerId(cust.id);
   };
@@ -160,7 +160,7 @@ export default function InvoiceEditor() {
     if (!savedId) return;
     const item = form.payment_schedule[i];
     const newPaid = !item.paid;
-    const nextSchedule = form.payment_schedule.map((s, idx) => (idx === i ? { ...s, paid: newPaid } : s));
+    const nextSchedule = form.payment_schedule.map((s, idx) => idx === i ? { ...s, paid: newPaid } : s);
     const amount_paid = nextSchedule.reduce((s, it) => s + (it.paid ? installmentAmount(it, totals.total) : 0), 0);
     const allPaid = nextSchedule.length > 0 && nextSchedule.every((it) => it.paid);
     const anyPaid = nextSchedule.some((it) => it.paid);
@@ -170,14 +170,14 @@ export default function InvoiceEditor() {
       amount_paid,
       payment_status: allPaid ? "paid" : anyPaid ? "partial" : "unpaid",
       payment_method: anyPaid ? "check" : "",
-      paid_date: allPaid ? today : "",
+      paid_date: allPaid ? today : ""
     };
     if (!isEstimate) update.status = allPaid ? "paid" : "sent";
     setForm((f) => ({ ...f, ...update }));
     const listKey = isEstimate ? "estimates" : "invoices";
-    queryClient.setQueryData([listKey], (old) => (old || []).map((x) => (x.id === savedId ? { ...x, ...update } : x)));
+    queryClient.setQueryData([listKey], (old) => (old || []).map((x) => x.id === savedId ? { ...x, ...update } : x));
     if (!isEstimate) {
-      queryClient.setQueryData(["invoices", "recent"], (old) => (old || []).map((x) => (x.id === savedId ? { ...x, ...update } : x)));
+      queryClient.setQueryData(["invoices", "recent"], (old) => (old || []).map((x) => x.id === savedId ? { ...x, ...update } : x));
     }
     try {
       const entity = isEstimate ? base44.entities.Estimate : base44.entities.Invoice;
@@ -191,8 +191,8 @@ export default function InvoiceEditor() {
   };
 
   const save = async (send = false) => {
-    if (!form.name) { toast({ description: `Name the ${docLabel}.` }); return; }
-    if (!selectedCustomerId) { toast({ description: "Select a customer." }); return; }
+    if (!form.name) {toast({ description: `Name the ${docLabel}.` });return;}
+    if (!selectedCustomerId) {toast({ description: "Select a customer." });return;}
     setSaving(true);
     const listKey = isEstimate ? "estimates" : "invoices";
     const tempId = savedId || `temp-${Date.now()}`;
@@ -201,14 +201,14 @@ export default function InvoiceEditor() {
     queryClient.setQueryData([listKey], (old) => {
       const arr = old || [];
       const idx = arr.findIndex((x) => x.id === (savedId || tempId));
-      if (idx >= 0) return arr.map((x) => (x.id === savedId ? { ...x, ...optimistic } : x));
+      if (idx >= 0) return arr.map((x) => x.id === savedId ? { ...x, ...optimistic } : x);
       return [optimistic, ...arr];
     });
     try {
       const basePayload = { ...form, customer_id: selectedCustomerId, customer_email: customerMap[selectedCustomerId]?.email || "", ...totals, status: send ? "sent" : form.status };
-      const payload = isEstimate
-        ? { customer_id: basePayload.customer_id, customer_email: basePayload.customer_email, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, cc_fee_enabled: basePayload.cc_fee_enabled, cc_fee: basePayload.cc_fee, total: basePayload.total, payment_schedule: basePayload.payment_schedule, status: basePayload.status, payment_status: basePayload.payment_status, payment_method: basePayload.payment_method, amount_paid: basePayload.amount_paid, paid_date: basePayload.paid_date, notes: basePayload.notes }
-        : basePayload;
+      const payload = isEstimate ?
+      { customer_id: basePayload.customer_id, customer_email: basePayload.customer_email, number: basePayload.number, name: basePayload.name, line_items: basePayload.line_items, subtotal: basePayload.subtotal, tax_rate: basePayload.tax_rate, tax: basePayload.tax, cc_fee_enabled: basePayload.cc_fee_enabled, cc_fee: basePayload.cc_fee, total: basePayload.total, payment_schedule: basePayload.payment_schedule, status: basePayload.status, payment_status: basePayload.payment_status, payment_method: basePayload.payment_method, amount_paid: basePayload.amount_paid, paid_date: basePayload.paid_date, notes: basePayload.notes } :
+      basePayload;
       const entity = isEstimate ? base44.entities.Estimate : base44.entities.Invoice;
       let resultId = savedId;
       let savedRecord;
@@ -220,7 +220,7 @@ export default function InvoiceEditor() {
         savedRecord = created;
         setSavedId(resultId);
       }
-      queryClient.setQueryData([listKey], (old) => (old || []).map((x) => (x.id === tempId ? { ...savedRecord, id: resultId } : x)));
+      queryClient.setQueryData([listKey], (old) => (old || []).map((x) => x.id === tempId ? { ...savedRecord, id: resultId } : x));
       if (pendingAttachments.length) {
         const flushed = [];
         for (const p of pendingAttachments) {
@@ -229,7 +229,7 @@ export default function InvoiceEditor() {
             const res = await base44.functions.invoke("uploadInvoiceAttachment", {
               file_uri,
               file_name: p.file.name,
-              mime_type: p.file.type || "application/octet-stream",
+              mime_type: p.file.type || "application/octet-stream"
             });
             const d = res.data || {};
             await base44.entities.InvoiceAttachment.create({
@@ -239,7 +239,7 @@ export default function InvoiceEditor() {
               drive_link: d.drive_link,
               thumbnail_url: d.thumbnail_url || "",
               mime_type: p.file.type || "",
-              type: p.type,
+              type: p.type
             });
           } catch (e) {
             flushed.push(p.file_name);
@@ -257,7 +257,7 @@ export default function InvoiceEditor() {
             toast({
               title: "Email not delivered to some recipients",
               description: `${failed.map((f) => f.to).join(", ")} — ${failed[0].error || "delivery failed"}. Connect a verified custom domain to email customers who aren't app users.`,
-              variant: "destructive",
+              variant: "destructive"
             });
           } else if (sent.length) {
             toast({ title: "Email sent", description: `Delivered to ${sent.join(", ")}` });
@@ -288,57 +288,57 @@ export default function InvoiceEditor() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-2xl font-semibold tracking-tight">{isEdit ? `Edit ${docLabel}` : `New ${docLabel}`}</h1>
-        {savedId && (
-          <div className="flex items-center gap-2 flex-wrap">
-            {isEstimate ? (
-              <StatusBadge status={form.status} />
-            ) : (
-              <InvoicePaymentControl
-                invoice={{ ...form, id: savedId, total: totals.total }}
-                onUpdated={(update) => setForm((f) => ({ ...f, ...update }))}
-              />
-            )}
+        {savedId &&
+        <div className="flex items-center gap-2 flex-wrap">
+            {isEstimate ?
+          <StatusBadge status={form.status} /> :
+
+          <InvoicePaymentControl
+            invoice={{ ...form, id: savedId, total: totals.total }}
+            onUpdated={(update) => setForm((f) => ({ ...f, ...update }))} />
+
+          }
             <OpenedIndicator opened={form.opened} lastOpenedDate={form.last_opened_date} />
           </div>
-        )}
+        }
       </div>
 
-      {!isEdit && (
-        <div className="inline-flex rounded-lg border bg-card p-0.5">
-          {["invoice", "estimate"].map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => switchType(t)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${docType === t ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-            >
+      {!isEdit &&
+      <div className="inline-flex rounded-lg border bg-card p-0.5">
+          {["invoice", "estimate"].map((t) =>
+        <button
+          key={t}
+          type="button"
+          onClick={() => switchType(t)}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${docType === t ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          
               {t}
             </button>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       <Card className="p-5 space-y-4">
         <SectionTitle icon={Contact}>Document details</SectionTitle>
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label>Customer</Label>
-            {selectedCustomerId ? (
-              <div className="flex items-center justify-between gap-2 p-2.5 rounded-md border bg-muted/30">
+            {selectedCustomerId ?
+            <div className="flex items-center justify-between gap-2 p-2.5 rounded-md border bg-muted/30">
                 <div className="min-w-0">
                   <div className="font-medium text-sm truncate">{customerMap[selectedCustomerId]?.name || "Selected customer"}</div>
-                  {customerMap[selectedCustomerId]?.email && (
-                    <div className="text-xs text-muted-foreground truncate">{customerMap[selectedCustomerId].email}</div>
-                  )}
+                  {customerMap[selectedCustomerId]?.email &&
+                <div className="text-xs text-muted-foreground truncate">{customerMap[selectedCustomerId].email}</div>
+                }
                 </div>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedCustomerId("")}>Change</Button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
+              </div> :
+
+            <div className="flex gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setManualOpen(true)}><Plus className="w-4 h-4 mr-1" /> New customer</Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => setGoogleOpen(true)}><Contact className="w-4 h-4 mr-1" /> Google Contacts</Button>
               </div>
-            )}
+            }
           </div>
           <div className="space-y-1.5">
             <Label>Invoice number</Label>
@@ -356,7 +356,7 @@ export default function InvoiceEditor() {
       <Card className="p-5 space-y-4">
         <SectionTitle icon={ClipboardList}>Line items</SectionTitle>
         <LineItemEditor lineItems={form.line_items} onChange={setLineItems} catalog={catalog} modifiersCatalog={modifiersCatalog} />
-        <p className="text-sm text-muted-foreground italic">{isEstimate ? "Estimates are valid for 30 days unless otherwise noted." : "Invoices are due within 7 days of issuance unless otherwise noted."}</p>
+        <p className="text-sm text-muted-foreground italic hidden">{isEstimate ? "Estimates are valid for 30 days unless otherwise noted." : "Invoices are due within 7 days of issuance unless otherwise noted."}</p>
       </Card>
 
       <Card className="p-5 space-y-4">
@@ -366,15 +366,15 @@ export default function InvoiceEditor() {
           <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
         </div>
 
-        {!isEstimate && (
-          <div className="flex items-center justify-between gap-4 py-1">
+        {!isEstimate &&
+        <div className="flex items-center justify-between gap-4 py-1">
             <div>
               <div className="text-sm font-medium">Daily payment reminders</div>
               <p className="text-sm text-muted-foreground">Send the customer a daily reminder email until this invoice is paid.</p>
             </div>
             <Switch checked={form.reminders_enabled !== false} onCheckedChange={(v) => setForm({ ...form, reminders_enabled: v })} />
           </div>
-        )}
+        }
 
         <div className="flex items-center justify-between gap-4 py-1">
           <div>
@@ -386,9 +386,9 @@ export default function InvoiceEditor() {
 
         <div className="border-t pt-4 space-y-1.5">
           <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{formatMoney(totals.subtotal)}</span></div>
-          {totals.cc_fee > 0 && (
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Credit Card Fee (3.5%)</span><span className="tabular-nums">{formatMoney(totals.cc_fee)}</span></div>
-          )}
+          {totals.cc_fee > 0 &&
+          <div className="flex justify-between text-sm"><span className="text-muted-foreground">Credit Card Fee (3.5%)</span><span className="tabular-nums">{formatMoney(totals.cc_fee)}</span></div>
+          }
           <div className="flex justify-between text-lg font-heading font-semibold pt-1"><span>Total</span><span className="tabular-nums">{formatMoney(totals.total)}</span></div>
         </div>
 
@@ -397,8 +397,8 @@ export default function InvoiceEditor() {
           schedule={form.payment_schedule}
           onChange={(s) => setForm({ ...form, payment_schedule: s })}
           canMarkPaid={!!savedId}
-          onTogglePaid={toggleSchedulePaid}
-        />
+          onTogglePaid={toggleSchedulePaid} />
+        
       </Card>
 
       <Card className="p-5">
@@ -412,16 +412,16 @@ export default function InvoiceEditor() {
               file,
               file_name: file.name,
               previewUrl: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
-              type: file.type.startsWith("image/") ? "photo" : "document",
+              type: file.type.startsWith("image/") ? "photo" : "document"
             }));
             setPendingAttachments((prev) => [...prev, ...items]);
           }}
-          onRemovePending={(pid) => setPendingAttachments((prev) => prev.filter((p) => p.id !== pid))}
-        />
+          onRemovePending={(pid) => setPendingAttachments((prev) => prev.filter((p) => p.id !== pid))} />
+        
       </Card>
 
-      {payLink && (
-        <Card className="p-4 bg-primary/5 border-primary/20">
+      {payLink &&
+      <Card className="p-4 bg-primary/5 border-primary/20">
           <div className="flex items-center gap-2 text-sm font-medium mb-2"><LinkIcon className="w-4 h-4" /> {isEstimate ? "Accept link" : "Payment link"}</div>
           <p className="text-xs text-muted-foreground mb-3">{isEstimate ? "Share this link with your client so they can review and accept the estimate." : "Share this link with your client so they can pay with PayPal."}</p>
           <div className="flex gap-2">
@@ -429,7 +429,7 @@ export default function InvoiceEditor() {
             <Button variant="outline" onClick={copyLink}>{copied ? <><Check className="w-4 h-4 mr-1" /> Copied</> : <><Copy className="w-4 h-4 mr-1" /> Copy</>}</Button>
           </div>
         </Card>
-      )}
+      }
 
       <GoogleContactsDialog open={googleOpen} onOpenChange={setGoogleOpen} onPick={pickGoogleContact} />
       <CustomerFormDialog open={manualOpen} onOpenChange={setManualOpen} onPick={pickManualCustomer} />
@@ -440,6 +440,6 @@ export default function InvoiceEditor() {
         <Button variant="outline" onClick={() => save(false)} disabled={saving}><Save className="w-4 h-4 mr-1" /> {saving ? "Saving…" : "Save draft"}</Button>
         <Button onClick={() => save(true)} disabled={saving || !form.name}><Send className="w-4 h-4 mr-1" /> Save &amp; send</Button>
       </div>
-    </div>
-  );
+    </div>);
+
 }
