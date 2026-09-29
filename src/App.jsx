@@ -24,6 +24,7 @@ const Invoices = lazy(() => import('@/pages/Invoices'));
 const InvoiceEditor = lazy(() => import('@/pages/InvoiceEditor'));
 const Estimates = lazy(() => import('@/pages/Estimates'));
 const Accounting = lazy(() => import('@/pages/Accounting'));
+const Receipts = lazy(() => import('@/pages/Receipts'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Users = lazy(() => import('@/pages/Users'));
 const UserDetail = lazy(() => import('@/pages/UserDetail'));
@@ -110,6 +111,7 @@ const AuthenticatedApp = () => {
               <Route path="/estimates/new" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
               <Route path="/estimates/:id" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
               <Route path="/accounting" element={<RoleGuard roles={["admin", "accountant"]}><Accounting /></RoleGuard>} />
+              <Route path="/receipts" element={<RoleGuard roles={["admin", "accountant"]}><Receipts /></RoleGuard>} />
               <Route path="/customers" element={<RoleGuard roles={["admin"]}><Customers /></RoleGuard>} />
               <Route path="/settings" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
               <Route path="/users" element={<RoleGuard roles={["admin"]}><Users /></RoleGuard>} />

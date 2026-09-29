@@ -20,11 +20,14 @@ export default async function(req) {
 
     if (folderId) {
       const q = `'${folderId}' in parents and trashed=false`;
-      const url = `${DRIVE}/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,modifiedTime,webViewLink,iconLink,fileExtension,size)&orderBy=modifiedTime desc&pageSize=200`;
+      const url = `${DRIVE}/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,modifiedTime,webViewLink,iconLink,fileExtension,size)&orderBy=folder,name&pageSize=200`;
       const res = await fetch(url, { headers });
       if (!res.ok) return Response.json({ error: `Drive list failed: ${await res.text()}` }, { status: 502 });
       const json = await res.json();
-      return Response.json({ files: json.files || [] });
+      const all = json.files || [];
+      const files = all.filter((f) => f.mimeType !== 'application/vnd.google-apps.folder');
+      const folders = all.filter((f) => f.mimeType === 'application/vnd.google-apps.folder');
+      return Response.json({ files, folders });
     }
 
     const q = `mimeType='application/vnd.google-apps.folder' and trashed=false`;

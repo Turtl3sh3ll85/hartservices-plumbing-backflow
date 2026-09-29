@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { base44 } from "@/api/base44Client";
-import { RefreshCw, Loader2, Link2, Unlink, Paperclip, X, FolderOpen } from "lucide-react";
+import { RefreshCw, Loader2, Link2, Unlink, Paperclip, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
@@ -26,7 +26,6 @@ export default function Accounting() {
   const [updatingId, setUpdatingId] = useState(null);
   const [matchTx, setMatchTx] = useState(null);
   const [pinTx, setPinTx] = useState(null);
-  const [showReceipts, setShowReceipts] = useState(false);
   const [collapsed, setCollapsed] = useState(() => readJSON(COLLAPSED_KEY, {}));
   const [order, setOrder] = useState(() => readJSON(ORDER_KEY, []));
 
@@ -246,9 +245,6 @@ export default function Accounting() {
           <p className="text-muted-foreground text-sm mt-1">Transactions matched to invoice payments.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowReceipts(true)}>
-            <FolderOpen className="w-4 h-4 mr-1.5" /> Receipts
-          </Button>
           <Button onClick={handleSync} disabled={syncing}>
             {syncing ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
             Sync now
@@ -298,8 +294,6 @@ export default function Accounting() {
         onClose={() => setMatchTx(null)}
         busy={updatingId === matchTx?.id}
       />
-
-      <ReceiptsDialog open={showReceipts} onClose={() => setShowReceipts(false)} title="Receipts" />
 
       <ReceiptsDialog
         open={!!pinTx}
