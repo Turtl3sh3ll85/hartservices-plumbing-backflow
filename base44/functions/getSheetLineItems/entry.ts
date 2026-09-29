@@ -7,6 +7,7 @@ const HEADER_MAP = {
   category: ["category", "type", "group", "section"],
   image_url: ["thumbnail", "thumbnail url", "image", "image url", "photo", "photo url", "picture", "img"],
   details: ["description", "details", "long description", "long desc", "note", "notes"],
+  markup: ["markup", "margin", "upcharge", "overhead"],
 };
 
 function matchHeaders(header) {
@@ -76,7 +77,9 @@ export default async function(req) {
       const category = fieldIndex.category !== undefined ? String(row[fieldIndex.category] || "").trim() : "";
       const image_url = fieldIndex.image_url !== undefined ? String(row[fieldIndex.image_url] || "").trim() : "";
       const details = fieldIndex.details !== undefined ? String(row[fieldIndex.details] || "").trim() : "";
-      line_items.push({ description, quantity, unit_price, category, image_url, details, markup: 0, markup_mode: "preset" });
+      const markup = fieldIndex.markup !== undefined ? parseFloat(row[fieldIndex.markup]) || 0 : 0;
+      const markup_mode = [0, 15, 25].includes(markup) ? "preset" : markup > 0 ? "custom" : "preset";
+      line_items.push({ description, quantity, unit_price, category, image_url, details, markup, markup_mode });
     }
 
     return Response.json({ line_items });
