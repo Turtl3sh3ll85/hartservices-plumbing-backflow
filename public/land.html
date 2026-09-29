@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quick Connect | HartServices Plumbing & Backflow</title>
+    <meta name="description" content="Quick links for HartServices Plumbing & Backflow. Book appointments, view pricing, and contact info.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" type="image/png" href="images/favicon.png">
+
+    <style>
+        /* --- CORE STYLES (Imported from your main site) --- */
+        html { scroll-behavior: smooth; }
+        html, body {
+            margin: 0; padding: 0; height: 100%; font-family: Arial, sans-serif; overflow-x: hidden;
+            background-color: #f4f7f9;
+        }
+        body { display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0; width: 100%; background: #fff; border-bottom: 1px solid #ddd;
+            z-index: 10000;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 20px; box-sizing: border-box;
+        }
+        nav .nav-left { display: flex; align-items: center; gap: 10px; flex-shrink: 1; }
+        nav img { height: 112px; max-width: 270px; object-fit: contain; }
+
+        .nav-links { display: flex; gap: 20px; align-items: center; flex-shrink: 0; }
+        .nav-links a { text-decoration: none; color: #000; font-weight: bold; white-space: nowrap; }
+
+        .btn-workorder {
+            background-color: #007bff;
+            color: #ffffff !important;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .btn-workorder:hover { background-color: #0056b3; }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 4px;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .hamburger div { width: 25px; height: 3px; background: #000; }
+
+        /* Main Layout */
+        main { flex: 1 0 auto; padding-top: 160px; }
+
+        section {
+            padding: 30px;
+            max-width: 600px; /* Narrower max-width for landing page focus */
+            margin: 0 auto 30px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        h1 { text-align: center; color: #333; font-size: 2.2em; margin-bottom: 5px; }
+        h2 { color: #007bff; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; text-align: center;}
+        p { text-align: center; }
+
+        /* --- LANDING PAGE SPECIFIC STYLES --- */
+
+        /* Profile / Contact Area */
+        .profile-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .profile-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0 5px 0;
+        }
+        .profile-title {
+            color: #666;
+            margin: 0 0 15px 0;
+        }
+
+        /* Big Mobile Buttons */
+        .quick-links-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-block {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            border-radius: 8px;
+            transition: transform 0.2s, opacity 0.2s;
+            box-sizing: border-box;
+            border: none;
+            color: white !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn-block:active { transform: scale(0.98); }
+
+        /* Button Colors */
+        .btn-primary { background-color: #007bff; } /* Blue */
+        .btn-success { background-color: #28a745; } /* Green */
+        .btn-dark { background-color: #333; }       /* Dark Grey */
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid #007bff;
+            color: #007bff !important;
+        }
+
+        /* Footer */
+        footer {
+            background: #333333; color: #ffffff; padding: 40px 20px; text-align: center;
+            font-size: 0.9em; line-height: 1.6;
+        }
+        footer a { color: #cccccc; }
+
+        .mobile-review-btn {
+            display: none; position: fixed; bottom: 0; left: 0; width: 100%;
+            background-color: #007bff; color: white; text-align: center;
+            padding: 15px; font-size: 18px; font-weight: bold; text-decoration: none;
+            z-index: 20000;
+        }
+
+        /* Mobile Adjustments */
+        @media(max-width:767px) {
+            nav img { height: 80px; max-width: 190px; }
+            main { padding-top: 120px; }
+            .nav-links {
+                display: none; flex-direction: column; background: #fff;
+                position: absolute; top: 100%; right: 0; width: 200px;
+                border: 1px solid #ddd; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+            .nav-links.show { display: flex; }
+            .nav-links a { padding: 12px; border-bottom: 1px solid #eee; }
+            .hamburger { display: flex; }
+            section { padding: 20px; margin: 15px; }
+            .mobile-review-btn { display: block; }
+            footer { padding-bottom: 80px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-left">
+        <a href="index.html"><img src="images/templatemo_logo.png" alt="HartServices Logo"></a>
+    </div>
+    <div class="nav-links" id="navLinks">
+        <a href="http://www.hartservices.us/workorder.html" class="btn-workorder">New Workorder</a>
+        <a href="book.html">Book Appointment</a>
+        <a href="info.html">Info</a>
+        <a href="contact.html">Contact</a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Toggle Navigation">
+        <div></div><div></div><div></div>
+    </button>
+</nav>
+
+<main>
+    <section style="border-top: 4px solid #007bff;">
+        <div class="profile-header">
+            <h1 class="profile-name">HartServices Plumbing & Backflow</h1>
+
+            <div style="margin-top: 15px;">
+                <a href="sms:2104300692" class="btn-block btn-primary" style="margin-bottom: 10px;">
+                    📞 Text 210-430-0692
+                </a>
+                <a href="mailto:Jon@HartServices.us" class="btn-block btn-outline" style="margin-bottom: 10px;">
+                    ✉️ Email Jon
+                </a>
+                <a href="jonhart.vcf" class="btn-block btn-dark" download>
+                    📇 Save Contact (vCard)
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Quick Actions</h2>
+        <div class="quick-links-container">
+            <a href="book.html" class="btn-block btn-success">
+                📅 Book Appointment
+            </a>
+              <div class="quick-links-container">
+            <a href="order.html" class="btn-block btn-success">
+                📅 Create Workorder
+            </a>
+            <a href="pricing.html" class="btn-block btn-primary">
+                💲 View Pricing
+            </a>
+
+            <a href="info.html" class="btn-block btn-primary" style="background-color: #17a2b8;">
+                📋 Customer Info
+            </a>
+
+            <a href="review.html" class="btn-block btn-outline">
+                ⭐ Reviews
+            </a>
+			<a href="contact.html" class="btn-block btn-outline">
+                 Give me Your Contact Info
+            </a>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>Serving the Greater San Antonio Area</p>
+    <p><strong>210-430-0692</strong> | Jon@HartServices.us</p>
+    <p>© 2026 HartServices Plumbing & Backflow</p>
+    <div style="font-size: 0.8em; max-width: 800px; margin: 20px auto; padding: 15px; border-top: 1px solid #555; opacity: 0.8;">
+        <p><a href="privacy.html">Privacy Policy</a> | <a href="contact.html">Contact & Opt-In</a></p>
+    </div>
+</footer>
+
+<a href="https://g.page/r/CdtUyswN8NSoEAI/review" class="mobile-review-btn" target="_blank">Leave Me A Review!</a>
+
+<script>
+    // Hamburger toggle
+    document.getElementById('hamburger').addEventListener('click', function() {
+        document.getElementById('navLinks').classList.toggle('show');
+    });
+
+    // Close menu on click
+    document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', () => {
+            document.getElementById('navLinks').classList.remove('show');
+        });
+    });
+</script>
+
+</body>
+</html>
