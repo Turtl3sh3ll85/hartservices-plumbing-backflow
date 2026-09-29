@@ -22,6 +22,7 @@ export default function MyDocuments() {
   const navigate = useNavigate();
   const { settings } = useSettings();
   const [hidePaid, setHidePaid] = useState(false);
+  const [view, setView] = useState("invoices");
 
   const { data: portal = {}, isLoading, error: portalError } = useQuery({
     queryKey: ["customerPortal", email],
@@ -107,6 +108,16 @@ export default function MyDocuments() {
           </Card>
         ) : (
           <>
+            <div className="inline-flex rounded-lg border bg-card p-0.5 w-full sm:w-auto">
+              <button type="button" onClick={() => setView("invoices")} className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors ${view === "invoices" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                <FileText className="w-4 h-4 inline mr-1.5" /> Invoices{invoices.length > 0 ? ` (${invoices.length})` : ""}
+              </button>
+              <button type="button" onClick={() => setView("estimates")} className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors ${view === "estimates" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                <ClipboardList className="w-4 h-4 inline mr-1.5" /> Estimates{estimates.length > 0 ? ` (${estimates.length})` : ""}
+              </button>
+            </div>
+
+            {view === "invoices" && (
             <div>
               <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
                 <h2 className="font-heading font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Invoices</h2>
@@ -154,7 +165,9 @@ export default function MyDocuments() {
                 </Card>
               )}
             </div>
+            )}
 
+            {view === "estimates" && (
             <div>
               <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Estimates</h2>
               {estimates.length === 0 ? (
@@ -182,7 +195,7 @@ export default function MyDocuments() {
                 </Card>
               )}
             </div>
-
+            )}
           </>
         )}
       </main>
