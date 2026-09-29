@@ -16,6 +16,8 @@ import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { formatMoney } from "@/lib/invoice";
+import { groupInvoicesByCustomer } from "@/lib/groupByCustomer";
+import CustomerGroupHeader from "@/components/CustomerGroupHeader";
 
 export default function Invoices() {
   const { toast } = useToast();
@@ -54,6 +56,8 @@ export default function Invoices() {
     const matchesStatus = statusFilter === "all" || i.payment_status === statusFilter || i.status === statusFilter;
     return matchesQuery && matchesStatus;
   });
+
+  const grouped = useMemo(() => groupInvoicesByCustomer(filtered, customerMap), [filtered, customerMap]);
 
   const outstanding = invoices.filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft").reduce((s, i) => s + ((Number(i.total) || 0) - (Number(i.amount_paid) || 0)), 0);
 
@@ -97,39 +101,44 @@ export default function Invoices() {
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="divide-y">
-            {filtered.map((i) => {
-              const c = customerMap[i.customer_id];
-              return (
-                <div key={i.id} className="p-4 hover:bg-accent transition-colors">
-                  <div className="flex items-center justify-between gap-3 min-h-11">
-                    <Link to={`/invoices/${i.id}`} className="flex flex-1 items-center justify-between gap-3 min-w-0 min-h-11 -m-4 p-4">
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">{i.name || "Untitled invoice"}</div>
-                        <div className="text-sm text-muted-foreground truncate">{i.number}{c ? ` · ${c.name}` : ""}</div>
+            {grouped.map((group) => (
+              <div key={group.key}>
+                <CustomerGroupHeader name={group.name} count={group.items.length} />
+                {group.items.map((i) => {
+                  const c = customerMap[i.customer_id];
+                  return (
+                    <div key={i.id} className="p-4 hover:bg-accent transition-colors">
+                      <div className="flex items-center justify-between gap-3 min-h-11">
+                        <Link to={`/invoices/${i.id}`} className="flex flex-1 items-center justify-between gap-3 min-w-0 min-h-11 -m-4 p-4">
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{i.name || "Untitled invoice"}</div>
+                            <div className="text-sm text-muted-foreground truncate">{i.number}{c ? ` · ${c.name}` : ""}</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
+                              <InvoicePaymentControl invoice={i} />
+                            </div>
+                            <PaidAmountLabel invoice={i} />
+                            <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
+                          </div>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                          onClick={() => setPendingDelete(i)}
+                          aria-label={`Delete ${i.name || i.number || "invoice"}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                          <InvoicePaymentControl invoice={i} />
-                        </div>
-                        <PaidAmountLabel invoice={i} />
-                        <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
-                      </div>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-                      onClick={() => setPendingDelete(i)}
-                      aria-label={`Delete ${i.name || i.number || "invoice"}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <InvoicePaymentSchedule invoice={i} />
-                </div>
-              );
-            })}
+                      <InvoicePaymentSchedule invoice={i} />
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </Card>
       )}
