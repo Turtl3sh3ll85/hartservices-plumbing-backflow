@@ -20,7 +20,7 @@ export default async function(req) {
 
     if (folderId) {
       const q = `'${folderId}' in parents and trashed=false`;
-      const url = `${DRIVE}/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,modifiedTime,webViewLink,iconLink,fileExtension,size)&orderBy=folder,name&pageSize=200`;
+      const url = `${DRIVE}/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,modifiedTime,webViewLink,iconLink,thumbnailLink,fileExtension,size)&orderBy=folder,name&pageSize=200`;
       const res = await fetch(url, { headers });
       if (!res.ok) return Response.json({ error: `Drive list failed: ${await res.text()}` }, { status: 502 });
       const json = await res.json();

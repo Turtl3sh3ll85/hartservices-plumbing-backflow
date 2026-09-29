@@ -27,7 +27,11 @@ export default function Accounting() {
   const [matchTx, setMatchTx] = useState(null);
   const [pinTx, setPinTx] = useState(null);
   const [collapsed, setCollapsed] = useState(() => readJSON(COLLAPSED_KEY, {}));
-  const [order, setOrder] = useState(() => readJSON(ORDER_KEY, []));
+  const [order, setOrder] = useState(() => {
+    const raw = readJSON(ORDER_KEY, null);
+    if (Array.isArray(raw)) return { business: [], personal: [], unlabeled: raw };
+    return raw || { business: [], personal: [], unlabeled: [] };
+  });
 
   useEffect(() => { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed)); }, [collapsed]);
   useEffect(() => { localStorage.setItem(ORDER_KEY, JSON.stringify(order)); }, [order]);
@@ -47,6 +51,12 @@ export default function Accounting() {
       return res;
     },
   });
+
+  const { data: labelRecords = [] } = useQuery({
+    queryKey: ["accountLabels"],
+    queryFn: async () => base44.entities.AccountLabel.list(),
+  });
+  const labelMap = useMemo(() => Object.fromEntries(labelRecords.map((l) => [l.account_name, l.type])), [labelRecords]);
 
   const paidInvoices = useMemo(() => invoices.filter((i) => i.payment_status === "paid" || i.payment_status === "partial"), [invoices]);
   const suggestions = useMemo(() => computeSuggestions(transactions, paidInvoices), [transactions, paidInvoices]);
@@ -108,6 +118,20 @@ export default function Accounting() {
     setUpdatingId(null);
   };
 
+  const setAccountLabel = async (accountName, type) => {
+    const existing = labelRecords.find((l) => l.account_name === accountName);
+    try {
+      if (type === "unlabeled") {
+        if (existing) await base44.entities.AccountLabel.delete(existing.id);
+      } else if (existing) {
+        await base44.entities.AccountLabel.update(existing.id, { type });
+      } else {
+        await base44.entities.AccountLabel.create({ account_name: accountName, type });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["accountLabels"] });
+    } catch (e) {}
+  };
+
   const tagged = useMemo(() => transactions.map((tx) => ({
     ...tx,
     _suggested_invoice_id: tx.matched === "unmatched" ? (suggestions[tx.ynab_id] || null) : null,
@@ -123,20 +147,35 @@ export default function Accounting() {
     return Array.from(map.entries());
   }, [tagged]);
 
-  const orderedAccounts = useMemo(() => {
-    const names = accountGroups.map(([n]) => n);
-    const nameSet = new Set(names);
-    const ordered = order.filter((n) => nameSet.has(n));
+  const GROUPS = ["business", "personal", "unlabeled"];
+
+  const grouped = useMemo(() => {
+    const buckets = { business: [], personal: [], unlabeled: [] };
+    for (const entry of accountGroups) {
+      const name = entry[0];
+      const type = labelMap[name] || "unlabeled";
+      buckets[type].push(entry);
+    }
+    return buckets;
+  }, [accountGroups, labelMap]);
+
+  const orderBucket = (type, entries) => {
+    const ord = order[type] || [];
+    const names = entries.map((e) => e[0]);
+    const set = new Set(names);
+    const ordered = ord.filter((n) => set.has(n));
     const rest = names.filter((n) => !ordered.includes(n));
-    return [...ordered, ...rest].map((n) => accountGroups.find(([x]) => x === n));
-  }, [accountGroups, order]);
+    return [...ordered, ...rest].map((n) => entries.find((e) => e[0] === n));
+  };
 
   const onDragEnd = (result) => {
-    if (!result.destination || result.destination.index === result.source.index) return;
-    const names = orderedAccounts.map(([n]) => n);
-    const [moved] = names.splice(result.source.index, 1);
-    names.splice(result.destination.index, 0, moved);
-    setOrder(names);
+    const { source, destination } = result;
+    if (!destination || source.droppableId !== destination.droppableId) return;
+    if (destination.index === source.index) return;
+    const list = orderBucket(source.droppableId, grouped[source.droppableId]).map((e) => e[0]);
+    const [moved] = list.splice(source.index, 1);
+    list.splice(destination.index, 0, moved);
+    setOrder((o) => ({ ...o, [source.droppableId]: list }));
   };
 
   const categorize = (list) => {
@@ -262,25 +301,41 @@ export default function Accounting() {
         </Card>
       ) : (
         <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="accounts">
-            {(provided) => (
-              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-6">
-                {orderedAccounts.map(([account, txs], index) => (
-                  <AccountGroup
-                    key={account}
-                    account={account}
-                    txs={txs}
-                    index={index}
-                    collapsed={!!collapsed[account]}
-                    onToggleCollapse={() => setCollapsed((c) => ({ ...c, [account]: !c[account] }))}
-                    renderSection={renderSection}
-                    categorize={categorize}
-                  />
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
+          <div className="space-y-8">
+            {GROUPS.map((group) => {
+              const entries = orderBucket(group, grouped[group]);
+              if (entries.length === 0) return null;
+              return (
+                <div key={group} className="space-y-3">
+                  <h2 className="font-heading text-xl font-semibold px-1">
+                    {group === "business" ? "Business" : group === "personal" ? "Personal" : "Unlabeled"}
+                    <span className="text-sm text-muted-foreground font-normal ml-2">· {entries.length}</span>
+                  </h2>
+                  <Droppable droppableId={group}>
+                    {(provided) => (
+                      <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-6">
+                        {entries.map(([account, txs], index) => (
+                          <AccountGroup
+                            key={account}
+                            account={account}
+                            txs={txs}
+                            index={index}
+                            collapsed={collapsed[account] !== false}
+                            onToggleCollapse={() => setCollapsed((c) => ({ ...c, [account]: !(c[account] !== false) }))}
+                            labelType={labelMap[account] || "unlabeled"}
+                            onSetLabel={(type) => setAccountLabel(account, type)}
+                            renderSection={renderSection}
+                            categorize={categorize}
+                          />
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              );
+            })}
+          </div>
         </DragDropContext>
       )}
 

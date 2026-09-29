@@ -1,0 +1,71 @@
+{
+  "name": "AccountLabel",
+  "type": "object",
+  "properties": {
+    "account_name": {
+      "type": "string",
+      "title": "Account Name"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "business",
+        "personal"
+      ],
+      "title": "Type"
+    }
+  },
+  "required": [
+    "account_name",
+    "type"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

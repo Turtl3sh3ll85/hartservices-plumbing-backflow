@@ -4,14 +4,34 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Loader2, Folder, FileText, Check, ExternalLink, ChevronDown, ChevronRight } from "lucide-react";
 
+function FileThumb({ file }) {
+  const [err, setErr] = useState(false);
+  if (file.thumbnailLink && !err) {
+    return (
+      <img
+        src={file.thumbnailLink}
+        alt={file.name}
+        loading="lazy"
+        className="w-full h-full object-cover"
+        onError={() => setErr(true)}
+      />
+    );
+  }
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <FileText className="w-10 h-10 text-muted-foreground" />
+    </div>
+  );
+}
+
 function FileGrid({ files, onPick }) {
   const isPickMode = !!onPick;
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
       {files.map((f) => (
         <div key={f.id} className="rounded-lg border bg-card overflow-hidden flex flex-col">
-          <div className="aspect-video bg-muted flex items-center justify-center">
-            <FileText className="w-8 h-8 text-muted-foreground" />
+          <div className="aspect-[4/3] bg-muted flex items-center justify-center overflow-hidden">
+            <FileThumb file={f} />
           </div>
           <div className="p-2 flex-1 flex flex-col gap-1.5">
             <span className="text-xs font-medium truncate" title={f.name}>{f.name}</span>
