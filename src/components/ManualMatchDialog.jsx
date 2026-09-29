@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/invoice";
 import { Loader2 } from "lucide-react";
 
-export default function ManualMatchDialog({ transaction, invoices, onMatch, onClose, busy }) {
+export default function ManualMatchDialog({ transaction, invoices, onMatch, onIgnore, onClose, busy }) {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -57,11 +57,21 @@ export default function ManualMatchDialog({ transaction, invoices, onMatch, onCl
             ))
           )}
         </div>
-        {busy && (
-          <div className="flex items-center justify-center text-sm text-muted-foreground">
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
-          </div>
-        )}
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <button
+            type="button"
+            onClick={onIgnore}
+            disabled={busy}
+            className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline disabled:opacity-50 min-h-11"
+          >
+            Transaction not for a job
+          </button>
+          {busy && (
+            <span className="flex items-center text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
+            </span>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

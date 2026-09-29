@@ -408,6 +408,10 @@ export default function Accounting() {
           await updateMatch(matchTx, "matched", invoiceId);
           setMatchTx(null);
         }}
+        onIgnore={async () => {
+          if (matchTx) await updateMatch(matchTx, "ignored", null);
+          setMatchTx(null);
+        }}
         onClose={() => setMatchTx(null)}
         busy={updatingId === matchTx?.id}
       />
