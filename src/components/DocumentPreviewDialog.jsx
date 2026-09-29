@@ -9,7 +9,7 @@ import StatusBadge from "@/components/StatusBadge";
 import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection, installmentAmount } from "@/lib/invoice";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 
-export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose }) {
+export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit }) {
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
   if (!doc) return null;
@@ -28,7 +28,8 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
 
   const edit = () => {
     onClose?.();
-    navigate(editPath);
+    if (onEdit) onEdit();
+    else navigate(editPath);
   };
 
   return (
@@ -47,8 +48,8 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
               <span className="hidden sm:inline">Download</span>
             </Button>
             <Button size="sm" onClick={edit}>
-              <Pencil className="w-4 h-4" />
-              <span className="hidden sm:inline">Edit</span>
+              {!onEdit && <Pencil className="w-4 h-4" />}
+              <span className="hidden sm:inline">{editLabel || "Edit"}</span>
             </Button>
           </div>
         </div>
