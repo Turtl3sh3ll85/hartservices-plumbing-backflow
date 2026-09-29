@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Image } from "@/components/ui/image";
 import { MessageSquare, ShieldCheck, Star } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
+import HeroCarousel from "@/components/landing/HeroCarousel";
 
 const TEXT_NUMBER = "210-430-0692";
 
-export default function LandingHero({ heroImage }) {
+export default function LandingHero() {
   const { settings } = useSettings();
 
   return (
@@ -32,7 +32,7 @@ export default function LandingHero({ heroImage }) {
         </div>
         <div className="relative">
           <div className="overflow-hidden rounded-2xl border shadow-lg">
-            <Image src={heroImage} alt="HartServices plumber at work" className="aspect-[4/3] w-full object-cover" fittingType="fill" />
+            <HeroCarousel />
           </div>
           <div className="absolute -bottom-4 -left-4 hidden items-center gap-2 rounded-xl border bg-card px-4 py-3 shadow-md sm:flex">
             <ShieldCheck className="h-5 w-5 text-primary" />
