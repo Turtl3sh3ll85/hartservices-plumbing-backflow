@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Image } from "@/components/ui/image";
 
 const SLIDES = [
+  "https://media.base44.com/images/public/6ab936d39a6c956d5b685842/b8dcab6ec_Screenshot_20260808_185625_Facebook.jpg",
   "https://media.base44.com/images/public/6ab936d39a6c956d5b685842/bd485c571_20260410_175911.jpg",
   "https://media.base44.com/images/public/6ab936d39a6c956d5b685842/337f810ce_20260423_180102.jpg",
   "https://media.base44.com/images/public/6ab936d39a6c956d5b685842/ab4ef696e_20260424_173224.jpg",
