@@ -121,16 +121,18 @@ export default function LineItemRow({
           )}
         </div>
       </div>
-      <div className="space-y-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <Textarea
           placeholder="Add a longer description / notes for this line item (optional)"
           value={li.details || ""}
           onChange={(e) => onUpdate("details", e.target.value)}
           disabled={!editable}
           rows={2}
-          className="text-sm"
+          className="text-sm flex-1"
         />
-        <LineItemPhotos photos={li.photos || []} onChange={(p) => onUpdate("photos", p)} disabled={!editable} />
+        <div className="sm:pt-1">
+          <LineItemPhotos photos={li.photos || []} onChange={(p) => onUpdate("photos", p)} disabled={!editable} />
+        </div>
       </div>
       {(modifiersCatalog.length > 0 || mods.length > 0) && (
         <div className="flex flex-wrap items-center gap-1.5 sm:pl-1">
