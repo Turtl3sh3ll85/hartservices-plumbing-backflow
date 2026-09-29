@@ -8,6 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import { formatMoney } from "@/lib/invoice";
 import { computeSuggestions } from "@/lib/ynabMatching";
 import ManualMatchDialog from "@/components/ManualMatchDialog";
+import TransactionCategoryPicker from "@/components/TransactionCategoryPicker";
 
 export default function Accounting() {
   const queryClient = useQueryClient();
@@ -101,7 +102,17 @@ export default function Accounting() {
         <div className="min-w-0">
           <div className="font-medium truncate">{tx.payee || tx.memo || "Unknown payee"}</div>
           <div className="text-sm text-muted-foreground truncate">
-            {tx.date ? new Date(tx.date).toLocaleDateString() : ""}{tx.category ? ` · ${tx.category}` : ""}{tx.memo ? ` · ${tx.memo}` : ""}
+            {tx.date ? new Date(tx.date).toLocaleDateString() : ""}{tx.memo ? ` · ${tx.memo}` : ""}
+          </div>
+          <div className="mt-1">
+            <TransactionCategoryPicker
+              value={tx.custom_category || ""}
+              disabled={busy}
+              onChange={async (val) => {
+                await base44.entities.YnabTransaction.update(tx.id, { custom_category: val });
+                await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
+              }}
+            />
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">

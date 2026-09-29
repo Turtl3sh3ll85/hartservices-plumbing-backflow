@@ -25,7 +25,11 @@
     },
     "category": {
       "type": "string",
-      "title": "Category"
+      "title": "YNAB Category"
+    },
+    "custom_category": {
+      "type": "string",
+      "title": "Custom Category"
     },
     "memo": {
       "type": "string",
