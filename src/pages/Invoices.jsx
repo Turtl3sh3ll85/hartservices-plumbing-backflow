@@ -18,6 +18,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { formatMoney } from "@/lib/invoice";
 import { groupInvoicesByCustomer } from "@/lib/groupByCustomer";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
+import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import { useSettings } from "@/hooks/useSettings";
 
 export default function Invoices() {
   const { toast } = useToast();
@@ -29,6 +31,8 @@ export default function Invoices() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const { settings } = useSettings();
+  const [preview, setPreview] = useState(null);
 
   const customerMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);
 
@@ -109,20 +113,18 @@ export default function Invoices() {
                   return (
                     <div key={i.id} className="p-4 hover:bg-accent transition-colors">
                       <div className="flex items-center justify-between gap-3 min-h-11">
-                        <Link to={`/invoices/${i.id}`} className="flex flex-1 items-center justify-between gap-3 min-w-0 min-h-11 -m-4 p-4">
+                        <button type="button" onClick={() => setPreview(i)} className="flex flex-1 items-center justify-between gap-3 min-w-0 min-h-11 -m-4 p-4 text-left">
                           <div className="min-w-0">
                             <div className="font-medium truncate">{i.name || "Untitled invoice"}</div>
                             <div className="text-sm text-muted-foreground truncate">{i.number}{c ? ` · ${c.name}` : ""}</div>
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0">
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                              <InvoicePaymentControl invoice={i} />
-                            </div>
+                            <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
                             <PaidAmountLabel invoice={i} />
                             <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                           </div>
-                        </Link>
+                        </button>
+                        <InvoicePaymentControl invoice={i} />
                         <Button
                           variant="ghost"
                           size="icon"
@@ -156,6 +158,13 @@ export default function Invoices() {
           <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
         </div>
       )}
+      <DocumentPreviewDialog
+        doc={preview}
+        kind="invoice"
+        customer={preview ? customerMap[preview.customer_id] : null}
+        settings={settings}
+        onClose={() => setPreview(null)}
+      />
     </div>
   );
 }

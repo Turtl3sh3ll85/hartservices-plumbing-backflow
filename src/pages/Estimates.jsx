@@ -15,6 +15,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { formatMoney } from "@/lib/invoice";
 import { groupInvoicesByCustomer } from "@/lib/groupByCustomer";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
+import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import { useSettings } from "@/hooks/useSettings";
 
 export default function Estimates() {
   const { toast } = useToast();
@@ -26,6 +28,8 @@ export default function Estimates() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const { settings } = useSettings();
+  const [preview, setPreview] = useState(null);
 
   const customerMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);
 
@@ -99,7 +103,7 @@ export default function Estimates() {
                   const c = customerMap[e.customer_id];
                   return (
                     <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11 hover:bg-accent transition-colors">
-                      <Link to={`/estimates/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 flex-1 min-w-0 min-h-11 -m-4 p-4">
+                      <button type="button" onClick={() => setPreview(e)} className="flex flex-wrap items-center justify-between gap-3 flex-1 min-w-0 min-h-11 -m-4 p-4 text-left">
                         <div className="min-w-0">
                           <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
                           <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}</div>
@@ -111,7 +115,7 @@ export default function Estimates() {
                           </div>
                           <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
                         </div>
-                      </Link>
+                      </button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -143,6 +147,13 @@ export default function Estimates() {
           <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
         </div>
       )}
+      <DocumentPreviewDialog
+        doc={preview}
+        kind="estimate"
+        customer={preview ? customerMap[preview.customer_id] : null}
+        settings={settings}
+        onClose={() => setPreview(null)}
+      />
     </div>
   );
 }
