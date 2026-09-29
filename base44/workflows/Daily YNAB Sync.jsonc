@@ -1,0 +1,47 @@
+{
+  "description": "Pulls new YNAB transactions daily so the accounting view stays current",
+  "name": "Daily YNAB Sync",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "daily_ynab_sync",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncYnabTransactions",
+            "args": {
+              "from_workflow": true
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Sync YNAB transactions",
+            "description": "Pull latest transactions"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 9 * * *",
+      "one_time_date": null,
+      "timezone": "America/Chicago",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

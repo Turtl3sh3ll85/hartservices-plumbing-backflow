@@ -7,6 +7,8 @@ export default function StatusBadge({ status, label }) {
     paid: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     completed: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     converted: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    matched: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    suggested: "bg-primary/15 text-primary",
     in_progress: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
     scheduled: "bg-primary/15 text-primary",
     declined: "bg-destructive/15 text-destructive",
