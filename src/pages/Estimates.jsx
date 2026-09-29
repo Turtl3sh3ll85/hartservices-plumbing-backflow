@@ -13,6 +13,8 @@ import EmptyState from "@/components/EmptyState";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { formatMoney } from "@/lib/invoice";
+import { groupInvoicesByCustomer } from "@/lib/groupByCustomer";
+import CustomerGroupHeader from "@/components/CustomerGroupHeader";
 
 export default function Estimates() {
   const { toast } = useToast();
@@ -52,6 +54,8 @@ export default function Estimates() {
     return matchesQuery && matchesStatus;
   });
 
+  const grouped = useMemo(() => groupInvoicesByCustomer(filtered, customerMap), [filtered, customerMap]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -88,35 +92,40 @@ export default function Estimates() {
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="divide-y">
-            {filtered.map((e) => {
-              const c = customerMap[e.customer_id];
-              return (
-                <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11 hover:bg-accent transition-colors">
-                  <Link to={`/estimates/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 flex-1 min-w-0 min-h-11 -m-4 p-4">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
-                      <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}</div>
+            {grouped.map((group) => (
+              <div key={group.key}>
+                <CustomerGroupHeader name={group.name} count={group.items.length} />
+                {group.items.map((e) => {
+                  const c = customerMap[e.customer_id];
+                  return (
+                    <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11 hover:bg-accent transition-colors">
+                      <Link to={`/estimates/${e.id}`} className="flex flex-wrap items-center justify-between gap-3 flex-1 min-w-0 min-h-11 -m-4 p-4">
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
+                          <div className="text-sm text-muted-foreground truncate">{e.number}{c ? ` · ${c.name}` : ""}</div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
+                            <StatusBadge status={e.status} />
+                          </div>
+                          <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
+                        </div>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                        onClick={() => setPendingDelete(e)}
+                        aria-label={`Delete ${e.name || e.number || "estimate"}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
-                        <StatusBadge status={e.status} />
-                      </div>
-                      <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
-                    </div>
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-                    onClick={() => setPendingDelete(e)}
-                    aria-label={`Delete ${e.name || e.number || "estimate"}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </Card>
       )}
