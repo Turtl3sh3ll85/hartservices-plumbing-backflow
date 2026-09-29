@@ -207,7 +207,7 @@ export default function MyDocuments() {
           customer={preview ? customerFor(preview) : null}
           settings={settings}
           onClose={() => setPreview(null)}
-          editLabel={previewKind === "invoice" ? (preview?.payment_status === "paid" ? "View" : "View & Pay") : (preview?.status === "converted" ? "View" : "Review")}
+          editLabel={previewKind === "invoice" ? (preview?.payment_status === "paid" ? "View" : "View & Pay") : (preview?.status === "converted" ? "View" : "Review and Accept")}
           onEdit={() => navigate(previewKind === "invoice" ? `/pay/${preview?.id}` : `/accept/${preview?.id}`)}
         />
       </main>
