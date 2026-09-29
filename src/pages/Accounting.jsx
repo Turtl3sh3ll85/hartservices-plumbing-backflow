@@ -190,11 +190,12 @@ export default function Accounting() {
               </div>
               {renderSection("Suggested matches", cats.suggested)}
               {renderSection("Unmatched", cats.unmatched)}
-              {renderSection("Matched", cats.matched)}
             </div>
           );
         })
       )}
+
+      {transactions.length > 0 && renderSection("Matched", tagged.filter((tx) => tx.matched === "matched"))}
 
       <ManualMatchDialog
         transaction={matchTx}
