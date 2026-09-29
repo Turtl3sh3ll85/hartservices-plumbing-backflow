@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Star, Quote } from "lucide-react";
+import { Star, Quote, PencilLine } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
   Carousel,
@@ -36,6 +36,7 @@ export default function LandingReviews() {
   const [reviews, setReviews] = useState(FALLBACK_REVIEWS);
   const [rating, setRating] = useState(5);
   const [reviewCount, setReviewCount] = useState(31);
+  const [reviewUrl, setReviewUrl] = useState("");
   const [expanded, setExpanded] = useState({});
 
   useEffect(() => {
@@ -44,10 +45,12 @@ export default function LandingReviews() {
       .invoke("getGoogleReviews", {})
       .then((res) => {
         if (cancelled) return;
-        if (res?.reviews?.length) {
-          setReviews(res.reviews);
-          if (typeof res.rating === "number") setRating(res.rating);
-          if (typeof res.user_ratings_total === "number") setReviewCount(res.user_ratings_total);
+        const data = res?.data || {};
+        if (data.reviews?.length) {
+          setReviews(data.reviews);
+          if (typeof data.rating === "number") setRating(data.rating);
+          if (typeof data.user_ratings_total === "number") setReviewCount(data.user_ratings_total);
+          if (data.place_id) setReviewUrl(`https://search.google.com/local/writereview?place_id=${data.place_id}`);
         }
       })
       .catch(() => {});
@@ -86,6 +89,16 @@ export default function LandingReviews() {
             <Star className="h-3.5 w-3.5 fill-primary" /> {rating.toFixed(1)} · {reviewCount} Google Reviews
           </div>
           <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">What Our Customers Say</h2>
+          {reviewUrl && (
+            <a
+              href={reviewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            >
+              <PencilLine className="h-4 w-4" /> Leave a review!
+            </a>
+          )}
         </div>
 
         <Carousel opts={{ loop: true }} setApi={setApi} className="px-10">

@@ -95,6 +95,7 @@ export default async function(req) {
     return Response.json({
       rating: data.rating,
       user_ratings_total: data.userRatingCount,
+      place_id: placeId,
       reviews,
     });
   } catch (error) {
