@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { RefreshCw, Loader2, CheckCircle2, Link2, Unlink, EyeOff, Wallet } from "lucide-react";
+import { RefreshCw, Loader2, Link2, Unlink, Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
@@ -83,15 +83,13 @@ export default function Accounting() {
 
   const categorize = (list) => {
     const matched = [];
-    const suggested = [];
     const unmatched = [];
     for (const tx of list) {
       if (tx.matched === "matched") matched.push(tx);
       else if (tx.matched === "ignored") continue;
-      else if (tx._suggested_invoice_id) suggested.push(tx);
       else unmatched.push(tx);
     }
-    return { matched, suggested, unmatched };
+    return { matched, unmatched };
   };
 
   const renderRow = (tx) => {
@@ -129,25 +127,10 @@ export default function Accounting() {
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlink className="w-4 h-4" />}
               </Button>
             </>
-          ) : tx._suggested_invoice_id ? (
-            <>
-              <StatusBadge status="suggested" label="suggested" />
-              <Button size="sm" variant="outline" onClick={() => updateMatch(tx, "matched", tx._suggested_invoice_id)} disabled={busy}>
-                <CheckCircle2 className="w-4 h-4 mr-1" /> Confirm
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => updateMatch(tx, "ignored")} disabled={busy} aria-label="Ignore">
-                <EyeOff className="w-4 h-4" />
-              </Button>
-            </>
           ) : (
-            <>
-              <Button size="sm" variant="outline" onClick={() => setMatchTx(tx)} className="border-amber-500/40 text-amber-600 hover:bg-amber-500/10">
-                <Link2 className="w-4 h-4 mr-1" /> Unmatched
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => updateMatch(tx, "ignored")} disabled={busy} aria-label="Ignore">
-                <EyeOff className="w-4 h-4" />
-              </Button>
-            </>
+            <Button size="sm" variant="outline" onClick={() => setMatchTx(tx)} className="border-amber-500/40 text-amber-600 hover:bg-amber-500/10">
+              <Link2 className="w-4 h-4 mr-1" /> Unmatched
+            </Button>
           )}
         </div>
       </div>
@@ -198,7 +181,6 @@ export default function Accounting() {
                 <h2 className="font-heading text-lg font-semibold">{accountName}</h2>
                 <span className="text-sm text-muted-foreground">· {txs.length} transactions</span>
               </div>
-              {renderSection("Suggested matches", cats.suggested)}
               {renderSection("Unmatched", cats.unmatched)}
             </div>
           );
