@@ -1,28 +1,12 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Image } from "@/components/ui/image";
-import { Mail, ArrowRight, ShieldCheck, Star } from "lucide-react";
+import { MessageSquare, ShieldCheck, Star } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 
-export default function LandingHero({ heroImage }) {
-  const navigate = useNavigate();
-  const { settings } = useSettings();
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-  const phone = settings?.business_phone;
+const TEXT_NUMBER = "210-430-0692";
 
-  const submit = (e) => {
-    e.preventDefault();
-    const trimmed = email.trim();
-    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setError("Enter a valid email address.");
-      return;
-    }
-    setError("");
-    navigate(`/portal?email=${encodeURIComponent(trimmed.toLowerCase())}`);
-  };
+export default function LandingHero({ heroImage }) {
+  const { settings } = useSettings();
 
   return (
     <section id="top" className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background">
@@ -38,34 +22,13 @@ export default function LandingHero({ heroImage }) {
             Honest, upfront pricing and clean work from a locally owned plumber. From leak repair to backflow testing, water softeners, and tankless water heaters — we keep your home flowing.
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            {phone && (
-              <Button asChild size="lg" className="gap-2">
-                <a href={`tel:${phone}`}>Call {phone}</a>
-              </Button>
-            )}
+            <Button asChild size="lg" className="gap-2">
+              <a href={`sms:${TEXT_NUMBER.replace(/-/g, "")}`}><MessageSquare className="h-4 w-4" /> Text {TEXT_NUMBER}</a>
+            </Button>
             <Button asChild variant="outline" size="lg" className="gap-2">
               <a href="#services">Our Services</a>
             </Button>
           </div>
-          <form onSubmit={submit} className="max-w-md space-y-2 rounded-xl border bg-card p-4 shadow-sm">
-            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Mail className="h-4 w-4 text-primary" /> View your invoices & estimates
-            </label>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                aria-label="Your email"
-                className="h-11"
-              />
-              <Button type="submit" className="h-11 shrink-0 gap-1.5">
-                Go <ArrowRight className="h-4 w-4" />
-              </Button>
-            </div>
-            {error && <p className="text-xs text-destructive">{error}</p>}
-          </form>
         </div>
         <div className="relative">
           <div className="overflow-hidden rounded-2xl border shadow-lg">

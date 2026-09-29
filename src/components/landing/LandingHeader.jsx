@@ -1,20 +1,35 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Image } from "@/components/ui/image";
-import { Lock, Phone } from "lucide-react";
+import { Lock, Mail, ArrowRight } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 
 const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
 
 export default function LandingHeader() {
+  const navigate = useNavigate();
   const { settings } = useSettings();
   const brand = settings?.business_name || "HartServices Plumbing & Backflow";
-  const phone = settings?.business_phone;
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+
+  const submit = (e) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setError("");
+    navigate(`/portal?email=${encodeURIComponent(trimmed.toLowerCase())}`);
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <a href="#top" className="flex items-center gap-3">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+        <a href="#top" className="flex shrink-0 items-center gap-3">
           <div className="h-11 w-11 overflow-hidden rounded-full border bg-card">
             <Image src={settings?.logo_url || LOGO_URL} alt={brand} className="h-full w-full object-contain" />
           </div>
@@ -23,17 +38,43 @@ export default function LandingHeader() {
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Plumbing & Backflow LLC</div>
           </div>
         </a>
-        <div className="flex items-center gap-2">
-          {phone && (
-            <a href={`tel:${phone}`} className="hidden items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary sm:flex">
-              <Phone className="h-4 w-4" /> {phone}
-            </a>
-          )}
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link to="/login"><Lock className="h-3.5 w-3.5" /> Admin</Link>
+        <form onSubmit={submit} className="hidden items-center gap-2 md:flex">
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <Input
+              type="email"
+              placeholder="View your invoices & estimates"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              aria-label="Your email"
+              className="h-9 w-64 pl-9"
+            />
+          </div>
+          <Button type="submit" size="sm" className="h-9 gap-1.5">
+            Go <ArrowRight className="h-3.5 w-3.5" />
           </Button>
-        </div>
+          {error && <span className="text-xs text-destructive">{error}</span>}
+        </form>
+        <Button asChild variant="outline" size="sm" className="shrink-0 gap-1.5">
+          <Link to="/login"><Lock className="h-3.5 w-3.5" /> Admin</Link>
+        </Button>
       </div>
+      <form onSubmit={submit} className="flex items-center gap-2 border-t px-4 py-2 md:hidden">
+        <div className="relative flex-1">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <Input
+            type="email"
+            placeholder="View your invoices & estimates"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-label="Your email"
+            className="h-9 pl-9"
+          />
+        </div>
+        <Button type="submit" size="sm" className="h-9 gap-1.5">
+          Go <ArrowRight className="h-3.5 w-3.5" />
+        </Button>
+      </form>
     </header>
   );
 }
