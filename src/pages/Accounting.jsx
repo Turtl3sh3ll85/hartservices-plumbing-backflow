@@ -208,6 +208,13 @@ export default function Accounting() {
       .slice(0, 10);
   }, [tagged]);
 
+  const newestUncategorized = useMemo(() => {
+    return tagged
+      .filter((tx) => !tx.custom_category)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 10);
+  }, [tagged]);
+
   const categorize = (list) => {
     const matched = [];
     const unmatched = [];
@@ -351,6 +358,32 @@ export default function Accounting() {
                   ) : (
                     <Card className="overflow-hidden p-0">
                       <div className="divide-y">{newestUnmatched.map((tx) => renderRow(tx, true))}</div>
+                    </Card>
+                  )
+                )}
+              </div>
+            );
+          })()}
+          {(() => {
+            const isCollapsed = !!groupCollapsed["newestUncat"];
+            return (
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setGroupCollapsed((c) => ({ ...c, newestUncat: !c.newestUncat }))}
+                  className="flex items-center gap-2 px-1 min-h-11 w-full text-left"
+                  aria-expanded={!isCollapsed}
+                >
+                  <ChevronDown className={cn("w-5 h-5 transition-transform shrink-0", isCollapsed && "-rotate-90")} />
+                  <h2 className="font-heading text-xl font-semibold">Newest Uncategorized Transactions</h2>
+                  <span className="text-sm text-muted-foreground font-normal">· {newestUncategorized.length}</span>
+                </button>
+                {!isCollapsed && (
+                  newestUncategorized.length === 0 ? (
+                    <Card className="p-4 text-sm text-muted-foreground">No uncategorized transactions.</Card>
+                  ) : (
+                    <Card className="overflow-hidden p-0">
+                      <div className="divide-y">{newestUncategorized.map((tx) => renderRow(tx, true))}</div>
                     </Card>
                   )
                 )}
