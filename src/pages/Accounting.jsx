@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { base44 } from "@/api/base44Client";
 import { RefreshCw, Loader2, Link2, Unlink, Paperclip, X, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -16,7 +15,6 @@ import ReceiptsDialog from "@/components/accounting/ReceiptsDialog";
 import MergeAccountsDialog from "@/components/accounting/MergeAccountsDialog";
 
 const COLLAPSED_KEY = "acct_collapsed";
-const ORDER_KEY = "acct_order";
 const GROUP_COLLAPSED_KEY = "acct_group_collapsed";
 
 function readJSON(key, fallback) {
@@ -32,14 +30,8 @@ export default function Accounting() {
   const [collapsed, setCollapsed] = useState(() => readJSON(COLLAPSED_KEY, {}));
   const [groupCollapsed, setGroupCollapsed] = useState(() => readJSON(GROUP_COLLAPSED_KEY, {}));
   const [mergeGroup, setMergeGroup] = useState(null);
-  const [order, setOrder] = useState(() => {
-    const raw = readJSON(ORDER_KEY, null);
-    if (Array.isArray(raw)) return { business: [], personal: [], unlabeled: raw };
-    return raw || { business: [], personal: [], unlabeled: [] };
-  });
 
   useEffect(() => { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed)); }, [collapsed]);
-  useEffect(() => { localStorage.setItem(ORDER_KEY, JSON.stringify(order)); }, [order]);
   useEffect(() => { localStorage.setItem(GROUP_COLLAPSED_KEY, JSON.stringify(groupCollapsed)); }, [groupCollapsed]);
 
   const { data: transactions = [], isLoading: loadingTx } = useQuery({
@@ -207,24 +199,7 @@ export default function Accounting() {
     return buckets;
   }, [accountGroups, labelMap]);
 
-  const orderBucket = (type, entries) => {
-    const ord = order[type] || [];
-    const names = entries.map((e) => e[0]);
-    const set = new Set(names);
-    const ordered = ord.filter((n) => set.has(n));
-    const rest = names.filter((n) => !ordered.includes(n));
-    return [...ordered, ...rest].map((n) => entries.find((e) => e[0] === n));
-  };
-
-  const onDragEnd = (result) => {
-    const { source, destination } = result;
-    if (!destination || source.droppableId !== destination.droppableId) return;
-    if (destination.index === source.index) return;
-    const list = orderBucket(source.droppableId, grouped[source.droppableId]).map((e) => e[0]);
-    const [moved] = list.splice(source.index, 1);
-    list.splice(destination.index, 0, moved);
-    setOrder((o) => ({ ...o, [source.droppableId]: list }));
-  };
+  const sortedEntries = (entries) => [...entries].sort((a, b) => a[0].localeCompare(b[0]));
 
   const categorize = (list) => {
     const matched = [];
@@ -348,57 +323,49 @@ export default function Accounting() {
           No transactions yet. Click <strong>Sync now</strong> to pull from YNAB.
         </Card>
       ) : (
-        <DragDropContext onDragEnd={onDragEnd}>
-          <div className="space-y-8">
-            {GROUPS.map((group) => {
-              const entries = orderBucket(group, grouped[group]);
-              if (entries.length === 0) return null;
-              const isCollapsed = !!groupCollapsed[group];
-              return (
-                <div key={group} className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={() => setGroupCollapsed((c) => ({ ...c, [group]: !c[group] }))}
-                    className="flex items-center gap-2 px-1 min-h-11 w-full text-left"
-                    aria-expanded={!isCollapsed}
-                  >
-                    <ChevronDown className={cn("w-5 h-5 transition-transform shrink-0", isCollapsed && "-rotate-90")} />
-                    <h2 className="font-heading text-xl font-semibold">
-                      {group === "business" ? "Business" : group === "routing" ? "Routing" : group === "personal" ? "Personal" : "Unlabeled"}
-                    </h2>
-                    <span className="text-sm text-muted-foreground font-normal">· {entries.length}</span>
-                  </button>
-                  {!isCollapsed && (
-                    <Droppable droppableId={group}>
-                      {(provided) => (
-                        <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-6">
-                          {entries.map(([account, txs], index) => (
-                            <AccountGroup
-                              key={account}
-                              account={account}
-                              txs={txs}
-                              index={index}
-                              collapsed={collapsed[account] !== false}
-                              onToggleCollapse={() => setCollapsed((c) => ({ ...c, [account]: !(c[account] !== false) }))}
-                              labelType={labelMap[account] || "unlabeled"}
-                              onSetLabel={(type) => setAccountLabel(account, type)}
-                              mergedSources={mergedSourcesOf(account)}
-                              onUnmerge={(src) => unmergeAccount(src)}
-                              onMerge={() => setMergeGroup({ name: account, raws: groupRawAccounts(account) })}
-                              renderSection={renderSection}
-                              categorize={categorize}
-                            />
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </DragDropContext>
+        <div className="space-y-8">
+          {GROUPS.map((group) => {
+            const entries = sortedEntries(grouped[group]);
+            if (entries.length === 0) return null;
+            const isCollapsed = !!groupCollapsed[group];
+            return (
+              <div key={group} className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setGroupCollapsed((c) => ({ ...c, [group]: !c[group] }))}
+                  className="flex items-center gap-2 px-1 min-h-11 w-full text-left"
+                  aria-expanded={!isCollapsed}
+                >
+                  <ChevronDown className={cn("w-5 h-5 transition-transform shrink-0", isCollapsed && "-rotate-90")} />
+                  <h2 className="font-heading text-xl font-semibold">
+                    {group === "business" ? "Business" : group === "routing" ? "Routing" : group === "personal" ? "Personal" : "Unlabeled"}
+                  </h2>
+                  <span className="text-sm text-muted-foreground font-normal">· {entries.length}</span>
+                </button>
+                {!isCollapsed && (
+                  <div className="space-y-6">
+                    {entries.map(([account, txs]) => (
+                      <AccountGroup
+                        key={account}
+                        account={account}
+                        txs={txs}
+                        collapsed={collapsed[account] !== false}
+                        onToggleCollapse={() => setCollapsed((c) => ({ ...c, [account]: !(c[account] !== false) }))}
+                        labelType={labelMap[account] || "unlabeled"}
+                        onSetLabel={(type) => setAccountLabel(account, type)}
+                        mergedSources={mergedSourcesOf(account)}
+                        onUnmerge={(src) => unmergeAccount(src)}
+                        onMerge={() => setMergeGroup({ name: account, raws: groupRawAccounts(account) })}
+                        renderSection={renderSection}
+                        categorize={categorize}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
       <ManualMatchDialog
