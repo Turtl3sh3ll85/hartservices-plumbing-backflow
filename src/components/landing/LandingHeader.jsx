@@ -49,7 +49,7 @@ export default function LandingHeader() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               aria-label="Your email"
-              className="h-9 w-64 pl-9"
+              className="h-9 w-80 pl-9"
             />
           </div>
           <Button type="submit" size="sm" className="h-9 gap-1.5">
