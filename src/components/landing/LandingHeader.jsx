@@ -4,14 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Image } from "@/components/ui/image";
 import { Lock, Mail, ArrowRight } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useSettings } from "@/hooks/useSettings";
-
-const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
+import { LOGO_LIGHT, LOGO_DARK } from "@/lib/logos";
 
 export default function LandingHeader() {
   const navigate = useNavigate();
   const { settings } = useSettings();
+  const { resolvedTheme } = useTheme();
   const brand = settings?.business_name || "HartServices Plumbing & Backflow";
+  const logo = resolvedTheme === "dark" ? LOGO_DARK : LOGO_LIGHT;
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
 
@@ -31,7 +33,7 @@ export default function LandingHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <a href="#top" className="flex shrink-0 items-center gap-3">
           <div className="h-11 w-11 overflow-hidden rounded-full border bg-card">
-            <Image src={settings?.logo_url || LOGO_URL} alt={brand} className="h-full w-full object-contain" />
+            <Image src={settings?.logo_url || logo} alt={brand} className="h-full w-full object-contain" />
           </div>
           <div className="leading-tight">
             <div className="font-heading text-sm font-bold text-foreground">HartServices</div>
