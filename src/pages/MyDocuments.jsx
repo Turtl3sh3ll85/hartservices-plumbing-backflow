@@ -143,7 +143,7 @@ export default function MyDocuments() {
                             {i.payment_status === "paid" ? (
                               <Button asChild size="sm" variant="outline"><Link to={`/pay/${i.id}`}>View</Link></Button>
                             ) : (
-                              <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> Pay</Link></Button>
+                              <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> View & Pay</Link></Button>
                             )}
                           </div>
                         </div>
