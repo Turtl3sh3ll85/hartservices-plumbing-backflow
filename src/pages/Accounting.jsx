@@ -201,6 +201,13 @@ export default function Accounting() {
 
   const sortedEntries = (entries) => [...entries].sort((a, b) => a[0].localeCompare(b[0]));
 
+  const newestUnmatched = useMemo(() => {
+    return tagged
+      .filter((tx) => tx.matched !== "matched" && tx.matched !== "ignored")
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 10);
+  }, [tagged]);
+
   const categorize = (list) => {
     const matched = [];
     const unmatched = [];
@@ -212,7 +219,7 @@ export default function Accounting() {
     return { matched, unmatched };
   };
 
-  const renderRow = (tx) => {
+  const renderRow = (tx, showAccount = false) => {
     const inv = tx._suggested_invoice_id ? invoiceMap[tx._suggested_invoice_id] : (tx.matched_invoice_id ? invoiceMap[tx.matched_invoice_id] : null);
     const busy = updatingId === tx.id;
     const receipts = Array.isArray(tx.receipts) ? tx.receipts : [];
@@ -221,7 +228,7 @@ export default function Accounting() {
         <div className="min-w-0 flex-1 min-w-[180px]">
           <div className="font-medium truncate">{tx.payee || tx.memo || "Unknown payee"}</div>
           <div className="text-sm text-muted-foreground truncate">
-            {tx.date ? new Date(tx.date).toLocaleDateString() : ""}{tx.memo ? ` · ${tx.memo}` : ""}
+            {tx.date ? new Date(tx.date).toLocaleDateString() : ""}{showAccount && tx.account_name ? ` · ${tx.account_name}` : ""}{tx.memo ? ` · ${tx.memo}` : ""}
           </div>
           <div className="mt-1">
             <TransactionCategoryPicker
@@ -324,6 +331,32 @@ export default function Accounting() {
         </Card>
       ) : (
         <div className="space-y-8">
+          {(() => {
+            const isCollapsed = !!groupCollapsed["newest"];
+            return (
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setGroupCollapsed((c) => ({ ...c, newest: !c.newest }))}
+                  className="flex items-center gap-2 px-1 min-h-11 w-full text-left"
+                  aria-expanded={!isCollapsed}
+                >
+                  <ChevronDown className={cn("w-5 h-5 transition-transform shrink-0", isCollapsed && "-rotate-90")} />
+                  <h2 className="font-heading text-xl font-semibold">Newest Unmatched Transactions</h2>
+                  <span className="text-sm text-muted-foreground font-normal">· {newestUnmatched.length}</span>
+                </button>
+                {!isCollapsed && (
+                  newestUnmatched.length === 0 ? (
+                    <Card className="p-4 text-sm text-muted-foreground">No unmatched transactions.</Card>
+                  ) : (
+                    <Card className="overflow-hidden p-0">
+                      <div className="divide-y">{newestUnmatched.map((tx) => renderRow(tx, true))}</div>
+                    </Card>
+                  )
+                )}
+              </div>
+            );
+          })()}
           {GROUPS.map((group) => {
             const entries = sortedEntries(grouped[group]);
             if (entries.length === 0) return null;
