@@ -66,7 +66,7 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
         )}
       </button>
       {open && (
-        <div className="absolute z-20 mt-1 right-0 w-48 rounded-md border bg-popover shadow-md py-1 max-h-72 overflow-y-auto">
+        <div className="absolute z-50 mt-1 right-0 w-48 rounded-md border bg-popover shadow-lg py-1 max-h-72 overflow-y-auto">
           {sheetCategories.map((opt) => (
             <button
               key={opt}
