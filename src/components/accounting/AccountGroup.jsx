@@ -50,7 +50,7 @@ export default function AccountGroup({ account, txs, collapsed, onToggleCollapse
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {mergedSources.length > 0 && (
+      {!collapsed && mergedSources.length > 0 && (
         <div className="flex flex-wrap gap-1 px-1 pl-11">
           {mergedSources.map((src) => (
             <span key={src} className="inline-flex items-center gap-1 rounded-full bg-muted text-xs px-2 py-0.5">
