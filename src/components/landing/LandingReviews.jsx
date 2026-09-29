@@ -51,7 +51,7 @@ export default function LandingReviews() {
 
   useEffect(() => {
     if (!api) return;
-    const id = setInterval(autoplay, 5000);
+    const id = setInterval(autoplay, 10000);
     return () => clearInterval(id);
   }, [api, autoplay]);
 
