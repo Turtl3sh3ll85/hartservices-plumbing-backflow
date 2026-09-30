@@ -33,6 +33,9 @@ export default function Accounting() {
 
   useEffect(() => { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed)); }, [collapsed]);
   useEffect(() => { localStorage.setItem(GROUP_COLLAPSED_KEY, JSON.stringify(groupCollapsed)); }, [groupCollapsed]);
+  useEffect(() => base44.entities.YnabTransaction.subscribe(() => {
+    queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
+  }), [queryClient]);
 
   const { data: transactions = [], isLoading: loadingTx } = useQuery({
     queryKey: ["ynabTransactions"],
@@ -203,7 +206,7 @@ export default function Accounting() {
 
   const newestUnmatched = useMemo(() => {
     return tagged
-      .filter((tx) => tx.matched !== "matched" && tx.matched !== "ignored")
+      .filter((tx) => tx.matched !== "matched" && tx.matched !== "ignored" && (tx.custom_category || "").trim().toLowerCase() !== "personal")
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 10);
   }, [tagged]);
@@ -243,7 +246,10 @@ export default function Accounting() {
               disabled={busy}
               onChange={async (val) => {
                 const patch = { custom_category: val };
-                if (val === 'Personal' && tx.matched !== 'matched') patch.matched = 'ignored';
+                if (val.trim().toLowerCase() === 'personal') {
+                  patch.matched = 'ignored';
+                  patch.matched_invoice_id = null;
+                }
                 await base44.entities.YnabTransaction.update(tx.id, patch);
                 await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
               }}
