@@ -63,6 +63,25 @@ export default async function(req) {
       return labelType[cur] || null;
     };
 
+    // Apply Personal to uncategorized records across ALL dates, including merged account names.
+    const personalAccounts = labels.filter((l) => resolveType(l.account_name) === 'personal').map((l) => l.account_name);
+    if (personalAccounts.length) {
+      let personalBatch;
+      do {
+        personalBatch = await base44.asServiceRole.entities.YnabTransaction.updateMany(
+          {
+            account_name: { $in: personalAccounts },
+            $or: [
+              { custom_category: { $in: [null, ''] } },
+              { custom_category: { $exists: false } },
+              { custom_category: { $regex: '^\\s*$' } },
+            ],
+          },
+          { $set: { custom_category: 'Personal', matched: 'ignored', matched_invoice_id: null } },
+        );
+      } while (personalBatch.has_more);
+    }
+
     // 2. Determine since_date
     let sinceDate = body.since_date;
     if (!sinceDate) {
