@@ -242,7 +242,9 @@ export default function Accounting() {
               value={tx.custom_category || ""}
               disabled={busy}
               onChange={async (val) => {
-                await base44.entities.YnabTransaction.update(tx.id, { custom_category: val });
+                const patch = { custom_category: val };
+                if (val === 'Personal' && tx.matched !== 'matched') patch.matched = 'ignored';
+                await base44.entities.YnabTransaction.update(tx.id, patch);
                 await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
               }}
             />

@@ -104,6 +104,8 @@ export default async function(req) {
       }
       const existing = existingMap[tx.id];
       if (existing) {
+        // Auto-match any transaction categorized as Personal (account-derived or manually set) to "Transaction not for a Job"
+        const effectivePersonal = isPersonal || existing.custom_category === 'Personal';
         const updatePayload = {
           id: existing.id,
           account_name: record.account_name,
@@ -115,10 +117,8 @@ export default async function(req) {
           cleared: record.cleared,
           last_synced_date: now,
         };
-        if (isPersonal) {
-          if (!existing.custom_category) updatePayload.custom_category = 'Personal';
-          if (existing.matched !== 'matched') updatePayload.matched = 'ignored';
-        }
+        if (isPersonal && !existing.custom_category) updatePayload.custom_category = 'Personal';
+        if (effectivePersonal && existing.matched !== 'matched') updatePayload.matched = 'ignored';
         toUpdate.push(updatePayload);
       } else {
         toCreate.push(record);
