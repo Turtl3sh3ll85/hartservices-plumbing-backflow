@@ -98,10 +98,7 @@ export default async function(req) {
         cleared: tx.cleared || '',
         last_synced_date: now,
       };
-      if (isPersonal) {
-        record.custom_category = 'Personal';
-        record.matched = 'ignored';
-      }
+      if (isPersonal) record.custom_category = 'Personal';
       const existing = existingMap[tx.id];
       if (existing) {
         const updatePayload = {
@@ -115,10 +112,7 @@ export default async function(req) {
           cleared: record.cleared,
           last_synced_date: now,
         };
-        if (isPersonal) {
-          if (!existing.custom_category) updatePayload.custom_category = 'Personal';
-          if (existing.matched === 'unmatched' || !existing.matched) updatePayload.matched = 'ignored';
-        }
+        if (isPersonal && !existing.custom_category) updatePayload.custom_category = 'Personal';
         toUpdate.push(updatePayload);
       } else {
         toCreate.push(record);
@@ -134,14 +128,6 @@ export default async function(req) {
     if (toUpdate.length) {
       await base44.asServiceRole.entities.YnabTransaction.bulkUpdate(toUpdate);
       updated = toUpdate.length;
-    }
-
-    // Auto-ignore any Personal-categorized transactions not already matched/ignored
-    const toIgnore = allExisting
-      .filter((t) => t.custom_category === 'Personal' && t.matched !== 'ignored' && t.matched !== 'matched')
-      .map((t) => ({ id: t.id, matched: 'ignored' }));
-    if (toIgnore.length) {
-      await base44.asServiceRole.entities.YnabTransaction.bulkUpdate(toIgnore);
     }
 
     return Response.json({
