@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { FileText, DollarSign, TrendingUp, ArrowRight, Users, ClipboardList, Link2 } from "lucide-react";
@@ -16,11 +16,31 @@ import { groupInvoicesByCustomer } from "@/lib/groupByCustomer";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
 import PhaseChangesSection from "@/components/PhaseChangesSection";
 import InvoiceMatchDialog from "@/components/InvoiceMatchDialog";
+import PhaseIndicator from "@/components/PhaseIndicator";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const canMatch = user?.role === "admin" || user?.role === "accountant";
   const [matchInvoice, setMatchInvoice] = useState(null);
+  const { data: phases = [] } = useQuery({
+    queryKey: ["invoicePhases"],
+    queryFn: async () => { const res = await base44.functions.invoke("getInvoicePhases", {}); return res.data?.phases || []; },
+    staleTime: Infinity,
+  });
+  const [phaseSavingId, setPhaseSavingId] = useState(null);
+  const handleSavePhase = (inv) => async (phase, note) => {
+    setPhaseSavingId(inv.id);
+    try {
+      const res = await base44.functions.invoke("setInvoicePhaseAdmin", { invoice_id: inv.id, phase, note });
+      const updated = res.data?.invoice;
+      if (updated) {
+        queryClient.setQueryData(["invoices", "recent"], (old) => (old || []).map((x) => x.id === inv.id ? { ...x, ...updated } : x));
+        queryClient.invalidateQueries({ queryKey: ["invoices", "phaseChanges"] });
+      }
+    } catch (e) {}
+    setPhaseSavingId(null);
+  };
   const { data: invoices = [], isLoading: loadingInvoices } = useQuery({ queryKey: ["invoices", "recent"], queryFn: () => base44.entities.Invoice.list("-created_date", 50) });
   const { data: estimates = [], isLoading: loadingEstimates } = useQuery({ queryKey: ["estimates", "recent"], queryFn: () => base44.entities.Estimate.list("-created_date", 20) });
   const { data: customers = [], isLoading: loadingCustomers } = useQuery({ queryKey: ["customers", "count"], queryFn: () => base44.entities.Customer.list("name", 500) });
@@ -93,6 +113,7 @@ export default function Dashboard() {
                           <div className="text-xs text-muted-foreground">{i.number}</div>
                         </Link>
                         <div className="flex flex-col items-end gap-1 shrink-0">
+                          <PhaseIndicator invoice={i} phases={phases} onSave={handleSavePhase(i)} busy={phaseSavingId === i.id} />
                           <div className="flex items-center gap-3">
                             <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
                             <InvoicePaymentControl invoice={i} />
