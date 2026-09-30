@@ -13,6 +13,7 @@ import InvoicePaymentSchedule from "@/components/portal/InvoicePaymentSchedule";
 import { formatMoney } from "@/lib/invoice";
 import { groupInvoicesByCustomer } from "@/lib/groupByCustomer";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
+import PhaseChangesSection from "@/components/PhaseChangesSection";
 
 export default function Dashboard() {
   const { data: invoices = [], isLoading: loadingInvoices } = useQuery({ queryKey: ["invoices", "recent"], queryFn: () => base44.entities.Invoice.list("-created_date", 50) });
@@ -132,6 +133,8 @@ export default function Dashboard() {
           )}
         </Card>
       </div>
+
+      <PhaseChangesSection />
     </div>
   );
 }

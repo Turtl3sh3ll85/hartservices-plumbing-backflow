@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { FileText, ClipboardList, Loader2, CreditCard, ArrowLeft, Mail, FileDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -26,6 +26,27 @@ export default function MyDocuments() {
   const [view, setView] = useState("invoices");
   const [preview, setPreview] = useState(null);
   const [previewKind, setPreviewKind] = useState("invoice");
+  const [flagging, setFlagging] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: phases = [] } = useQuery({
+    queryKey: ["invoicePhases"],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getInvoicePhases", {});
+      return res.data?.phases || [];
+    },
+  });
+
+  const handleFlagPhase = async (phase, note) => {
+    if (!preview) return;
+    setFlagging(true);
+    try {
+      await base44.functions.invoke("setInvoicePhase", { invoice_id: preview.id, email, phase, note });
+      await queryClient.invalidateQueries({ queryKey: ["customerPortal", email] });
+      setPreview((p) => p ? { ...p, phase, phase_note: note, phase_changed_date: new Date().toISOString() } : p);
+    } catch (e) { /* ignore */ }
+    setFlagging(false);
+  };
 
   const { data: portal = {}, isLoading, error: portalError } = useQuery({
     queryKey: ["customerPortal", email],
@@ -209,6 +230,9 @@ export default function MyDocuments() {
           onClose={() => setPreview(null)}
           editLabel={previewKind === "invoice" ? (preview?.payment_status === "paid" ? "View" : "View & Pay") : (preview?.status === "converted" ? "View" : "Review and Accept")}
           onEdit={() => navigate(previewKind === "invoice" ? `/pay/${preview?.id}` : `/accept/${preview?.id}`)}
+          phases={previewKind === "invoice" ? phases : null}
+          onFlagPhase={previewKind === "invoice" ? handleFlagPhase : null}
+          flagging={flagging}
         />
       </main>
     </div>

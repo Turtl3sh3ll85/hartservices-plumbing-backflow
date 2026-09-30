@@ -185,6 +185,45 @@
     "notes": {
       "type": "string",
       "title": "Notes"
+    },
+    "phase": {
+      "type": "string",
+      "title": "Current Phase"
+    },
+    "phase_note": {
+      "type": "string",
+      "title": "Phase Note"
+    },
+    "phase_changed_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Phase Changed Date"
+    },
+    "phase_history": {
+      "type": "array",
+      "title": "Phase History",
+      "items": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "string",
+            "title": "Phase"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date"
+          },
+          "by": {
+            "type": "string",
+            "title": "By"
+          }
+        }
+      }
     }
   },
   "required": [
