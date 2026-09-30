@@ -31,6 +31,7 @@ export default function Accounting() {
   const [collapsed, setCollapsed] = useState(() => readJSON(COLLAPSED_KEY, {}));
   const [groupCollapsed, setGroupCollapsed] = useState(() => readJSON(GROUP_COLLAPSED_KEY, {}));
   const [mergeGroup, setMergeGroup] = useState(null);
+  const [hideUncategorized, setHideUncategorized] = useState(false);
 
   useEffect(() => { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed)); }, [collapsed]);
   useEffect(() => { localStorage.setItem(GROUP_COLLAPSED_KEY, JSON.stringify(groupCollapsed)); }, [groupCollapsed]);
@@ -252,6 +253,11 @@ export default function Accounting() {
       .slice(0, 10);
   }, [tagged, inactiveSet]);
 
+  const displayedNewestUnmatched = useMemo(() => {
+    if (!hideUncategorized) return newestUnmatched;
+    return newestUnmatched.filter((tx) => (tx.custom_category || "").trim());
+  }, [newestUnmatched, hideUncategorized]);
+
   const newestUncategorized = useMemo(() => {
     return tagged
       .filter((tx) => {
@@ -404,22 +410,33 @@ export default function Accounting() {
             const isCollapsed = !!groupCollapsed["newest"];
             return (
               <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => setGroupCollapsed((c) => ({ ...c, newest: !c.newest }))}
-                  className="flex items-center gap-2 px-1 min-h-11 w-full text-left"
-                  aria-expanded={!isCollapsed}
-                >
-                  <ChevronDown className={cn("w-5 h-5 transition-transform shrink-0", isCollapsed && "-rotate-90")} />
-                  <h2 className="font-heading text-xl font-semibold">Newest Unmatched Transactions</h2>
-                  <span className="text-sm text-muted-foreground font-normal">· {newestUnmatched.length}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setGroupCollapsed((c) => ({ ...c, newest: !c.newest }))}
+                    className="flex items-center gap-2 px-1 min-h-11 text-left"
+                    aria-expanded={!isCollapsed}
+                  >
+                    <ChevronDown className={cn("w-5 h-5 transition-transform shrink-0", isCollapsed && "-rotate-90")} />
+                    <h2 className="font-heading text-xl font-semibold">Newest Unmatched Transactions</h2>
+                    <span className="text-sm text-muted-foreground font-normal">· {displayedNewestUnmatched.length}</span>
+                  </button>
+                  <label className="ml-auto flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none min-h-11 px-2">
+                    <input
+                      type="checkbox"
+                      checked={hideUncategorized}
+                      onChange={(e) => setHideUncategorized(e.target.checked)}
+                      className="w-4 h-4 rounded"
+                    />
+                    Hide uncategorized
+                  </label>
+                </div>
                 {!isCollapsed && (
-                  newestUnmatched.length === 0 ? (
+                  displayedNewestUnmatched.length === 0 ? (
                     <Card className="p-4 text-sm text-muted-foreground">No unmatched transactions.</Card>
                   ) : (
                     <Card className="overflow-hidden p-0">
-                      <div className="divide-y">{newestUnmatched.map((tx) => renderRow(tx, true))}</div>
+                      <div className="divide-y">{displayedNewestUnmatched.map((tx) => renderRow(tx, true))}</div>
                     </Card>
                   )
                 )}
