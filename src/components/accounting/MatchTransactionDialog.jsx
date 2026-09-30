@@ -1,21 +1,15 @@
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import useYnabTransactions from "@/hooks/useYnabTransactions";
+import TransactionTags from "@/components/accounting/TransactionTags";
 import { Loader2, Search, Link2, Paperclip } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/invoice";
 
 export default function MatchTransactionDialog({ open, file, onClose, onDone }) {
-  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [pinningId, setPinningId] = useState(null);
-
-  const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ["ynabTransactions"],
-    queryFn: async () => base44.entities.YnabTransaction.list("-date", 500),
-    enabled: open,
-  });
+  const { data: transactions = [], isLoading, updateTransaction } = useYnabTransactions({ enabled: open });
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -40,12 +34,12 @@ export default function MatchTransactionDialog({ open, file, onClose, onDone }) 
     }];
     setPinningId(tx.id);
     try {
-      await base44.entities.YnabTransaction.update(tx.id, { receipts: next });
-      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
-      onDone?.(tx);
+      const saved = await updateTransaction(tx.id, { receipts: next });
+      onDone?.(saved);
       onClose();
-    } catch (e) {}
-    setPinningId(null);
+    } finally {
+      setPinningId(null);
+    }
   };
 
   return (
@@ -90,6 +84,7 @@ export default function MatchTransactionDialog({ open, file, onClose, onDone }) 
                     <div className="text-xs text-muted-foreground truncate">
                       {tx.date ? new Date(tx.date).toLocaleDateString() : ""}{tx.account_name ? ` · ${tx.account_name}` : ""}
                     </div>
+                    <div className="mt-1"><TransactionTags transaction={tx} /></div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-sm font-medium tabular-nums">{formatMoney(tx.amount)}</span>

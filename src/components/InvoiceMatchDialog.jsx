@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import useYnabTransactions from "@/hooks/useYnabTransactions";
+import TransactionTags from "@/components/accounting/TransactionTags";
 import { Loader2, Search, Link2, Unlink } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,14 +8,9 @@ import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/invoice";
 
 export default function InvoiceMatchDialog({ invoice, onClose }) {
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState(null);
-
-  const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ["ynabTransactions"],
-    queryFn: () => base44.entities.YnabTransaction.list("-date", 500),
-  });
+  const { data: transactions = [], isLoading, updateTransaction } = useYnabTransactions({ enabled: !!invoice });
 
   const currentMatch = useMemo(
     () => transactions.find((t) => t.matched_invoice_id === invoice?.id && t.matched === "matched") || null,
@@ -33,20 +28,20 @@ export default function InvoiceMatchDialog({ invoice, onClose }) {
   const match = async (tx) => {
     setBusyId(tx.id);
     try {
-      await base44.entities.YnabTransaction.update(tx.id, { matched: "matched", matched_invoice_id: invoice.id });
-      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
-    } catch (e) {}
-    setBusyId(null);
+      await updateTransaction(tx.id, { matched: "matched", matched_invoice_id: invoice.id });
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const unmatch = async () => {
     if (!currentMatch) return;
     setBusyId(currentMatch.id);
     try {
-      await base44.entities.YnabTransaction.update(currentMatch.id, { matched: "unmatched", matched_invoice_id: null });
-      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
-    } catch (e) {}
-    setBusyId(null);
+      await updateTransaction(currentMatch.id, { matched: "unmatched", matched_invoice_id: null });
+    } finally {
+      setBusyId(null);
+    }
   };
 
   if (!invoice) return null;
@@ -67,6 +62,7 @@ export default function InvoiceMatchDialog({ invoice, onClose }) {
                 <div className="min-w-0">
                   <div className="font-medium text-sm truncate">{currentMatch.payee || currentMatch.memo}</div>
                   <div className="text-xs text-muted-foreground truncate">{currentMatch.date ? new Date(currentMatch.date).toLocaleDateString() : ""} · {currentMatch.account_name}</div>
+                  <div className="mt-1"><TransactionTags transaction={currentMatch} /></div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-sm font-medium tabular-nums">{formatMoney(currentMatch.amount)}</span>
@@ -94,6 +90,7 @@ export default function InvoiceMatchDialog({ invoice, onClose }) {
                         <div className="min-w-0 flex-1">
                           <div className="font-medium text-sm truncate">{tx.payee || tx.memo || "Unknown payee"}</div>
                           <div className="text-xs text-muted-foreground truncate">{tx.date ? new Date(tx.date).toLocaleDateString() : ""} · {tx.account_name}</div>
+                          <div className="mt-1"><TransactionTags transaction={tx} /></div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-sm font-medium tabular-nums">{formatMoney(tx.amount)}</span>

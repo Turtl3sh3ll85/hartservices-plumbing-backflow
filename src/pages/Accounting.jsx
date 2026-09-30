@@ -5,7 +5,8 @@ import { RefreshCw, Loader2, Link2, Unlink, Paperclip, X, ChevronDown } from "lu
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import StatusBadge from "@/components/StatusBadge";
+import TransactionTags from "@/components/accounting/TransactionTags";
+import useYnabTransactions from "@/hooks/useYnabTransactions";
 import { formatMoney } from "@/lib/invoice";
 import { computeSuggestions } from "@/lib/ynabMatching";
 import ManualMatchDialog from "@/components/ManualMatchDialog";
@@ -33,17 +34,7 @@ export default function Accounting() {
 
   useEffect(() => { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed)); }, [collapsed]);
   useEffect(() => { localStorage.setItem(GROUP_COLLAPSED_KEY, JSON.stringify(groupCollapsed)); }, [groupCollapsed]);
-  useEffect(() => base44.entities.YnabTransaction.subscribe(() => {
-    queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
-  }), [queryClient]);
-
-  const { data: transactions = [], isLoading: loadingTx } = useQuery({
-    queryKey: ["ynabTransactions"],
-    queryFn: async () => {
-      const res = await base44.entities.YnabTransaction.list("-date", 500);
-      return res;
-    },
-  });
+  const { data: transactions = [], isLoading: loadingTx, updateTransaction } = useYnabTransactions();
 
   const { data: invoices = [] } = useQuery({
     queryKey: ["invoicesForMatching"],
@@ -92,10 +83,10 @@ export default function Accounting() {
   const updateMatch = async (tx, matched, matched_invoice_id = null) => {
     setUpdatingId(tx.id);
     try {
-      await base44.entities.YnabTransaction.update(tx.id, { matched, matched_invoice_id });
-      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
-    } catch (e) {}
-    setUpdatingId(null);
+      await updateTransaction(tx.id, { matched, matched_invoice_id });
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const pinReceipt = async (tx, file) => {
@@ -109,8 +100,7 @@ export default function Accounting() {
     }];
     setUpdatingId(tx.id);
     try {
-      await base44.entities.YnabTransaction.update(tx.id, { receipts: next });
-      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
+      await updateTransaction(tx.id, { receipts: next });
     } catch (e) {}
     setUpdatingId(null);
     setPinTx(null);
@@ -121,8 +111,7 @@ export default function Accounting() {
     const next = receipts.filter((r) => r.drive_file_id !== fileId);
     setUpdatingId(tx.id);
     try {
-      await base44.entities.YnabTransaction.update(tx.id, { receipts: next });
-      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
+      await updateTransaction(tx.id, { receipts: next });
     } catch (e) {}
     setUpdatingId(null);
   };
@@ -250,8 +239,12 @@ export default function Accounting() {
                   patch.matched = 'ignored';
                   patch.matched_invoice_id = null;
                 }
-                await base44.entities.YnabTransaction.update(tx.id, patch);
-                await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
+                setUpdatingId(tx.id);
+                try {
+                  await updateTransaction(tx.id, patch);
+                } finally {
+                  setUpdatingId(null);
+                }
               }}
             />
           </div>
@@ -293,11 +286,13 @@ export default function Accounting() {
           </Button>
           {tx.matched === "matched" ? (
             <>
-              <StatusBadge status="matched" label="matched" />
+              <TransactionTags transaction={tx} showCategory={false} />
               <Button size="sm" variant="ghost" onClick={() => updateMatch(tx, "unmatched", null)} disabled={busy} aria-label="Unmatch">
                 <Unlink className="w-4 h-4" />
               </Button>
             </>
+          ) : tx.matched === "ignored" ? (
+            <TransactionTags transaction={tx} showCategory={false} />
           ) : (
             <Button size="sm" variant="outline" onClick={() => setMatchTx(tx)} className="border-amber-500/40 text-amber-600 hover:bg-amber-500/10">
               <Link2 className="w-4 h-4 mr-1" /> Unmatched
@@ -316,7 +311,7 @@ export default function Accounting() {
       {list.length === 0 ? (
         <div className="p-4 text-sm text-muted-foreground">None.</div>
       ) : (
-        <div className="divide-y">{list.map(renderRow)}</div>
+        <div className="divide-y">{list.map((tx) => renderRow(tx))}</div>
       )}
     </Card>
   );
@@ -443,7 +438,7 @@ export default function Accounting() {
       )}
 
       <ManualMatchDialog
-        transaction={matchTx}
+        transaction={transactions.find((tx) => tx.id === matchTx?.id) || matchTx}
         invoices={recentInvoices}
         onMatch={async (invoiceId) => {
           await updateMatch(matchTx, "matched", invoiceId);

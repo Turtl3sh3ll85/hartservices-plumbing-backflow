@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/invoice";
 import { Loader2 } from "lucide-react";
+import TransactionTags from "@/components/accounting/TransactionTags";
 
 export default function ManualMatchDialog({ transaction, invoices, onMatch, onIgnore, onClose, busy }) {
   const [query, setQuery] = useState("");
@@ -29,6 +30,7 @@ export default function ManualMatchDialog({ transaction, invoices, onMatch, onIg
             <span className="font-medium text-foreground">{transaction.payee || transaction.memo || "Unknown payee"}</span>
             {" · "}{formatMoney(transaction.amount)}
             {transaction.date ? ` · ${new Date(transaction.date).toLocaleDateString()}` : ""}
+            <div className="mt-1"><TransactionTags transaction={transaction} /></div>
           </div>
         )}
         <Input
