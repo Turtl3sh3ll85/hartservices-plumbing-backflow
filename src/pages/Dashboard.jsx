@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { FileText, DollarSign, TrendingUp, ArrowRight, Users, ClipboardList } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { FileText, DollarSign, TrendingUp, ArrowRight, Users, ClipboardList, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
@@ -14,8 +15,12 @@ import { formatMoney } from "@/lib/invoice";
 import { groupInvoicesByCustomer } from "@/lib/groupByCustomer";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
 import PhaseChangesSection from "@/components/PhaseChangesSection";
+import InvoiceMatchDialog from "@/components/InvoiceMatchDialog";
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const canMatch = user?.role === "admin" || user?.role === "accountant";
+  const [matchInvoice, setMatchInvoice] = useState(null);
   const { data: invoices = [], isLoading: loadingInvoices } = useQuery({ queryKey: ["invoices", "recent"], queryFn: () => base44.entities.Invoice.list("-created_date", 50) });
   const { data: estimates = [], isLoading: loadingEstimates } = useQuery({ queryKey: ["estimates", "recent"], queryFn: () => base44.entities.Estimate.list("-created_date", 20) });
   const { data: customers = [], isLoading: loadingCustomers } = useQuery({ queryKey: ["customers", "count"], queryFn: () => base44.entities.Customer.list("name", 500) });
@@ -91,6 +96,11 @@ export default function Dashboard() {
                           <div className="flex items-center gap-3">
                             <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
                             <InvoicePaymentControl invoice={i} />
+                            {canMatch && (
+                              <Button size="sm" variant="ghost" onClick={() => setMatchInvoice(i)} aria-label="Match to transaction" title="Match to transaction">
+                                <Link2 className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                           <PaidAmountLabel invoice={i} />
                           <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
@@ -135,6 +145,8 @@ export default function Dashboard() {
       </div>
 
       <PhaseChangesSection />
+
+      <InvoiceMatchDialog invoice={matchInvoice} onClose={() => setMatchInvoice(null)} />
     </div>
   );
 }
