@@ -110,7 +110,7 @@ const AuthenticatedApp = () => {
               <Route path="/estimates" element={<RoleGuard roles={["admin", "tech", "accountant"]}><Estimates /></RoleGuard>} />
               <Route path="/estimates/new" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
               <Route path="/estimates/:id" element={<RoleGuard roles={["admin", "tech", "accountant"]}><InvoiceEditor /></RoleGuard>} />
-              <Route path="/accounting" element={<RoleGuard roles={["admin", "accountant"]}><Accounting /></RoleGuard>} />
+              <Route path="/transactions" element={<RoleGuard roles={["admin", "accountant"]}><Accounting /></RoleGuard>} />
               <Route path="/receipts" element={<RoleGuard roles={["admin", "accountant"]}><Receipts /></RoleGuard>} />
               <Route path="/customers" element={<RoleGuard roles={["admin"]}><Customers /></RoleGuard>} />
               <Route path="/settings" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />

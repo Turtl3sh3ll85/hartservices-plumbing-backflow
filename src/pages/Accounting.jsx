@@ -205,7 +205,10 @@ export default function Accounting() {
 
   const newestUncategorized = useMemo(() => {
     return tagged
-      .filter((tx) => !tx.custom_category)
+      .filter((tx) => {
+        const cat = (tx.custom_category || "").trim().toLowerCase();
+        return tx.matched !== "matched" && tx.matched !== "ignored" && cat !== "personal" && cat !== "transfer" && !tx.custom_category;
+      })
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 10);
   }, [tagged]);
@@ -324,7 +327,7 @@ export default function Accounting() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Accounting</h1>
+          <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Transactions</h1>
           <p className="text-muted-foreground text-sm mt-1">Transactions matched to invoice payments.</p>
         </div>
         <div className="flex items-center gap-2">
