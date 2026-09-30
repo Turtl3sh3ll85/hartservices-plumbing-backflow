@@ -461,6 +461,7 @@ export default function Accounting() {
       <ManualMatchDialog
         transaction={matchTx}
         invoices={recentInvoices}
+        disableIgnore={!!matchTx && labelMap[resolveName(matchTx.account_name || "Unknown Account")] === "personal"}
         onMatch={async (invoiceId) => {
           await updateMatch(matchTx, "matched", invoiceId);
           setMatchTx(null);
