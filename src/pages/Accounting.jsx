@@ -195,7 +195,10 @@ export default function Accounting() {
 
   const newestUnmatched = useMemo(() => {
     return tagged
-      .filter((tx) => tx.matched !== "matched" && tx.matched !== "ignored" && (tx.custom_category || "").trim().toLowerCase() !== "personal")
+      .filter((tx) => {
+        const cat = (tx.custom_category || "").trim().toLowerCase();
+        return tx.matched !== "matched" && tx.matched !== "ignored" && cat !== "personal" && cat !== "transfer";
+      })
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 10);
   }, [tagged]);
@@ -235,7 +238,8 @@ export default function Accounting() {
               disabled={busy}
               onChange={async (val) => {
                 const patch = { custom_category: val };
-                if (val.trim().toLowerCase() === 'personal') {
+                const catLower = val.trim().toLowerCase();
+                if (catLower === 'personal' || catLower === 'transfer') {
                   patch.matched = 'ignored';
                   patch.matched_invoice_id = null;
                 }

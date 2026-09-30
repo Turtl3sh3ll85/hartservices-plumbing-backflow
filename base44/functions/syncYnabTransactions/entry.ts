@@ -18,17 +18,18 @@ export default async function(req) {
       }
     }
 
-    // Match Personal categories across ALL stored dates, not just the YNAB sync window.
-    let personalBatch;
+    // Auto-ignore Personal and Transfer categories across ALL stored dates, not just the YNAB sync window.
+    const autoIgnoreRegex = '^\\s*(personal|transfer)\\s*$';
+    let autoIgnoreBatch;
     do {
-      personalBatch = await base44.asServiceRole.entities.YnabTransaction.updateMany(
+      autoIgnoreBatch = await base44.asServiceRole.entities.YnabTransaction.updateMany(
         {
-          custom_category: { $regex: '^\\s*personal\\s*$', $options: 'i' },
+          custom_category: { $regex: autoIgnoreRegex, $options: 'i' },
           $or: [{ matched: { $ne: 'ignored' } }, { matched_invoice_id: { $nin: [null, ''] } }],
         },
         { $set: { matched: 'ignored', matched_invoice_id: null } },
       );
-    } while (personalBatch.has_more);
+    } while (autoIgnoreBatch.has_more);
 
     const token = secrets.get('YNAB_ACCESS_TOKEN');
     if (!token) return Response.json({ error: 'YNAB_ACCESS_TOKEN not set' }, { status: 500 });
@@ -117,7 +118,8 @@ export default async function(req) {
       const existing = existingMap[tx.id];
       if (existing) {
         // Auto-match any transaction categorized as Personal (account-derived or manually set) to "Transaction not for a Job"
-        const effectivePersonal = isPersonal || (existing.custom_category || '').trim().toLowerCase() === 'personal';
+        const catLower = (existing.custom_category || '').trim().toLowerCase();
+        const effectivePersonal = isPersonal || catLower === 'personal' || catLower === 'transfer';
         const updatePayload = {
           id: existing.id,
           account_name: record.account_name,
