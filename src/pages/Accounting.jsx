@@ -44,15 +44,21 @@ export default function Accounting() {
     },
   });
 
-  const { data: activeCategories = [] } = useQuery({
-    queryKey: ["activeCategories"],
+  const { data: categoryData } = useQuery({
+    queryKey: ["sheetCategories", "active"],
     queryFn: async () => {
       const res = await base44.functions.invoke("getSheetCategories", {});
-      return res.data?.activeCategories || [];
+      return { categories: res.data?.categories || [], activeCategories: res.data?.activeCategories || [] };
     },
     staleTime: 5 * 60 * 1000,
   });
-  const activeSet = useMemo(() => new Set(activeCategories.map((c) => c.toLowerCase())), [activeCategories]);
+  const inactiveSet = useMemo(() => {
+    const active = new Set((categoryData?.activeCategories || []).map((c) => c.toLowerCase()));
+    const all = new Set((categoryData?.categories || []).map((c) => c.toLowerCase()));
+    const inactive = new Set();
+    for (const c of all) if (!active.has(c)) inactive.add(c);
+    return inactive;
+  }, [categoryData]);
 
   const { data: labelRecords = [] } = useQuery({
     queryKey: ["accountLabels"],
@@ -209,12 +215,12 @@ export default function Accounting() {
         const cat = (tx.custom_category || "").trim().toLowerCase();
         if (tx.matched === "matched" || tx.matched === "ignored") return false;
         if (cat === "personal" || cat === "transfer") return false;
-        if (cat && !activeSet.has(cat)) return false;
+        if (cat && inactiveSet.has(cat)) return false;
         return true;
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 10);
-  }, [tagged, activeSet]);
+  }, [tagged, inactiveSet]);
 
   const newestUncategorized = useMemo(() => {
     return tagged
@@ -222,12 +228,12 @@ export default function Accounting() {
         const cat = (tx.custom_category || "").trim().toLowerCase();
         if (tx.matched === "matched" || tx.matched === "ignored") return false;
         if (cat === "personal" || cat === "transfer") return false;
-        if (cat && !activeSet.has(cat)) return false;
+        if (cat && inactiveSet.has(cat)) return false;
         return !tx.custom_category;
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 10);
-  }, [tagged, activeSet]);
+  }, [tagged, inactiveSet]);
 
   const categorize = (list) => {
     const matched = [];

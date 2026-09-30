@@ -15,7 +15,7 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
   const current = value || "";
 
   const { data: sheetCategories = [] } = useQuery({
-    queryKey: ["sheetCategories"],
+    queryKey: ["sheetCategories", "col-a"],
     queryFn: async () => {
       const res = await base44.functions.invoke("getSheetCategories", {});
       return res.data?.categories || [];
