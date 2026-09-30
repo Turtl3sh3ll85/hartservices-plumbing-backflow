@@ -231,8 +231,8 @@ export default function MyDocuments() {
           editLabel={previewKind === "invoice" ? (preview?.payment_status === "paid" ? "View" : "View & Pay") : (preview?.status === "converted" ? "View" : "Review and Accept")}
           onEdit={() => navigate(previewKind === "invoice" ? `/pay/${preview?.id}` : `/accept/${preview?.id}`)}
           phases={previewKind === "invoice" ? phases : null}
-          onFlagPhase={previewKind === "invoice" ? handleFlagPhase : null}
-          flagging={flagging}
+          onSavePhase={previewKind === "invoice" ? handleFlagPhase : null}
+          phaseSaving={flagging}
         />
       </main>
     </div>

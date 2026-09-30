@@ -16,6 +16,7 @@ import SheetItemsDialog from "@/components/SheetItemsDialog";
 import InvoiceAttachments from "@/components/InvoiceAttachments";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
+import PhaseIndicator from "@/components/PhaseIndicator";
 import InvoicePaymentControl from "@/components/InvoicePaymentControl";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
@@ -118,6 +119,27 @@ export default function InvoiceEditor() {
   });
   const catalog = catalogData || [];
   const modifiersCatalog = modifiersData || [];
+
+  const { data: phases = [] } = useQuery({
+    queryKey: ["invoicePhases"],
+    queryFn: async () => { const res = await base44.functions.invoke("getInvoicePhases", {}); return res.data?.phases || []; },
+    staleTime: Infinity,
+  });
+  const [phaseSaving, setPhaseSaving] = useState(false);
+  const handleSavePhase = async (phase, note) => {
+    if (!savedId) return;
+    setPhaseSaving(true);
+    try {
+      const res = await base44.functions.invoke("setInvoicePhaseAdmin", { invoice_id: savedId, phase, note });
+      const updated = res.data?.invoice;
+      if (updated) {
+        setForm((f) => ({ ...f, phase: updated.phase, phase_note: updated.phase_note, phase_changed_date: updated.phase_changed_date, phase_history: updated.phase_history }));
+        queryClient.setQueryData(["invoice", savedId], updated);
+        queryClient.invalidateQueries({ queryKey: ["invoices", "phaseChanges"] });
+      }
+    } catch (e) {}
+    setPhaseSaving(false);
+  };
 
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c]));
   const totals = calcTotals(form.line_items, form.tax_rate, !!form.cc_fee_enabled);
@@ -298,6 +320,9 @@ export default function InvoiceEditor() {
             onUpdated={(update) => setForm((f) => ({ ...f, ...update }))} />
 
           }
+            {!isEstimate && (
+              <PhaseIndicator invoice={form} phases={phases} onSave={handleSavePhase} busy={phaseSaving} />
+            )}
             <OpenedIndicator opened={form.opened} lastOpenedDate={form.last_opened_date} />
           </div>
         }

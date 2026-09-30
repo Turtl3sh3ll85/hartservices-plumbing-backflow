@@ -1,28 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileDown, Pencil, Loader2, GitBranch } from "lucide-react";
+import { FileDown, Pencil, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import PhaseIndicator from "@/components/PhaseIndicator";
 import { Image } from "@/components/ui/image";
 import BillTo from "@/components/BillTo";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection, installmentAmount } from "@/lib/invoice";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 
-export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onFlagPhase, flagging }) {
+export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onSavePhase, phaseSaving }) {
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
-  const [phaseSel, setPhaseSel] = useState("");
-  const [phaseNote, setPhaseNote] = useState("");
-
-  useEffect(() => {
-    if (doc) {
-      setPhaseSel(doc.phase || "");
-      setPhaseNote("");
-    }
-  }, [doc?.id]);
-
   if (!doc) return null;
   const isInvoice = kind === "invoice";
   const title = isInvoice ? "Invoice" : "Estimate";
@@ -155,34 +145,9 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
             </div>
           )}
 
-          {Array.isArray(phases) && phases.length > 0 && onFlagPhase && (
-            <div className="border-t pt-4 space-y-3">
-              <div className="font-medium text-sm flex items-center gap-2"><GitBranch className="w-4 h-4" /> Flag as ready for next phase</div>
-              {doc.phase && (
-                <div className="text-xs text-muted-foreground">Current phase: <span className="font-medium text-primary">{doc.phase}</span>{doc.phase_note ? ` — “${doc.phase_note}”` : ""}</div>
-              )}
-              <select
-                value={phaseSel}
-                onChange={(e) => setPhaseSel(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-11"
-              >
-                <option value="" disabled>Select a phase…</option>
-                {phases.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-              <Textarea
-                placeholder="Add a note (optional)"
-                value={phaseNote}
-                onChange={(e) => setPhaseNote(e.target.value)}
-                rows={2}
-              />
-              <Button
-                size="sm"
-                onClick={() => onFlagPhase(phaseSel, phaseNote)}
-                disabled={!phaseSel || flagging}
-              >
-                {flagging && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
-                Submit phase
-              </Button>
+          {isInvoice && Array.isArray(phases) && phases.length > 0 && onSavePhase && (
+            <div className="border-t pt-4">
+              <PhaseIndicator invoice={doc} phases={phases} onSave={onSavePhase} busy={phaseSaving} />
             </div>
           )}
         </div>

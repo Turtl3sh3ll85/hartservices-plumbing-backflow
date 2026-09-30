@@ -19,6 +19,7 @@ import { formatMoney } from "@/lib/invoice";
 import { groupInvoicesByCustomer } from "@/lib/groupByCustomer";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import PhaseIndicator from "@/components/PhaseIndicator";
 import { useSettings } from "@/hooks/useSettings";
 
 export default function Invoices() {
@@ -33,6 +34,25 @@ export default function Invoices() {
   const [deleting, setDeleting] = useState(false);
   const { settings } = useSettings();
   const [preview, setPreview] = useState(null);
+  const { data: phases = [] } = useQuery({
+    queryKey: ["invoicePhases"],
+    queryFn: async () => { const res = await base44.functions.invoke("getInvoicePhases", {}); return res.data?.phases || []; },
+    staleTime: Infinity,
+  });
+  const [phaseSavingId, setPhaseSavingId] = useState(null);
+  const handleSavePhase = (inv) => async (phase, note) => {
+    setPhaseSavingId(inv.id);
+    try {
+      const res = await base44.functions.invoke("setInvoicePhaseAdmin", { invoice_id: inv.id, phase, note });
+      const updated = res.data?.invoice;
+      if (updated) {
+        queryClient.setQueryData(["invoices"], (old) => (old || []).map((x) => x.id === inv.id ? { ...x, ...updated } : x));
+        queryClient.invalidateQueries({ queryKey: ["invoices", "phaseChanges"] });
+        setPreview((p) => p && p.id === inv.id ? { ...p, ...updated } : p);
+      }
+    } catch (e) {}
+    setPhaseSavingId(null);
+  };
 
   const customerMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);
 
@@ -124,6 +144,7 @@ export default function Invoices() {
                             <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
                           </div>
                         </button>
+                        <PhaseIndicator invoice={i} phases={phases} onSave={handleSavePhase(i)} busy={phaseSavingId === i.id} />
                         <InvoicePaymentControl invoice={i} />
                         <Button
                           variant="ghost"
@@ -164,6 +185,9 @@ export default function Invoices() {
         customer={preview ? customerMap[preview.customer_id] : null}
         settings={settings}
         onClose={() => setPreview(null)}
+        phases={phases}
+        onSavePhase={preview ? handleSavePhase(preview) : null}
+        phaseSaving={!!preview && phaseSavingId === preview.id}
       />
     </div>
   );
