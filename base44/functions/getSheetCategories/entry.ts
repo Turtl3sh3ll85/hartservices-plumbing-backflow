@@ -34,19 +34,21 @@ export default async function(req) {
     const rows = vals.values || [];
 
     const categories = [];
+    const activeCategories = [];
     const seen = new Set();
     for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      for (const cell of row) {
-        const v = String(cell || "").trim();
-        if (v && !seen.has(v.toLowerCase())) {
-          seen.add(v.toLowerCase());
-          categories.push(v);
-        }
+      const row = rows[i] || [];
+      const name = String(row[0] || "").trim();
+      if (!name || seen.has(name.toLowerCase())) continue;
+      seen.add(name.toLowerCase());
+      categories.push(name);
+      const flag = String(row[2] || "").trim().toLowerCase();
+      if (flag === "true") {
+        activeCategories.push(name);
       }
     }
 
-    return Response.json({ categories });
+    return Response.json({ categories, activeCategories });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

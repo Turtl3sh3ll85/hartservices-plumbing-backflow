@@ -44,6 +44,16 @@ export default function Accounting() {
     },
   });
 
+  const { data: activeCategories = [] } = useQuery({
+    queryKey: ["activeCategories"],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("getSheetCategories", {});
+      return res.data?.activeCategories || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const activeSet = useMemo(() => new Set(activeCategories.map((c) => c.toLowerCase())), [activeCategories]);
+
   const { data: labelRecords = [] } = useQuery({
     queryKey: ["accountLabels"],
     queryFn: async () => base44.entities.AccountLabel.list(),
@@ -197,21 +207,27 @@ export default function Accounting() {
     return tagged
       .filter((tx) => {
         const cat = (tx.custom_category || "").trim().toLowerCase();
-        return tx.matched !== "matched" && tx.matched !== "ignored" && cat !== "personal" && cat !== "transfer";
+        if (tx.matched === "matched" || tx.matched === "ignored") return false;
+        if (cat === "personal" || cat === "transfer") return false;
+        if (cat && !activeSet.has(cat)) return false;
+        return true;
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 10);
-  }, [tagged]);
+  }, [tagged, activeSet]);
 
   const newestUncategorized = useMemo(() => {
     return tagged
       .filter((tx) => {
         const cat = (tx.custom_category || "").trim().toLowerCase();
-        return tx.matched !== "matched" && tx.matched !== "ignored" && cat !== "personal" && cat !== "transfer" && !tx.custom_category;
+        if (tx.matched === "matched" || tx.matched === "ignored") return false;
+        if (cat === "personal" || cat === "transfer") return false;
+        if (cat && !activeSet.has(cat)) return false;
+        return !tx.custom_category;
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 10);
-  }, [tagged]);
+  }, [tagged, activeSet]);
 
   const categorize = (list) => {
     const matched = [];
