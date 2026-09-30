@@ -39,6 +39,17 @@ export default async function(req) {
     const accountsJson = await accountsRes.json();
     const accountMap = Object.fromEntries((accountsJson?.data?.accounts || []).map((a) => [a.id, a.name]));
 
+    // Account labels (personal/business/routing + merges)
+    const labels = await base44.asServiceRole.entities.AccountLabel.list();
+    const labelType = Object.fromEntries(labels.filter((l) => l.type).map((l) => [l.account_name, l.type]));
+    const mergeInto = Object.fromEntries(labels.filter((l) => l.merge_into).map((l) => [l.account_name, l.merge_into]));
+    const resolveType = (name) => {
+      let cur = name;
+      const seen = new Set();
+      while (mergeInto[cur] && !seen.has(cur)) { seen.add(cur); cur = mergeInto[cur]; }
+      return labelType[cur] || null;
+    };
+
     // 2. Determine since_date
     let sinceDate = body.since_date;
     if (!sinceDate) {
@@ -74,9 +85,11 @@ export default async function(req) {
 
     for (const tx of transactions) {
       const dollars = Math.round((Number(tx.amount) || 0) / 1000 * 100) / 100;
+      const accountName = accountMap[tx.account_id] || '';
+      const isPersonal = resolveType(accountName) === 'personal';
       const record = {
         ynab_id: tx.id,
-        account_name: accountMap[tx.account_id] || '',
+        account_name: accountName,
         date: tx.date,
         amount: dollars,
         payee: tx.payee_name || '',
@@ -85,9 +98,10 @@ export default async function(req) {
         cleared: tx.cleared || '',
         last_synced_date: now,
       };
+      if (isPersonal) record.custom_category = 'Personal';
       const existing = existingMap[tx.id];
       if (existing) {
-        toUpdate.push({
+        const updatePayload = {
           id: existing.id,
           account_name: record.account_name,
           date: record.date,
@@ -97,7 +111,9 @@ export default async function(req) {
           memo: record.memo,
           cleared: record.cleared,
           last_synced_date: now,
-        });
+        };
+        if (isPersonal && !existing.custom_category) updatePayload.custom_category = 'Personal';
+        toUpdate.push(updatePayload);
       } else {
         toCreate.push(record);
       }
