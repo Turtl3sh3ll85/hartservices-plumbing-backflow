@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { RefreshCw, Loader2, Link2, Unlink, Paperclip, X, ChevronDown, Tags } from "lucide-react";
+import { RefreshCw, Loader2, Link2, Unlink, Paperclip, X, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,6 @@ import TransactionCategoryPicker from "@/components/TransactionCategoryPicker";
 import AccountGroup from "@/components/accounting/AccountGroup";
 import ReceiptsDialog from "@/components/accounting/ReceiptsDialog";
 import MergeAccountsDialog from "@/components/accounting/MergeAccountsDialog";
-import { useToast } from "@/components/ui/use-toast";
 
 const COLLAPSED_KEY = "acct_collapsed";
 const GROUP_COLLAPSED_KEY = "acct_group_collapsed";
@@ -24,9 +23,7 @@ function readJSON(key, fallback) {
 
 export default function Accounting() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [syncing, setSyncing] = useState(false);
-  const [categorizing, setCategorizing] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
   const [matchTx, setMatchTx] = useState(null);
   const [pinTx, setPinTx] = useState(null);
@@ -87,23 +84,6 @@ export default function Accounting() {
       // surfaced by query refetch state
     }
     setSyncing(false);
-  };
-
-  const categorizePersonal = async () => {
-    const targets = transactions.filter((tx) => labelMap[resolveName(tx.account_name || "Unknown Account")] === "personal" && !tx.custom_category);
-    if (targets.length === 0) {
-      toast({ description: "No uncategorized transactions in personal accounts." });
-      return;
-    }
-    setCategorizing(true);
-    try {
-      await base44.entities.YnabTransaction.bulkUpdate(targets.map((tx) => ({ id: tx.id, custom_category: "personal" })));
-      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
-      toast({ description: `Categorized ${targets.length} transaction${targets.length === 1 ? "" : "s"} as personal.` });
-    } catch (e) {
-      toast({ variant: "destructive", description: "Could not categorize transactions." });
-    }
-    setCategorizing(false);
   };
 
   const updateMatch = async (tx, matched, matched_invoice_id = null) => {
@@ -345,10 +325,6 @@ export default function Accounting() {
             {syncing ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
             Sync now
           </Button>
-          <Button onClick={categorizePersonal} disabled={categorizing} variant="outline">
-            {categorizing ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Tags className="w-4 h-4 mr-1.5" />}
-            Categorize personal
-          </Button>
         </div>
       </div>
 
@@ -461,7 +437,6 @@ export default function Accounting() {
       <ManualMatchDialog
         transaction={matchTx}
         invoices={recentInvoices}
-        disableIgnore={!!matchTx && labelMap[resolveName(matchTx.account_name || "Unknown Account")] === "personal"}
         onMatch={async (invoiceId) => {
           await updateMatch(matchTx, "matched", invoiceId);
           setMatchTx(null);

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/invoice";
 import { Loader2 } from "lucide-react";
 
-export default function ManualMatchDialog({ transaction, invoices, onMatch, onIgnore, onClose, busy, disableIgnore }) {
+export default function ManualMatchDialog({ transaction, invoices, onMatch, onIgnore, onClose, busy }) {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -58,20 +58,14 @@ export default function ManualMatchDialog({ transaction, invoices, onMatch, onIg
           )}
         </div>
         <div className="flex items-center justify-between gap-3 pt-1">
-          {disableIgnore ? (
-            <span className="text-sm text-muted-foreground min-h-11 flex items-center">
-              Personal transactions can't be marked “not for a job” — categorize as Personal instead.
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={onIgnore}
-              disabled={busy}
-              className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline disabled:opacity-50 min-h-11"
-            >
-              Transaction not for a job
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onIgnore}
+            disabled={busy}
+            className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline disabled:opacity-50 min-h-11"
+          >
+            Transaction not for a job
+          </button>
           {busy && (
             <span className="flex items-center text-sm text-muted-foreground">
               <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
