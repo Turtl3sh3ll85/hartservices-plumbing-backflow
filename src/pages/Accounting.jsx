@@ -134,6 +134,7 @@ export default function Accounting() {
 
   const setAccountLabel = async (accountName, type) => {
     const existing = settingsByAccount[accountName];
+    const prevType = existing?.type || null;
     try {
       if (type === "unlabeled") {
         if (existing) {
@@ -148,7 +149,36 @@ export default function Accounting() {
       } else {
         await base44.entities.AccountLabel.create({ account_name: accountName, type });
       }
+
+      // Recategorize transactions when personal status changes
+      const raws = [...new Set([
+        accountName,
+        ...labelRecords.filter((l) => resolveName(l.account_name) === accountName).map((l) => l.account_name),
+        ...groupRawAccounts(accountName),
+      ])];
+
+      if (raws.length) {
+        if (type === "personal") {
+          let batch;
+          do {
+            batch = await base44.entities.YnabTransaction.updateMany(
+              { account_name: { $in: raws }, matched: { $ne: "ignored" } },
+              { $set: { custom_category: "Personal", matched: "ignored", matched_invoice_id: null } }
+            );
+          } while (batch?.has_more);
+        } else if (prevType === "personal") {
+          let batch;
+          do {
+            batch = await base44.entities.YnabTransaction.updateMany(
+              { account_name: { $in: raws }, matched: "ignored" },
+              { $set: { custom_category: null, matched: "unmatched", matched_invoice_id: null } }
+            );
+          } while (batch?.has_more);
+        }
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["accountLabels"] });
+      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
     } catch (e) {}
   };
 
