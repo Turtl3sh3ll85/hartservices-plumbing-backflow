@@ -13,6 +13,7 @@ const allNav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ["admin", "tech", "accountant"] },
   { to: "/estimates", label: "Estimates", icon: ClipboardList, roles: ["admin", "tech", "accountant"] },
   { to: "/invoices", label: "Invoices", icon: FileText, roles: ["admin", "tech", "accountant"] },
+  { to: "/customers", label: "Customers", icon: UserCog, roles: ["admin"] },
   { to: "/transactions", label: "Transactions", icon: ArrowLeftRight, roles: ["admin", "accountant"] },
   { to: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "accountant"] },
   { to: "/receipts", label: "Receipts", icon: Receipt, roles: ["admin", "accountant"] },

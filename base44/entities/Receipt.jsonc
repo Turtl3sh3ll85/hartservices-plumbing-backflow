@@ -1,0 +1,100 @@
+{
+  "name": "Receipt",
+  "type": "object",
+  "properties": {
+    "transaction_id": {
+      "type": "string",
+      "title": "Linked Transaction"
+    },
+    "gmail_message_id": {
+      "type": "string",
+      "title": "Gmail Message ID"
+    },
+    "from_email": {
+      "type": "string",
+      "title": "From Email"
+    },
+    "subject": {
+      "type": "string",
+      "title": "Subject"
+    },
+    "received_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Received Date"
+    },
+    "file_uri": {
+      "type": "string",
+      "title": "Private File URI"
+    },
+    "file_name": {
+      "type": "string",
+      "title": "File Name"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Detected Amount"
+    },
+    "merchant": {
+      "type": "string",
+      "title": "Merchant"
+    },
+    "matched": {
+      "type": "boolean",
+      "default": false,
+      "title": "Matched to Transaction"
+    }
+  },
+  "required": [
+    "file_name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,172 +1,134 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Save, Building2, Upload, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
-import { Image } from "@/components/ui/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
-
-const empty = { business_name: "", business_email: "", business_phone: "", business_street: "", business_city: "", business_state: "", business_zip: "", logo_url: "", default_tax_rate: 0, payment_terms: "Due on receipt", google_sheet_id: "", weekly_summary_enabled: false };
+import { RefreshCw, MailSearch } from "lucide-react";
 
 export default function Settings() {
-  const [form, setForm] = useState(empty);
-  const [existing, setExisting] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const fileRef = useRef(null);
   const { toast } = useToast();
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await base44.entities.Settings.list();
-        if (list[0]) { setExisting(list[0]); setForm({ ...empty, ...list[0] }); }
-      } catch (e) {}
-    })();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const list = await base44.entities.Settings.list();
+      if (list[0]) setSettings(list[0]);
+      else setSettings({});
+    } catch (e) {
+      toast({ title: "Failed to load settings", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { load(); }, []);
+
+  const set = (k, v) => setSettings((s) => ({ ...s, [k]: v }));
 
   const save = async () => {
     setSaving(true);
     try {
-      if (existing) await base44.entities.Settings.update(existing.id, form);
-      else { const created = await base44.entities.Settings.create(form); setExisting(created); }
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
-    setSaving(false);
+      if (settings.id) await base44.entities.Settings.update(settings.id, settings);
+      else {
+        const created = await base44.entities.Settings.create(settings);
+        setSettings(created);
+      }
+      toast({ title: "Settings saved" });
+    } catch (e) {
+      toast({ title: "Save failed", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const uploadLogo = async (file) => {
-    if (!file) return;
-    setUploading(true);
+  const runSync = async () => {
+    setBusy("sync");
     try {
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-      setForm((f) => ({ ...f, logo_url: file_url }));
-    } catch (e) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
-    setUploading(false);
+      const res = await base44.functions.invoke("syncPlaidTransactions", {});
+      toast({ title: `Synced ${res.data?.added ?? 0} new, ${res.data?.updated ?? 0} updated` });
+    } catch (e) {
+      toast({ title: "Sync failed", description: e.message, variant: "destructive" });
+    } finally { setBusy(null); }
   };
 
-  const removeLogo = () => setForm((f) => ({ ...f, logo_url: "" }));
-
-  const deleteAccount = async () => {
-    setDeleting(true);
+  const runReceipts = async () => {
+    setBusy("receipts");
     try {
-      await base44.functions.invoke("deleteAccount", {});
-      await base44.auth.logout("/login");
-    } catch (e) { toast({ title: "Error", description: e.message, variant: "destructive" }); }
-    setDeleting(false);
+      const res = await base44.functions.invoke("findReceiptsInEmail", {});
+      toast({ title: `Scanned ${res.data?.scanned ?? 0} emails, matched ${res.data?.matched ?? 0} receipts` });
+    } catch (e) {
+      toast({ title: "Receipt scan failed", description: e.message, variant: "destructive" });
+    } finally { setBusy(null); }
   };
+
+  if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground text-sm mt-1">Your business details appear on every invoice your clients see.</p>
-      </div>
+    <div className="space-y-6 max-w-3xl">
+      <h1 className="text-2xl font-heading font-semibold tracking-tight">Settings</h1>
 
-      <Card className="p-6 space-y-4">
-        <div className="flex items-center gap-2 text-sm font-medium"><Building2 className="w-4 h-4" /> Business profile</div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5"><Label>Business name</Label><Input value={form.business_name} onChange={(e) => setForm({ ...form, business_name: e.target.value })} placeholder="FlowPro Plumbing" /></div>
-          <div className="space-y-1.5"><Label>Phone</Label><Input value={form.business_phone} onChange={(e) => setForm({ ...form, business_phone: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Email</Label><Input value={form.business_email} onChange={(e) => setForm({ ...form, business_email: e.target.value })} /></div>
-          <div className="sm:col-span-2 space-y-1.5">
-            <Label>Logo</Label>
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-lg border bg-muted/30 flex items-center justify-center overflow-hidden shrink-0">
-                {form.logo_url ? (
-                  <Image src={form.logo_url} alt="Logo" className="w-full h-full object-contain" />
-                ) : (
-                  <Building2 className="w-8 h-8 text-muted-foreground" />
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => uploadLogo(e.target.files?.[0])} />
-                <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                  {uploading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Upload className="w-4 h-4 mr-1.5" />}
-                  {uploading ? "Uploading…" : "Upload logo"}
-                </Button>
-                {form.logo_url && (
-                  <Button type="button" variant="ghost" size="sm" onClick={removeLogo}><X className="w-4 h-4 mr-1.5" /> Remove</Button>
-                )}
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">PNG or JPG. Shown on your customer-facing invoices and estimates.</p>
+      <Card>
+        <CardHeader><CardTitle className="text-base">Business profile</CardTitle></CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          <div><Label>Business name</Label><Input value={settings.business_name || ""} onChange={(e) => set("business_name", e.target.value)} /></div>
+          <div><Label>Business email</Label><Input type="email" value={settings.business_email || ""} onChange={(e) => set("business_email", e.target.value)} /></div>
+          <div><Label>Business phone</Label><Input value={settings.business_phone || ""} onChange={(e) => set("business_phone", e.target.value)} /></div>
+          <div><Label>Logo URL</Label><Input value={settings.logo_url || ""} onChange={(e) => set("logo_url", e.target.value)} /></div>
+          <div className="sm:col-span-2"><Label>Street</Label><Input value={settings.business_street || ""} onChange={(e) => set("business_street", e.target.value)} /></div>
+          <div><Label>City</Label><Input value={settings.business_city || ""} onChange={(e) => set("business_city", e.target.value)} /></div>
+          <div><Label>State</Label><Input value={settings.business_state || ""} onChange={(e) => set("business_state", e.target.value)} /></div>
+          <div><Label>ZIP</Label><Input value={settings.business_zip || ""} onChange={(e) => set("business_zip", e.target.value)} /></div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Billing defaults</CardTitle></CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          <div><Label>Default tax rate (%)</Label><Input type="number" step="0.01" value={settings.default_tax_rate ?? 0} onChange={(e) => set("default_tax_rate", parseFloat(e.target.value) || 0)} /></div>
+          <div><Label>Payment terms</Label><Input value={settings.payment_terms || ""} onChange={(e) => set("payment_terms", e.target.value)} /></div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Integrations</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div><Label>Item catalog Google Sheet ID</Label><Input value={settings.google_sheet_id || ""} onChange={(e) => set("google_sheet_id", e.target.value)} /></div>
+            <div><Label>Receipts Drive folder ID</Label><Input value={settings.receipts_folder_id || ""} onChange={(e) => set("receipts_folder_id", e.target.value)} /></div>
           </div>
-          <div className="sm:col-span-2 space-y-1.5"><Label>Street address</Label><Input value={form.business_street} onChange={(e) => setForm({ ...form, business_street: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>City</Label><Input value={form.business_city} onChange={(e) => setForm({ ...form, business_city: e.target.value })} /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5"><Label>State</Label><Input value={form.business_state} onChange={(e) => setForm({ ...form, business_state: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>ZIP</Label><Input value={form.business_zip} onChange={(e) => setForm({ ...form, business_zip: e.target.value })} /></div>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={runSync} disabled={busy === "sync"}>
+              <RefreshCw className={`w-4 h-4 ${busy === "sync" ? "animate-spin" : ""}`} /> Sync Plaid now
+            </Button>
+            <Button variant="outline" size="sm" onClick={runReceipts} disabled={busy === "receipts"}>
+              <MailSearch className={`w-4 h-4 ${busy === "receipts" ? "animate-spin" : ""}`} /> Find receipts in email
+            </Button>
           </div>
-        </div>
+          <p className="text-xs text-muted-foreground">Plaid transactions sync hourly. Receipts are auto-matched from the connected Gmail inbox.</p>
+        </CardContent>
       </Card>
 
-      <Card className="p-6 space-y-4">
-        <div className="text-sm font-medium">Invoice defaults</div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5"><Label>Default tax rate %</Label><Input type="number" min="0" step="0.01" value={form.default_tax_rate ?? 0} onChange={(e) => setForm({ ...form, default_tax_rate: parseFloat(e.target.value) || 0 })} /></div>
-          <div className="space-y-1.5"><Label>Payment terms</Label><Input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} /></div>
-        </div>
-      </Card>
-
-      <Card className="p-6 space-y-3">
-        <div className="text-sm font-medium">Line item catalog (Google Sheets)</div>
-        <p className="text-sm text-muted-foreground">Paste a Google Sheets ID to pull line items into invoices. The first sheet should have header columns named <span className="font-medium">Description</span>, <span className="font-medium">Quantity</span>, and <span className="font-medium">Unit Price</span>.</p>
-        <div className="space-y-1.5"><Label>Google Sheet ID</Label><Input value={form.google_sheet_id} onChange={(e) => setForm({ ...form, google_sheet_id: e.target.value })} placeholder="1AbC…xyz" /></div>
-      </Card>
-
-      <Card className="p-6 space-y-2">
-        <div className="text-sm font-medium">Automated reminders</div>
-        <div className="flex items-center justify-between gap-4 py-1">
+      <Card>
+        <CardHeader><CardTitle className="text-base">Notifications</CardTitle></CardHeader>
+        <CardContent className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-medium">Weekly open-invoices summary</div>
-            <p className="text-sm text-muted-foreground">Every Thursday at 8am, email each customer a single message listing all their open invoices.</p>
+            <Label>Weekly open-invoices summary</Label>
+            <p className="text-xs text-muted-foreground">Email a summary of open invoices every week.</p>
           </div>
-          <Switch checked={!!form.weekly_summary_enabled} onCheckedChange={(v) => setForm({ ...form, weekly_summary_enabled: v })} />
-        </div>
-      </Card>
-
-      <Card className="p-6 space-y-2">
-        <div className="text-sm font-medium">PayPal</div>
-        <p className="text-sm text-muted-foreground">Payments are processed through your PayPal Business account. Credentials are configured securely in the app's environment variables (sandbox for testing, live for real payments).</p>
+          <Switch checked={!!settings.weekly_summary_enabled} onCheckedChange={(v) => set("weekly_summary_enabled", v)} />
+        </CardContent>
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={save} disabled={saving}><Save className="w-4 h-4 mr-1" /> {saving ? "Saving…" : saved ? "Saved!" : "Save settings"}</Button>
+        <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save settings"}</Button>
       </div>
-
-      <Card className="p-6 space-y-3 border-destructive/30">
-        <div className="text-sm font-medium text-destructive">Danger Zone</div>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="text-sm font-medium">Delete account</div>
-            <p className="text-sm text-muted-foreground">Permanently delete your account and all data you've created. This cannot be undone.</p>
-          </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" disabled={deleting}>{deleting ? "Deleting…" : "Delete account"}</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete account?</AlertDialogTitle>
-                <AlertDialogDescription>This will permanently delete all data you've created — customers, invoices, estimates, and more. This action cannot be undone.</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={deleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete permanently</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </Card>
     </div>
   );
 }

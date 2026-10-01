@@ -1,547 +1,191 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { RefreshCw, MailSearch, Link2, Unlink, Ban, Paperclip, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { RefreshCw, Loader2, Link2, Unlink, Paperclip, X, ChevronDown } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import TransactionTags from "@/components/accounting/TransactionTags";
-import useYnabTransactions from "@/hooks/useYnabTransactions";
-import { formatMoney } from "@/lib/invoice";
-import { computeSuggestions } from "@/lib/ynabMatching";
-import ManualMatchDialog from "@/components/ManualMatchDialog";
-import TransactionCategoryPicker from "@/components/TransactionCategoryPicker";
-import AccountGroup from "@/components/accounting/AccountGroup";
-import ReceiptsDialog from "@/components/accounting/ReceiptsDialog";
-import MergeAccountsDialog from "@/components/accounting/MergeAccountsDialog";
-
-const COLLAPSED_KEY = "acct_collapsed";
-const GROUP_COLLAPSED_KEY = "acct_group_collapsed";
-
-function readJSON(key, fallback) {
-  try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; }
-}
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
+import StatusBadge from "@/components/StatusBadge";
+import { formatCurrency, formatDate, paymentAmounts } from "@/lib/format";
 
 export default function Accounting() {
-  const queryClient = useQueryClient();
-  const [syncing, setSyncing] = useState(false);
-  const [updatingId, setUpdatingId] = useState(null);
-  const [matchTx, setMatchTx] = useState(null);
-  const [pinTx, setPinTx] = useState(null);
-  const [collapsed, setCollapsed] = useState(() => readJSON(COLLAPSED_KEY, {}));
-  const [groupCollapsed, setGroupCollapsed] = useState(() => readJSON(GROUP_COLLAPSED_KEY, {}));
-  const [mergeGroup, setMergeGroup] = useState(null);
-  const [hideUncategorized, setHideUncategorized] = useState(false);
+  const { toast } = useToast();
+  const [txs, setTxs] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(null);
+  const [filter, setFilter] = useState("unmatched");
+  const [query, setQuery] = useState("");
+  const [linking, setLinking] = useState(null); // transaction being linked
+  const [invoiceQuery, setInvoiceQuery] = useState("");
 
-  useEffect(() => { localStorage.setItem(COLLAPSED_KEY, JSON.stringify(collapsed)); }, [collapsed]);
-  useEffect(() => { localStorage.setItem(GROUP_COLLAPSED_KEY, JSON.stringify(groupCollapsed)); }, [groupCollapsed]);
-  const { data: transactions = [], isLoading: loadingTx, updateTransaction } = useYnabTransactions();
-
-  const { data: invoices = [] } = useQuery({
-    queryKey: ["invoicesForMatching"],
-    queryFn: async () => {
-      const res = await base44.entities.Invoice.list("-updated_date", 500);
-      return res;
-    },
-  });
-
-  const { data: categoryData } = useQuery({
-    queryKey: ["sheetCategories", "active"],
-    queryFn: async () => {
-      const res = await base44.functions.invoke("getSheetCategories", {});
-      return { categories: res.data?.categories || [], activeCategories: res.data?.activeCategories || [] };
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-  const inactiveSet = useMemo(() => {
-    const active = new Set((categoryData?.activeCategories || []).map((c) => c.toLowerCase()));
-    const all = new Set((categoryData?.categories || []).map((c) => c.toLowerCase()));
-    const inactive = new Set();
-    for (const c of all) if (!active.has(c)) inactive.add(c);
-    return inactive;
-  }, [categoryData]);
-
-  const { data: labelRecords = [] } = useQuery({
-    queryKey: ["accountLabels"],
-    queryFn: async () => base44.entities.AccountLabel.list(),
-  });
-  const settingsByAccount = useMemo(() => Object.fromEntries(labelRecords.map((l) => [l.account_name, l])), [labelRecords]);
-  const labelMap = useMemo(() => Object.fromEntries(labelRecords.filter((l) => l.type).map((l) => [l.account_name, l.type])), [labelRecords]);
-  const mergeMap = useMemo(() => Object.fromEntries(labelRecords.filter((l) => l.merge_into).map((l) => [l.account_name, l.merge_into])), [labelRecords]);
-  const resolveName = useMemo(() => (name) => {
-    let cur = name;
-    const seen = new Set();
-    while (mergeMap[cur] && !seen.has(cur)) { seen.add(cur); cur = mergeMap[cur]; }
-    return cur;
-  }, [mergeMap]);
-
-  const paidInvoices = useMemo(() => invoices.filter((i) => i.payment_status === "paid" || i.payment_status === "partial"), [invoices]);
-  const suggestions = useMemo(() => computeSuggestions(transactions, paidInvoices), [transactions, paidInvoices]);
-  const invoiceMap = useMemo(() => Object.fromEntries(invoices.map((i) => [i.id, i])), [invoices]);
-
-  const recentInvoices = useMemo(() => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 90);
-    return invoices.filter((i) => i.created_date && new Date(i.created_date) >= cutoff);
-  }, [invoices]);
-
-  const handleSync = async () => {
-    setSyncing(true);
+  const load = async () => {
+    setLoading(true);
     try {
-      const res = await base44.functions.invoke("syncYnabTransactions", {});
-      if (res.data?.error) throw new Error(res.data.error);
-      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
+      const [t, i] = await Promise.all([
+        base44.entities.Transaction.list('-date', 200),
+        base44.entities.Invoice.list('-created_date', 200),
+      ]);
+      setTxs(t);
+      setInvoices(i);
     } catch (e) {
-      // surfaced by query refetch state
-    }
-    setSyncing(false);
+      toast({ title: "Failed to load", variant: "destructive" });
+    } finally { setLoading(false); }
   };
+  useEffect(() => { load(); }, []);
 
-  const updateMatch = async (tx, matched, matched_invoice_id = null) => {
-    setUpdatingId(tx.id);
+  const runSync = async () => {
+    setBusy("sync");
     try {
-      await updateTransaction(tx.id, { matched, matched_invoice_id });
-    } finally {
-      setUpdatingId(null);
-    }
+      const res = await base44.functions.invoke("syncPlaidTransactions", {});
+      toast({ title: `Synced ${res.data?.added ?? 0} new, ${res.data?.updated ?? 0} updated` });
+      load();
+    } catch (e) { toast({ title: "Sync failed", description: e.message, variant: "destructive" }); }
+    finally { setBusy(null); }
   };
-
-  const pinReceipt = async (tx, file) => {
-    const receipts = Array.isArray(tx.receipts) ? tx.receipts : [];
-    if (receipts.some((r) => r.drive_file_id === file.id)) return;
-    const next = [...receipts, {
-      drive_file_id: file.id,
-      name: file.name,
-      link: file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`,
-      thumbnail_url: "",
-    }];
-    setUpdatingId(tx.id);
+  const runReceipts = async () => {
+    setBusy("receipts");
     try {
-      await updateTransaction(tx.id, { receipts: next });
-    } catch (e) {}
-    setUpdatingId(null);
-    setPinTx(null);
+      const res = await base44.functions.invoke("findReceiptsInEmail", {});
+      toast({ title: `Scanned ${res.data?.scanned ?? 0} emails, matched ${res.data?.matched ?? 0}` });
+      load();
+    } catch (e) { toast({ title: "Scan failed", description: e.message, variant: "destructive" }); }
+    finally { setBusy(null); }
   };
 
-  const unpinReceipt = async (tx, fileId) => {
-    const receipts = Array.isArray(tx.receipts) ? tx.receipts : [];
-    const next = receipts.filter((r) => r.drive_file_id !== fileId);
-    setUpdatingId(tx.id);
-    try {
-      await updateTransaction(tx.id, { receipts: next });
-    } catch (e) {}
-    setUpdatingId(null);
+  const updateTx = async (id, patch) => {
+    try { await base44.entities.Transaction.update(id, patch); } catch (e) { toast({ title: "Update failed", variant: "destructive" }); }
+    setTxs((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   };
 
-  const setAccountLabel = async (accountName, type) => {
-    const existing = settingsByAccount[accountName];
-    const prevType = existing?.type || null;
-    try {
-      if (type === "unlabeled") {
-        if (existing) {
-          if (existing.merge_into) {
-            await base44.entities.AccountLabel.update(existing.id, { type: null });
-          } else {
-            await base44.entities.AccountLabel.delete(existing.id);
-          }
-        }
-      } else if (existing) {
-        await base44.entities.AccountLabel.update(existing.id, { type });
-      } else {
-        await base44.entities.AccountLabel.create({ account_name: accountName, type });
-      }
-
-      // Recategorize transactions when personal status changes
-      const raws = [...new Set([
-        accountName,
-        ...labelRecords.filter((l) => resolveName(l.account_name) === accountName).map((l) => l.account_name),
-        ...groupRawAccounts(accountName),
-      ])];
-
-      if (raws.length) {
-        if (type === "personal") {
-          let batch;
-          do {
-            batch = await base44.entities.YnabTransaction.updateMany(
-              { account_name: { $in: raws }, matched: { $ne: "ignored" } },
-              { $set: { custom_category: "Personal", matched: "ignored", matched_invoice_id: null } }
-            );
-          } while (batch?.has_more);
-        } else if (prevType === "personal") {
-          let batch;
-          do {
-            batch = await base44.entities.YnabTransaction.updateMany(
-              { account_name: { $in: raws }, matched: "ignored" },
-              { $set: { custom_category: null, matched: "unmatched", matched_invoice_id: null } }
-            );
-          } while (batch?.has_more);
-        }
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ["accountLabels"] });
-      await queryClient.invalidateQueries({ queryKey: ["ynabTransactions"] });
-    } catch (e) {}
+  const linkInvoice = async (tx, invoiceId) => {
+    await updateTx(tx.id, { matched_invoice_id: invoiceId, matched: "matched" });
+    setLinking(null);
+    toast({ title: "Transaction linked to invoice" });
   };
+  const unlink = (tx) => updateTx(tx.id, { matched_invoice_id: "", matched: "unmatched" });
+  const ignore = (tx) => updateTx(tx.id, { matched: tx.matched === "ignored" ? "unmatched" : "ignored" });
 
-  const setMerge = async (rawAccountNames, target) => {
-    for (const name of rawAccountNames) {
-      const existing = settingsByAccount[name];
-      try {
-        if (existing) {
-          await base44.entities.AccountLabel.update(existing.id, { merge_into: target });
-        } else {
-          await base44.entities.AccountLabel.create({ account_name: name, merge_into: target });
-        }
-      } catch (e) {}
-    }
-    await queryClient.invalidateQueries({ queryKey: ["accountLabels"] });
-  };
+  const filtered = txs.filter((t) => {
+    if (filter === "unmatched" && t.matched !== "unmatched") return false;
+    if (filter === "matched" && t.matched !== "matched") return false;
+    if (filter === "ignored" && t.matched !== "ignored") return false;
+    const q = query.toLowerCase();
+    if (q && !(`${t.payee} ${t.category} ${t.custom_category}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
 
-  const unmergeAccount = async (name) => {
-    const existing = settingsByAccount[name];
-    try {
-      if (existing) {
-        await base44.entities.AccountLabel.update(existing.id, { merge_into: null });
-        await queryClient.invalidateQueries({ queryKey: ["accountLabels"] });
-      }
-    } catch (e) {}
-  };
+  const invoiceFor = (id) => invoices.find((i) => i.id === id);
+  const invoiceOptions = invoices.filter((i) => {
+    const q = invoiceQuery.toLowerCase();
+    return !q || (i.name || '').toLowerCase().includes(q) || (i.number || '').toLowerCase().includes(q);
+  });
 
-  const tagged = useMemo(() => transactions.map((tx) => ({
-    ...tx,
-    _suggested_invoice_id: tx.matched === "unmatched" ? (suggestions[tx.ynab_id] || null) : null,
-  })), [transactions, suggestions]);
-
-  const accountGroups = useMemo(() => {
-    const map = new Map();
-    for (const tx of tagged) {
-      const name = resolveName(tx.account_name || "Unknown Account");
-      if (!map.has(name)) map.set(name, []);
-      map.get(name).push(tx);
-    }
-    return Array.from(map.entries());
-  }, [tagged, resolveName]);
-
-  const rawAccounts = useMemo(() => [...new Set(transactions.map((t) => t.account_name || "Unknown Account"))], [transactions]);
-  const groupRawAccounts = (groupName) => rawAccounts.filter((a) => resolveName(a) === groupName);
-  const mergedSourcesOf = (groupName) => rawAccounts.filter((a) => resolveName(a) === groupName && mergeMap[a]);
-
-  const GROUPS = ["business", "routing", "personal", "unlabeled"];
-
-  const grouped = useMemo(() => {
-    const buckets = { business: [], routing: [], personal: [], unlabeled: [] };
-    for (const entry of accountGroups) {
-      const name = entry[0];
-      const type = labelMap[name] || "unlabeled";
-      buckets[type].push(entry);
-    }
-    return buckets;
-  }, [accountGroups, labelMap]);
-
-  const sortedEntries = (entries) => [...entries].sort((a, b) => a[0].localeCompare(b[0]));
-
-  const newestUnmatched = useMemo(() => {
-    return tagged
-      .filter((tx) => {
-        const cat = (tx.custom_category || "").trim().toLowerCase();
-        if (tx.matched === "matched" || tx.matched === "ignored") return false;
-        if (cat === "personal" || cat === "transfer") return false;
-        if (cat && inactiveSet.has(cat)) return false;
-        return true;
-      })
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 10);
-  }, [tagged, inactiveSet]);
-
-  const displayedNewestUnmatched = useMemo(() => {
-    if (!hideUncategorized) return newestUnmatched;
-    return newestUnmatched.filter((tx) => (tx.custom_category || "").trim());
-  }, [newestUnmatched, hideUncategorized]);
-
-  const newestUncategorized = useMemo(() => {
-    return tagged
-      .filter((tx) => {
-        const cat = (tx.custom_category || "").trim().toLowerCase();
-        if (tx.matched === "matched" || tx.matched === "ignored") return false;
-        if (cat === "personal" || cat === "transfer") return false;
-        if (cat && inactiveSet.has(cat)) return false;
-        return !tx.custom_category;
-      })
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 10);
-  }, [tagged, inactiveSet]);
-
-  const categorize = (list) => {
-    const matched = [];
-    const unmatched = [];
-    for (const tx of list) {
-      if (tx.matched === "matched") matched.push(tx);
-      else if (tx.matched === "ignored") continue;
-      else unmatched.push(tx);
-    }
-    return { matched, unmatched };
-  };
-
-  const renderRow = (tx, showAccount = false) => {
-    const inv = tx._suggested_invoice_id ? invoiceMap[tx._suggested_invoice_id] : (tx.matched_invoice_id ? invoiceMap[tx.matched_invoice_id] : null);
-    const busy = updatingId === tx.id;
-    const receipts = Array.isArray(tx.receipts) ? tx.receipts : [];
-    return (
-      <div key={tx.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
-        <div className="min-w-0 flex-1 min-w-[180px]">
-          <div className="font-medium truncate">{tx.payee || tx.memo || "Unknown payee"}</div>
-          <div className="text-sm text-muted-foreground truncate">
-            {tx.date ? new Date(tx.date).toLocaleDateString() : ""}{showAccount && tx.account_name ? ` · ${tx.account_name}` : ""}{tx.memo ? ` · ${tx.memo}` : ""}
-          </div>
-          <div className="mt-1">
-            <TransactionCategoryPicker
-              value={tx.custom_category || ""}
-              disabled={busy}
-              onChange={async (val) => {
-                const patch = { custom_category: val };
-                const catLower = val.trim().toLowerCase();
-                if (catLower === 'personal' || catLower === 'transfer') {
-                  patch.matched = 'ignored';
-                  patch.matched_invoice_id = null;
-                }
-                setUpdatingId(tx.id);
-                try {
-                  await updateTransaction(tx.id, patch);
-                } finally {
-                  setUpdatingId(null);
-                }
-              }}
-            />
-          </div>
-          {receipts.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {receipts.map((r) => (
-                <a
-                  key={r.drive_file_id}
-                  href={r.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5 min-h-7"
-                >
-                  <Paperclip className="w-3 h-3 shrink-0" />
-                  <span className="max-w-[120px] truncate">{r.name}</span>
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); unpinReceipt(tx, r.drive_file_id); }}
-                    className="hover:bg-primary/20 rounded-full p-0.5"
-                    aria-label="Unpin receipt"
-                  >
-                    <X className="w-3 h-3" />
-                  </span>
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-sm font-medium tabular-nums">{formatMoney(tx.amount)}</span>
-          {inv && (
-            <span className="text-xs text-muted-foreground truncate max-w-[140px] hidden sm:inline">
-              <Link2 className="w-3 h-3 inline mr-1" />{inv.name || inv.number || "Invoice"}
-            </span>
-          )}
-          <Button size="sm" variant="ghost" onClick={() => setPinTx(tx)} disabled={busy} aria-label="Attach receipt">
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-          </Button>
-          {tx.matched === "matched" ? (
-            <>
-              <TransactionTags transaction={tx} showCategory={false} />
-              <Button size="sm" variant="ghost" onClick={() => updateMatch(tx, "unmatched", null)} disabled={busy} aria-label="Unmatch">
-                <Unlink className="w-4 h-4" />
-              </Button>
-            </>
-          ) : tx.matched === "ignored" ? (
-            <TransactionTags transaction={tx} showCategory={false} />
-          ) : (
-            <Button size="sm" variant="outline" onClick={() => setMatchTx(tx)} className="border-amber-500/40 text-amber-600 hover:bg-amber-500/10">
-              <Link2 className="w-4 h-4 mr-1" /> Unmatched
-            </Button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const renderSection = (title, list) => (
-    <Card className="overflow-hidden p-0">
-      <div className="px-4 py-2.5 border-b bg-muted/40 font-medium text-sm flex items-center justify-between">
-        <span>{title} ({list.length})</span>
-      </div>
-      {list.length === 0 ? (
-        <div className="p-4 text-sm text-muted-foreground">None.</div>
-      ) : (
-        <div className="divide-y">{list.map((tx) => renderRow(tx))}</div>
-      )}
-    </Card>
-  );
+  const tabs = [
+    { key: "unmatched", label: "Unmatched" },
+    { key: "matched", label: "Matched" },
+    { key: "ignored", label: "Ignored" },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Transactions</h1>
-          <p className="text-muted-foreground text-sm mt-1">Transactions matched to invoice payments.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleSync} disabled={syncing}>
-            {syncing ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
-            Sync now
+        <h1 className="text-2xl font-heading font-semibold tracking-tight">Transactions</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={runSync} disabled={busy === "sync"}>
+            <RefreshCw className={`w-4 h-4 ${busy === "sync" ? "animate-spin" : ""}`} /> Sync Plaid
+          </Button>
+          <Button variant="outline" size="sm" onClick={runReceipts} disabled={busy === "receipts"}>
+            <MailSearch className={`w-4 h-4 ${busy === "receipts" ? "animate-spin" : ""}`} /> Find receipts
           </Button>
         </div>
       </div>
 
-      {loadingTx ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search payee or category" className="pl-9" />
         </div>
-      ) : transactions.length === 0 ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground">
-          No transactions yet. Click <strong>Sync now</strong> to pull from YNAB.
-        </Card>
+        <div className="flex gap-1 rounded-lg border bg-card p-1">
+          {tabs.map((t) => (
+            <button key={t.key} onClick={() => setFilter(t.key)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filter === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      ) : filtered.length === 0 ? (
+        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No transactions.</CardContent></Card>
       ) : (
-        <div className="space-y-8">
-          {(() => {
-            const isCollapsed = !!groupCollapsed["newest"];
+        <div className="divide-y rounded-lg border bg-card">
+          {filtered.map((t) => {
+            const inv = invoiceFor(t.matched_invoice_id);
             return (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setGroupCollapsed((c) => ({ ...c, newest: !c.newest }))}
-                    className="flex items-center gap-2 px-1 min-h-11 text-left"
-                    aria-expanded={!isCollapsed}
-                  >
-                    <ChevronDown className={cn("w-5 h-5 transition-transform shrink-0", isCollapsed && "-rotate-90")} />
-                    <h2 className="font-heading text-xl font-semibold">Newest Unmatched Transactions</h2>
-                    <span className="text-sm text-muted-foreground font-normal">· {displayedNewestUnmatched.length}</span>
-                  </button>
-                  <label className="ml-auto flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none min-h-11 px-2">
-                    <input
-                      type="checkbox"
-                      checked={hideUncategorized}
-                      onChange={(e) => setHideUncategorized(e.target.checked)}
-                      className="w-4 h-4 rounded"
-                    />
-                    Hide uncategorized
-                  </label>
-                </div>
-                {!isCollapsed && (
-                  displayedNewestUnmatched.length === 0 ? (
-                    <Card className="p-4 text-sm text-muted-foreground">No unmatched transactions.</Card>
-                  ) : (
-                    <Card className="overflow-hidden p-0">
-                      <div className="divide-y">{displayedNewestUnmatched.map((tx) => renderRow(tx, true))}</div>
-                    </Card>
-                  )
-                )}
-              </div>
-            );
-          })()}
-          {(() => {
-            const isCollapsed = !!groupCollapsed["newestUncat"];
-            return (
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => setGroupCollapsed((c) => ({ ...c, newestUncat: !c.newestUncat }))}
-                  className="flex items-center gap-2 px-1 min-h-11 w-full text-left"
-                  aria-expanded={!isCollapsed}
-                >
-                  <ChevronDown className={cn("w-5 h-5 transition-transform shrink-0", isCollapsed && "-rotate-90")} />
-                  <h2 className="font-heading text-xl font-semibold">Newest Uncategorized Transactions</h2>
-                  <span className="text-sm text-muted-foreground font-normal">· {newestUncategorized.length}</span>
-                </button>
-                {!isCollapsed && (
-                  newestUncategorized.length === 0 ? (
-                    <Card className="p-4 text-sm text-muted-foreground">No uncategorized transactions.</Card>
-                  ) : (
-                    <Card className="overflow-hidden p-0">
-                      <div className="divide-y">{newestUncategorized.map((tx) => renderRow(tx, true))}</div>
-                    </Card>
-                  )
-                )}
-              </div>
-            );
-          })()}
-          {GROUPS.map((group) => {
-            const entries = sortedEntries(grouped[group]);
-            if (entries.length === 0) return null;
-            const isCollapsed = !!groupCollapsed[group];
-            return (
-              <div key={group} className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => setGroupCollapsed((c) => ({ ...c, [group]: !c[group] }))}
-                  className="flex items-center gap-2 px-1 min-h-11 w-full text-left"
-                  aria-expanded={!isCollapsed}
-                >
-                  <ChevronDown className={cn("w-5 h-5 transition-transform shrink-0", isCollapsed && "-rotate-90")} />
-                  <h2 className="font-heading text-xl font-semibold">
-                    {group === "business" ? "Business" : group === "routing" ? "Routing" : group === "personal" ? "Personal" : "Unlabeled"}
-                  </h2>
-                  <span className="text-sm text-muted-foreground font-normal">· {entries.length}</span>
-                </button>
-                {!isCollapsed && (
-                  <div className="space-y-6">
-                    {entries.map(([account, txs]) => (
-                      <AccountGroup
-                        key={account}
-                        account={account}
-                        txs={txs}
-                        collapsed={collapsed[account] !== false}
-                        onToggleCollapse={() => setCollapsed((c) => ({ ...c, [account]: !(c[account] !== false) }))}
-                        labelType={labelMap[account] || "unlabeled"}
-                        onSetLabel={(type) => setAccountLabel(account, type)}
-                        mergedSources={mergedSourcesOf(account)}
-                        onUnmerge={(src) => unmergeAccount(src)}
-                        onMerge={() => setMergeGroup({ name: account, raws: groupRawAccounts(account) })}
-                        renderSection={renderSection}
-                        categorize={categorize}
-                      />
-                    ))}
+              <div key={t.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium truncate">{t.payee || "Unknown"}</span>
+                    {t.receipt_email_id && <Paperclip className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
                   </div>
-                )}
+                  <div className="text-xs text-muted-foreground">
+                    {formatDate(t.date)} · {t.account_name}{t.account_mask ? ` ···${t.account_mask}` : ""}
+                  </div>
+                  <input
+                    value={t.custom_category || t.category || ""}
+                    onChange={(e) => setTxs((p) => p.map((x) => (x.id === t.id ? { ...x, custom_category: e.target.value } : x)))}
+                    onBlur={(e) => updateTx(t.id, { custom_category: e.target.value })}
+                    placeholder="Category"
+                    className="mt-1 text-xs text-muted-foreground bg-transparent border-none p-0 w-full focus:outline-none focus:ring-0"
+                  />
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="font-medium tabular-nums">{formatCurrency(t.amount)}</div>
+                  {inv ? (
+                    <div className="text-xs text-primary truncate max-w-[160px]">{inv.name || inv.number}</div>
+                  ) : (
+                    <StatusBadge status={t.matched} />
+                  )}
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  {t.matched === "matched" ? (
+                    <Button variant="ghost" size="icon" onClick={() => unlink(t)} aria-label="Unlink"><Unlink className="w-4 h-4" /></Button>
+                  ) : (
+                    <Button variant="ghost" size="icon" onClick={() => { setLinking(t); setInvoiceQuery(""); }} aria-label="Link invoice"><Link2 className="w-4 h-4" /></Button>
+                  )}
+                  <Button variant="ghost" size="icon" onClick={() => ignore(t)} aria-label="Toggle ignore">
+                    <Ban className={`w-4 h-4 ${t.matched === "ignored" ? "text-muted-foreground" : "text-destructive"}`} />
+                  </Button>
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      <ManualMatchDialog
-        transaction={transactions.find((tx) => tx.id === matchTx?.id) || matchTx}
-        invoices={recentInvoices}
-        onMatch={async (invoiceId) => {
-          await updateMatch(matchTx, "matched", invoiceId);
-          setMatchTx(null);
-        }}
-        onIgnore={async () => {
-          if (matchTx) await updateMatch(matchTx, "ignored", null);
-          setMatchTx(null);
-        }}
-        onClose={() => setMatchTx(null)}
-        busy={updatingId === matchTx?.id}
-      />
-
-      <ReceiptsDialog
-        open={!!pinTx}
-        onClose={() => setPinTx(null)}
-        onPick={(file) => pinTx && pinReceipt(pinTx, file)}
-        title="Pin receipt to transaction"
-      />
-
-      <MergeAccountsDialog
-        open={!!mergeGroup}
-        account={mergeGroup?.name}
-        accounts={accountGroups.map(([n]) => n)}
-        onClose={() => setMergeGroup(null)}
-        onMerge={(target) => { if (mergeGroup) setMerge(mergeGroup.raws, target); setMergeGroup(null); }}
-      />
+      <Dialog open={!!linking} onOpenChange={(o) => !o && setLinking(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Link to invoice</DialogTitle></DialogHeader>
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input value={invoiceQuery} onChange={(e) => setInvoiceQuery(e.target.value)} placeholder="Search invoices" className="pl-9 mb-2" autoFocus />
+          </div>
+          <div className="max-h-72 overflow-y-auto divide-y rounded-lg border">
+            {invoiceOptions.slice(0, 30).map((i) => (
+              <button key={i.id} onClick={() => linkInvoice(linking, i.id)}
+                className="w-full text-left px-3 py-2 hover:bg-accent/50 transition-colors">
+                <div className="font-medium text-sm truncate">{i.name || i.number}</div>
+                <div className="text-xs text-muted-foreground">{formatCurrency(i.total)}</div>
+              </button>
+            ))}
+            {invoiceOptions.length === 0 && <div className="p-4 text-sm text-muted-foreground text-center">No invoices.</div>}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

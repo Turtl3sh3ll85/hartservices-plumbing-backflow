@@ -141,6 +141,15 @@
       "default": "unpaid",
       "title": "Payment Status"
     },
+    "work_status": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "next_payment_due"
+      ],
+      "default": "in_progress",
+      "title": "Work Status"
+    },
     "payment_method": {
       "type": "string",
       "enum": [
@@ -224,6 +233,25 @@
           }
         }
       }
+    },
+    "standing_by": {
+      "type": "boolean",
+      "default": false,
+      "title": "Standing By (next payment)"
+    },
+    "customer_ready_for_next_stage": {
+      "type": "boolean",
+      "default": false,
+      "title": "Customer Ready for Next Stage"
+    },
+    "ready_for_next_stage_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Customer Ready Date"
+    },
+    "ready_note": {
+      "type": "string",
+      "title": "Customer Ready Note"
     }
   },
   "required": [
