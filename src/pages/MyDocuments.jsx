@@ -2,19 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { FileText, ClipboardList, Loader2, CreditCard, ArrowLeft, Mail, FileDown } from "lucide-react";
+import { FileText, ClipboardList, Loader2, ArrowLeft, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Image } from "@/components/ui/image";
 import { useSettings } from "@/hooks/useSettings";
-import StatusBadge from "@/components/StatusBadge";
-import PaidAmountLabel from "@/components/PaidAmountLabel";
-import { formatMoney } from "@/lib/invoice";
-import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
-import InvoicePaymentSchedule from "@/components/portal/InvoicePaymentSchedule";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
-import CustomerGroupedList from "@/components/CustomerGroupedList";
+import PortalDocumentList from "@/components/portal/PortalDocumentList";
 
 const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
 
@@ -23,7 +17,6 @@ export default function MyDocuments() {
   const email = (searchParams.get("email") || "").trim().toLowerCase();
   const navigate = useNavigate();
   const { settings } = useSettings();
-  const [hidePaid, setHidePaid] = useState(false);
   const [view, setView] = useState("invoices");
   const [preview, setPreview] = useState(null);
   const [previewKind, setPreviewKind] = useState("invoice");
@@ -63,20 +56,8 @@ export default function MyDocuments() {
   const invoices = portal.invoices || [];
   const estimates = portal.estimates || [];
   const customers = portal.customers || [];
-  const visibleInvoices = hidePaid ? invoices.filter((i) => i.payment_status !== "paid") : invoices;
-  const [downloading, setDownloading] = useState(null);
 
   const customerFor = (doc) => customers.find((c) => c.id === doc.customer_id) || customers[0];
-  const downloadPdf = async (doc, kind) => {
-    const key = `${kind}:${doc.id}`;
-    setDownloading(key);
-    try {
-      const customer = customerFor(doc);
-      if (kind === "invoice") await downloadInvoicePdf({ invoice: doc, customer, settings });
-      else await downloadEstimatePdf({ estimate: doc, customer, settings });
-    } catch (e) { /* ignore */ }
-    setDownloading(null);
-  };
 
   if (!email) {
     return (
@@ -143,83 +124,29 @@ export default function MyDocuments() {
             </div>
 
             {view === "invoices" && (
-            <div>
-              <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-                <h2 className="font-heading font-semibold flex items-center gap-2"><FileText className="w-4 h-4" /> Invoices</h2>
-                {invoices.length > 0 && (
-                  <label className="flex items-center gap-2 text-sm text-muted-foreground select-none cursor-pointer">
-                    <Switch checked={hidePaid} onCheckedChange={setHidePaid} aria-label="Hide paid invoices" />
-                    <span className="inline-flex items-center gap-1">Hide paid</span>
-                  </label>
-                )}
-              </div>
-              {visibleInvoices.length === 0 ? (
-                <Card className="p-6 text-center text-sm text-muted-foreground">
-                  {invoices.length === 0 ? "No invoices yet." : "All invoices are hidden."}
-                </Card>
-              ) : (
-                <CustomerGroupedList
-                  items={visibleInvoices}
+              <div>
+                <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><FileText className="w-4 h-4" /> Invoices</h2>
+                <PortalDocumentList
+                  kind="invoice"
+                  items={invoices}
                   customers={customers}
-                  renderItem={({ item: i }) => (
-                    <div key={i.id} className="p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3 min-h-11">
-                        <button type="button" onClick={() => { setPreview(i); setPreviewKind("invoice"); }} className="min-w-0 text-left min-h-11 -m-1 p-1">
-                          <div className="font-medium truncate">{i.name || "Invoice"}</div>
-                          <div className="text-sm text-muted-foreground truncate">
-                            {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
-                          </div>
-                          <PaidAmountLabel invoice={i} />
-                        </button>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                          <StatusBadge status={i.payment_status} />
-                          <Button size="sm" variant="outline" onClick={() => downloadPdf(i, "invoice")} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
-                            {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                          </Button>
-                          {i.payment_status === "paid" ? (
-                            <Button asChild size="sm" variant="outline"><Link to={`/pay/${i.id}`}>View</Link></Button>
-                          ) : (
-                            <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> View & Pay</Link></Button>
-                          )}
-                        </div>
-                      </div>
-                      <InvoicePaymentSchedule invoice={i} />
-                    </div>
-                  )}
+                  settings={settings}
+                  onPreview={(i) => { setPreview(i); setPreviewKind("invoice"); }}
                 />
-              )}
-            </div>
+              </div>
             )}
 
             {view === "estimates" && (
-            <div>
-              <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Estimates</h2>
-              {estimates.length === 0 ? (
-                <Card className="p-6 text-center text-sm text-muted-foreground">No estimates yet.</Card>
-              ) : (
-                <CustomerGroupedList
+              <div>
+                <h2 className="font-heading font-semibold mb-3 flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Estimates</h2>
+                <PortalDocumentList
+                  kind="estimate"
                   items={estimates}
                   customers={customers}
-                  renderItem={({ item: e }) => (
-                    <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
-                      <button type="button" onClick={() => { setPreview(e); setPreviewKind("estimate"); }} className="min-w-0 text-left min-h-11 -m-1 p-1">
-                        <div className="font-medium truncate">{e.name || "Estimate"}</div>
-                        <div className="text-sm text-muted-foreground truncate">{e.number}</div>
-                      </button>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
-                        <StatusBadge status={e.status} />
-                        <Button size="sm" variant="outline" onClick={() => downloadPdf(e, "estimate")} disabled={downloading === `estimate:${e.id}`} aria-label="Download estimate PDF">
-                          {downloading === `estimate:${e.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                        </Button>
-                        <Button asChild size="sm" variant="outline"><Link to={`/accept/${e.id}`}>{e.status === "converted" ? "View" : "Review"}</Link></Button>
-                      </div>
-                    </div>
-                  )}
+                  settings={settings}
+                  onPreview={(e) => { setPreview(e); setPreviewKind("estimate"); }}
                 />
-              )}
-            </div>
+              </div>
             )}
           </>
         )}

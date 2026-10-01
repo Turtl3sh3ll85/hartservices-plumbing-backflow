@@ -6,9 +6,8 @@ import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import StatusBadge from "@/components/StatusBadge";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
-import { formatMoney } from "@/lib/invoice";
+import PortalDocumentList from "@/components/portal/PortalDocumentList";
 import { useSettings } from "@/hooks/useSettings";
 
 export default function CustomerPortalPreviewDialog({ customer, onClose }) {
@@ -66,37 +65,16 @@ export default function CustomerPortalPreviewDialog({ customer, onClose }) {
                   </TabsList>
                 </Tabs>
 
-                <div className="divide-y rounded-lg border">
-                  {view === "invoices" && (invoices.length === 0 ? (
-                    <div className="p-4 text-sm text-muted-foreground">No invoices.</div>
-                  ) : invoices.map((i) => (
-                    <button key={i.id} type="button" onClick={() => { setPreview(i); setPreviewKind("invoice"); }} className="flex w-full items-center justify-between gap-3 p-3 text-left hover:bg-accent/50 transition-colors min-h-11">
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">{i.name || "Invoice"}</div>
-                        <div className="text-xs text-muted-foreground truncate">{i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}</div>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                        <StatusBadge status={i.payment_status} />
-                      </div>
-                    </button>
-                  )))}
-
-                  {view === "estimates" && (estimates.length === 0 ? (
-                    <div className="p-4 text-sm text-muted-foreground">No estimates.</div>
-                  ) : estimates.map((e) => (
-                    <button key={e.id} type="button" onClick={() => { setPreview(e); setPreviewKind("estimate"); }} className="flex w-full items-center justify-between gap-3 p-3 text-left hover:bg-accent/50 transition-colors min-h-11">
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">{e.name || "Estimate"}</div>
-                        <div className="text-xs text-muted-foreground truncate">{e.number}</div>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
-                        <StatusBadge status={e.status} />
-                      </div>
-                    </button>
-                  )))}
-                </div>
+                <PortalDocumentList
+                  kind={view === "invoices" ? "invoice" : "estimate"}
+                  items={view === "invoices" ? invoices : estimates}
+                  customers={customers}
+                  settings={settings}
+                  onPreview={(doc) => {
+                    setPreview(doc);
+                    setPreviewKind(view === "invoices" ? "invoice" : "estimate");
+                  }}
+                />
 
                 <div className="flex justify-end pt-1">
                   <Button asChild variant="outline" size="sm">
