@@ -50,25 +50,18 @@ export default function Dashboard() {
     })();
   }, []);
 
-  const setStatus = async (inv, status) => {
-    const prev = {
-      standing_by: inv.standing_by,
-      customer_ready_for_next_stage: inv.customer_ready_for_next_stage,
-      ready_for_next_stage_date: inv.ready_for_next_stage_date,
-    };
-    const patch = {
-      customer_ready_for_next_stage: status === "ready",
-      standing_by: status !== "due",
-      ready_for_next_stage_date: status === "ready" ? new Date().toISOString() : null,
-    };
-    setRecent((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
-    setPreviewInv((p) => (p?.id === inv.id ? { ...p, ...patch } : p));
+  const setStatus = async (inv, status, index) => {
     try {
-      await base44.entities.Invoice.update(inv.id, patch);
-    } catch (e) {
-      setRecent((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
-      setPreviewInv((p) => (p?.id === inv.id ? { ...p, ...prev } : p));
-      toast({ title: "Could not update status", variant: "destructive" });
+      const response = await base44.functions.invoke("setCustomerPortalInvoiceStatus", {
+        invoice_id: inv.id, status, schedule_index: index,
+      });
+      if (response.data?.error || !response.data?.invoice) throw new Error(response.data?.error || "Could not save status");
+      const saved = response.data.invoice;
+      setRecent((items) => items.map((item) => item.id === saved.id ? saved : item));
+      setPreviewInv((item) => item?.id === saved.id ? saved : item);
+      setStats((current) => ({ ...current, readyNext: current.readyNext + Number(!!saved.customer_ready_for_next_stage) - Number(!!inv.customer_ready_for_next_stage) }));
+    } catch (error) {
+      toast({ title: "Could not update status", description: error.message, variant: "destructive" });
     }
   };
 

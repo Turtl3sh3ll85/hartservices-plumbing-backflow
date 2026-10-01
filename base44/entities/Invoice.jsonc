@@ -115,6 +115,15 @@
           "paypal_order_id": {
             "type": "string",
             "title": "PayPal Order ID"
+          },
+          "milestone_status": {
+            "type": "string",
+            "enum": [
+              "standing",
+              "due",
+              "ready"
+            ],
+            "title": "Milestone Status"
           }
         }
       }

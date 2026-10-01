@@ -23,7 +23,7 @@ import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
  *  - settings: business settings (for PDF rendering)
  *  - onPreview(doc): called when a row's name/number is clicked
  */
-export default function PortalDocumentList({ kind, items, customers, settings, onPreview, onPayNow }) {
+export default function PortalDocumentList({ kind, items, customers, settings, onPreview, onPayNow, onStatusChange }) {
   const [hidePaid, setHidePaid] = useState(false);
   const [downloading, setDownloading] = useState(null);
 
@@ -84,7 +84,8 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
                   total={i.total}
                   standingBy={i.standing_by}
                   customerReady={i.customer_ready_for_next_stage}
-                  readOnly={!onPayNow}
+                  readOnly={!onStatusChange}
+                  onStatusChange={onStatusChange ? (status, index) => onStatusChange(i, status, index) : undefined}
                   onPayNow={onPayNow ? (idx) => onPayNow(i, idx) : undefined}
                 />
               </div>

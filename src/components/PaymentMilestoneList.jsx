@@ -1,11 +1,6 @@
-import { Check, Hourglass, AlarmClock, UserCheck, ChevronDown, Banknote, CreditCard } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import { Check, Hourglass, AlarmClock, UserCheck, CreditCard } from "lucide-react";
+import MarkPaidButton from "@/components/payments/MarkPaidButton";
+import MilestoneStatusDropdown from "@/components/payments/MilestoneStatusDropdown";
 import { formatCurrency, paymentAmounts } from "@/lib/format";
 
 const STATUS_LABEL = { standing: "Standing By", due: "Due", ready: "Customer ready" };
@@ -20,8 +15,8 @@ const STATUS_ICON = { standing: Hourglass, due: AlarmClock, ready: UserCheck };
  * Payment milestone list matching the dark reference card:
  * label (left) · amount (mid) · status (right).
  *
- * The next unpaid milestone's status is an icon dropdown. Paid milestones show a
- * green check; milestones after the next unpaid one show "Upcoming".
+ * Every unpaid milestone has its own independent status dropdown.
+ * Paid milestones retain the green check and existing remove-paid action.
  */
 export default function PaymentMilestoneList({
   schedule = [],
@@ -42,8 +37,6 @@ export default function PaymentMilestoneList({
     : [{ label: "Payment due", type: "amount", value: Number(total) || 0, paid: false }];
   const amounts = paymentAmounts(list, total);
   const nextIdx = list.findIndex((p) => !p.paid);
-  const status = customerReady ? "ready" : (standingBy !== false ? "standing" : "due");
-  const StatusIcon = STATUS_ICON[status];
 
   // Keep status control clicks local; invoice navigation is a separate sibling link.
   const stop = (e) => e.stopPropagation();
@@ -53,7 +46,9 @@ export default function PaymentMilestoneList({
       <div className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r bg-[#3b5a80]" />
       <div className="divide-y divide-white/5">
         {list.map((p, i) => {
-          const isNext = i === nextIdx;
+          const status = p.milestone_status || (i === nextIdx
+            ? (customerReady ? "ready" : standingBy !== false ? "standing" : "due")
+            : "standing");
           return (
             <div key={i} className="flex items-center gap-3 py-1.5">
               <span className="flex-1 min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
@@ -77,7 +72,7 @@ export default function PaymentMilestoneList({
                   )
                 ) : (
                   <>
-                    {onPayNow ? (
+                    {onPayNow && status === "due" ? (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); onPayNow(i); }}
@@ -87,48 +82,13 @@ export default function PaymentMilestoneList({
                         <CreditCard className="w-3 h-3" /> Pay Now
                       </button>
                     ) : canMarkPaidByCheck && onMarkPaidByCheck ? (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onMarkPaidByCheck(i); }}
-                        onPointerDown={stop}
-                        className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] hover:bg-[#bbf7d0] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
-                      >
-                        <Banknote className="w-3 h-3" /> Mark paid
-                      </button>
+                      <MarkPaidButton onClick={() => onMarkPaidByCheck(i)} className={STATUS_STYLE.ready} label={p.label || `Payment ${i + 1}`} />
                     ) : null}
-                    {isNext && !onPayNow && onStatusChange && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={stop}
-                            onPointerDown={stop}
-                            disabled={readOnly}
-                            className={`pointer-events-auto inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 shrink-0 border transition-colors ${STATUS_STYLE[status]} disabled:opacity-100 disabled:cursor-default`}
-                          >
-                            <StatusIcon className="w-3 h-3" />
-                            {STATUS_LABEL[status]}
-                            <ChevronDown className="w-3 h-3 opacity-60" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="min-w-[10rem]">
-                          {statuses.map((s) => {
-                            const ItemIcon = STATUS_ICON[s];
-                            return (
-                              <DropdownMenuItem
-                                key={s}
-                                onSelect={() => onStatusChange(s)}
-                                className={`gap-2 ${s === status ? "font-semibold" : ""}`}
-                              >
-                                <ItemIcon className="w-4 h-4" />
-                                {STATUS_LABEL[s]}
-                                {s === status && <Check className="w-3.5 h-3.5 ml-auto text-primary" />}
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    <MilestoneStatusDropdown
+                      status={status} statuses={statuses} labels={STATUS_LABEL} icons={STATUS_ICON} styles={STATUS_STYLE}
+                      label={p.label || `Payment ${i + 1}`} readOnly={readOnly}
+                      onChange={onStatusChange ? (value) => onStatusChange(value, i) : undefined}
+                    />
                   </>
                 )}
               </div>

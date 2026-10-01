@@ -9,6 +9,7 @@ import { Image } from "@/components/ui/image";
 import { useSettings } from "@/hooks/useSettings";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import PortalDocumentList from "@/components/portal/PortalDocumentList";
+import usePortalMilestoneStatus from "@/components/portal/usePortalMilestoneStatus";
 
 const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
 
@@ -22,6 +23,7 @@ export default function MyDocuments() {
   const [previewKind, setPreviewKind] = useState("invoice");
   const [flagging, setFlagging] = useState(false);
   const queryClient = useQueryClient();
+  const setPortalStatus = usePortalMilestoneStatus(email);
 
   const { data: phases = [] } = useQuery({
     queryKey: ["invoicePhases"],
@@ -133,6 +135,10 @@ export default function MyDocuments() {
                   settings={settings}
                   onPreview={(i) => { setPreview(i); setPreviewKind("invoice"); }}
                   onPayNow={(inv, idx) => navigate(`/pay/${inv.id}?milestone=${idx}`)}
+                  onStatusChange={async (inv, status, index) => {
+                    const saved = await setPortalStatus(inv, status, index);
+                    if (saved) setPreview((current) => current?.id === saved.id ? saved : current);
+                  }}
                 />
               </div>
             )}

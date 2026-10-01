@@ -28,7 +28,7 @@ export default function PaymentScheduleDisplay({ schedule = [], total = 0, stand
     return (
       <div className="flex items-center gap-1 flex-wrap">
         {list.map((p, i) => {
-          const isStanding = i === nextIdx && standingBy && !p.paid;
+          const isStanding = !p.paid && (p.milestone_status ? p.milestone_status === "standing" : i === nextIdx ? standingBy : true);
           const cls = p.paid
             ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
             : isStanding
@@ -50,7 +50,8 @@ export default function PaymentScheduleDisplay({ schedule = [], total = 0, stand
       <div className="border rounded-lg divide-y">
         {list.map((p, i) => {
           const isNext = i === nextIdx;
-          const isStanding = isNext && standingBy && !p.paid;
+          const status = p.milestone_status || (isNext && !standingBy ? "due" : "standing");
+          const isStanding = status === "standing" && !p.paid;
           return (
             <div key={i} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
               <div className="min-w-0">
@@ -63,7 +64,7 @@ export default function PaymentScheduleDisplay({ schedule = [], total = 0, stand
                   ? <StatusBadge status="paid" label="Paid" />
                   : isStanding
                     ? <StatusBadge status="unpaid" label="Standing by" />
-                    : <StatusBadge status="unpaid" label="Due" />}
+                    : <StatusBadge status={status === "ready" ? "approved" : "unpaid"} label={status === "ready" ? "Customer ready" : "Due"} />}
                 {renderAction?.(p, i, amounts[i], isNext, isStanding)}
               </div>
             </div>
