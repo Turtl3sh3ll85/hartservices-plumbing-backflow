@@ -33,6 +33,11 @@ export default function InvoiceListItem({
             {inv.customer_ready_for_next_stage && <span className="text-emerald-600">· Ready for next stage</span>}
           </div>
         </div>
+        {onDelete && (
+          <Button variant="ghost" size="icon" className="pointer-events-auto shrink-0 relative z-10" onClick={() => onDelete(inv)} aria-label="Delete invoice">
+            <Trash2 className="w-4 h-4 text-destructive" />
+          </Button>
+        )}
         <OpenedIndicator opened={inv.opened} lastOpenedDate={inv.last_opened_date} />
         <div className="text-right">
           <div className="font-medium tabular-nums">{formatCurrency(multiple ? (inv.total || 0) : balance)}</div>
@@ -52,13 +57,6 @@ export default function InvoiceListItem({
           onUnmarkPaid={(idx) => onUnmarkPaid(inv, idx)}
         />
       </div>
-      {onDelete && (
-        <div className="relative z-10 flex justify-end mt-1.5">
-          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-7" onClick={() => onDelete(inv)}>
-            <Trash2 className="w-3.5 h-3.5" /> Delete
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

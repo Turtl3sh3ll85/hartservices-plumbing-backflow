@@ -110,6 +110,9 @@ export default function Estimates() {
                 <div className="min-w-0 flex-1 pointer-events-none">
                   <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
                 </div>
+                <Button size="icon" variant="ghost" className="pointer-events-auto shrink-0" onClick={() => deleteEstimate(e)} aria-label="Delete estimate">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
                 <div className="hidden sm:flex items-center gap-2 pointer-events-none text-xs text-muted-foreground whitespace-nowrap">
                   <span>{formatDate(e.created_date)}</span>
                   <span>· {MODE_LABEL[e.selection_mode || "single"]}</span>
@@ -117,7 +120,7 @@ export default function Estimates() {
                 <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
                 <StatusBadge status={e.status} />
                 <span className="font-medium tabular-nums pointer-events-none whitespace-nowrap">{formatCurrency(e.total)}</span>
-                <div className="flex items-center gap-1 pointer-events-auto">
+                <div className="flex items-center gap-1 pointer-events-auto shrink-0">
                   {e.status !== "converted" ? (
                     <Button size="sm" variant="outline" onClick={() => convertEstimate(e)} disabled={convertingId === e.id}>
                       {convertingId === e.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileInput className="w-4 h-4" />}
@@ -129,9 +132,6 @@ export default function Estimates() {
                       <span className="hidden sm:inline">View invoice</span>
                     </Button>
                   )}
-                  <Button size="icon" variant="ghost" onClick={() => deleteEstimate(e)} aria-label="Delete estimate">
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
                 </div>
               </div>
             </div>
