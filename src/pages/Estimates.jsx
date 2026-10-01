@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Plus, Search, FileInput, Trash2, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import { useSettings } from "@/hooks/useSettings";
+import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 const MODE_LABEL = { single: "Single", a_la_carte: "À la carte", side_by_side: "Side-by-side" };
@@ -20,7 +21,39 @@ export default function Estimates() {
   const [query, setQuery] = useState("");
   const [previewEst, setPreviewEst] = useState(null);
   const [hideConverted, setHideConverted] = useState(false);
+  const [convertingId, setConvertingId] = useState(null);
   const { settings } = useSettings();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const convertEstimate = async (est) => {
+    setConvertingId(est.id);
+    try {
+      const res = await base44.functions.invoke("acceptEstimate", { estimate_id: est.id });
+      setItems((prev) => prev.map((i) => (i.id === est.id ? { ...i, status: "converted", converted_invoice_id: res.invoice_id } : i)));
+      setPreviewEst(null);
+      toast({ title: res.already_converted ? "Already converted" : "Converted to invoice" });
+      navigate(`/invoices/${res.invoice_id}`);
+    } catch (e) {
+      toast({ title: "Conversion failed", description: e.message, variant: "destructive" });
+    } finally {
+      setConvertingId(null);
+    }
+  };
+
+  const deleteEstimate = async (est) => {
+    if (!window.confirm(`Delete estimate "${est.name || est.number || "Untitled"}"? This cannot be undone.`)) return;
+    setItems((prev) => prev.filter((i) => i.id !== est.id));
+    setPreviewEst(null);
+    try {
+      await base44.entities.Estimate.delete(est.id);
+      toast({ title: "Estimate deleted" });
+    } catch (e) {
+      toast({ title: "Delete failed", variant: "destructive" });
+      const list = await base44.entities.Estimate.list('-created_date', 200);
+      setItems(list);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -71,8 +104,9 @@ export default function Estimates() {
       ) : (
         <div className="divide-y rounded-lg border bg-card">
           {filtered.map((e) => (
-            <button key={e.id} type="button" onClick={() => setPreviewEst(e)} className="block w-full text-left px-4 py-3 hover:bg-accent/50 transition-colors">
-              <div className="flex items-center gap-3">
+            <div key={e.id} className="relative px-4 py-3 hover:bg-accent/50 transition-colors">
+              <button type="button" onClick={() => setPreviewEst(e)} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Preview estimate: ${e.name || e.number || "Estimate"}`} />
+              <div className="relative z-10 pointer-events-none flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2">
@@ -84,7 +118,23 @@ export default function Estimates() {
                 <StatusBadge status={e.status} />
                 <span className="font-medium tabular-nums">{formatCurrency(e.total)}</span>
               </div>
-            </button>
+              <div className="relative z-10 flex justify-end gap-1 mt-1.5">
+                {e.status !== "converted" ? (
+                  <Button size="sm" variant="outline" onClick={() => convertEstimate(e)} disabled={convertingId === e.id}>
+                    {convertingId === e.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileInput className="w-4 h-4" />}
+                    <span className="hidden sm:inline">Convert</span>
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="ghost" onClick={() => e.converted_invoice_id && navigate(`/invoices/${e.converted_invoice_id}`)}>
+                    <FileInput className="w-4 h-4" />
+                    <span className="hidden sm:inline">View invoice</span>
+                  </Button>
+                )}
+                <Button size="icon" variant="ghost" onClick={() => deleteEstimate(e)} aria-label="Delete estimate">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -95,6 +145,8 @@ export default function Estimates() {
         customer={customers.find((c) => c.id === previewEst?.customer_id)}
         settings={settings}
         onClose={() => setPreviewEst(null)}
+        onConvert={previewEst ? () => convertEstimate(previewEst) : undefined}
+        onDelete={previewEst ? () => deleteEstimate(previewEst) : undefined}
       />
     </div>
   );

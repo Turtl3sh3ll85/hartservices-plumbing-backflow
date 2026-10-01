@@ -1,5 +1,7 @@
+import { Trash2 } from "lucide-react";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import PaymentMilestoneList from "@/components/PaymentMilestoneList";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate, amountPaidTotal } from "@/lib/format";
 
 export default function InvoiceListItem({
@@ -10,6 +12,7 @@ export default function InvoiceListItem({
   onUnmarkPaid,
   canMarkPaidByCheck = false,
   canUnmarkPaid = false,
+  onDelete,
 }) {
   const paid = amountPaidTotal(inv.payment_schedule, inv.total);
   const balance = Math.max(0, (inv.total || 0) - paid);
@@ -49,6 +52,13 @@ export default function InvoiceListItem({
           onUnmarkPaid={(idx) => onUnmarkPaid(inv, idx)}
         />
       </div>
+      {onDelete && (
+        <div className="relative z-10 flex justify-end mt-1.5">
+          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive h-7" onClick={() => onDelete(inv)}>
+            <Trash2 className="w-3.5 h-3.5" /> Delete
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

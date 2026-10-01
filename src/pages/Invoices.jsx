@@ -102,6 +102,20 @@ export default function Invoices() {
     }
   };
 
+  const deleteInvoice = async (inv) => {
+    if (!window.confirm(`Delete invoice "${inv.name || inv.number || "Untitled"}"? This cannot be undone.`)) return;
+    setItems((prev) => prev.filter((i) => i.id !== inv.id));
+    setPreviewInv(null);
+    try {
+      await base44.entities.Invoice.delete(inv.id);
+      toast({ title: "Invoice deleted" });
+    } catch (e) {
+      toast({ title: "Delete failed", variant: "destructive" });
+      const list = await base44.entities.Invoice.list('-created_date', 200);
+      setItems(list);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -165,6 +179,7 @@ export default function Invoices() {
                     onUnmarkPaid={unmarkPaid}
                     canMarkPaidByCheck={canMarkPaidByCheck}
                     canUnmarkPaid={canUnmarkPaid}
+                    onDelete={deleteInvoice}
                   />
                 ))}
               </div>
@@ -179,6 +194,7 @@ export default function Invoices() {
         customer={customers.find((c) => c.id === previewInv?.customer_id)}
         settings={settings}
         onClose={() => setPreviewInv(null)}
+        onDelete={previewInv ? () => deleteInvoice(previewInv) : undefined}
       />
     </div>
   );

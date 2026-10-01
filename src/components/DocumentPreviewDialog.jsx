@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileDown, Pencil, Loader2 } from "lucide-react";
+import { FileDown, Pencil, Loader2, FileInput, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import PhaseIndicator from "@/components/PhaseIndicator";
@@ -11,9 +11,10 @@ import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection, installme
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 import PaymentScheduleDisplay from "@/components/PaymentScheduleDisplay";
 
-export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onSavePhase, phaseSaving }) {
+export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onSavePhase, phaseSaving, onConvert, onDelete }) {
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
+  const [converting, setConverting] = useState(false);
   if (!doc) return null;
   const isInvoice = kind === "invoice";
   const title = isInvoice ? "Invoice" : "Estimate";
@@ -34,6 +35,17 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
     else navigate(editPath);
   };
 
+  const handleConvert = async () => {
+    if (converting) return;
+    setConverting(true);
+    try { await onConvert?.(); } catch {} finally { setConverting(false); }
+  };
+
+  const handleDelete = () => {
+    if (!window.confirm(`Delete this ${title.toLowerCase()}? This cannot be undone.`)) return;
+    onDelete?.();
+  };
+
   return (
     <Dialog open={!!doc} onOpenChange={(o) => !o && onClose?.()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
@@ -45,6 +57,18 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
             <div className="text-xs text-muted-foreground truncate">{doc.number}</div>
           </div>
           <div className="flex items-center gap-2">
+            {!isInvoice && onConvert && doc.status !== "converted" && (
+              <Button size="sm" variant="outline" onClick={handleConvert} disabled={converting}>
+                {converting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileInput className="w-4 h-4" />}
+                <span className="hidden sm:inline">Convert to invoice</span>
+              </Button>
+            )}
+            {!isInvoice && doc.status === "converted" && doc.converted_invoice_id && (
+              <Button size="sm" variant="outline" onClick={() => { onClose?.(); navigate(`/invoices/${doc.converted_invoice_id}`); }}>
+                <FileInput className="w-4 h-4" />
+                <span className="hidden sm:inline">View invoice</span>
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={downloadPdf} disabled={downloading}>
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
               <span className="hidden sm:inline">Download</span>
@@ -53,6 +77,11 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
               {!onEdit && <Pencil className="w-4 h-4" />}
               <span className="hidden sm:inline">{editLabel || "Edit"}</span>
             </Button>
+            {onDelete && (
+              <Button size="icon" variant="ghost" onClick={handleDelete} aria-label={`Delete ${title.toLowerCase()}`}>
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
+            )}
           </div>
         </div>
 
