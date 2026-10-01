@@ -116,7 +116,7 @@ export default function PaymentMilestoneList({
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <span className="text-xs text-[#9ca3af] shrink-0">Upcoming</span>
+                <span />
                 )}
                 </div>
                 </div>
