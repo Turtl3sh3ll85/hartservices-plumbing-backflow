@@ -111,7 +111,7 @@ export default function Invoices() {
                           {multiple && <div className="text-xs text-muted-foreground">{formatCurrency(paid)} paid</div>}
                         </div>
                       </div>
-                      <div className="mt-2">
+                      <div className="mt-1.5">
                         <PaymentMilestoneList
                           schedule={inv.payment_schedule}
                           total={inv.total}

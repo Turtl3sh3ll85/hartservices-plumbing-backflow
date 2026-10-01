@@ -1,27 +1,26 @@
-import { Check } from "lucide-react";
+import { Check, Hourglass, AlarmClock, UserCheck, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { formatCurrency, paymentAmounts } from "@/lib/format";
 
 const STATUS_LABEL = { standing: "Standing By", due: "Due", ready: "Customer ready" };
 const STATUS_STYLE = {
-  standing: "text-slate-300 border-slate-500/60 bg-slate-700/40",
-  due: "text-[#d97706] border-[#d97706]/60 bg-[#fef3c7]",
-  ready: "text-[#10b981] border-[#10b981]/60 bg-[#d1fae5]",
+  standing: "text-slate-300 border-slate-500/60 bg-slate-700/40 hover:bg-slate-700/70",
+  due: "text-[#d97706] border-[#d97706]/60 bg-[#fef3c7] hover:bg-[#fde68a]",
+  ready: "text-[#10b981] border-[#10b981]/60 bg-[#d1fae5] hover:bg-[#bbf7d0]",
 };
+const STATUS_ICON = { standing: Hourglass, due: AlarmClock, ready: UserCheck };
 
 /**
  * Payment milestone list matching the dark reference card:
  * label (left) · amount (mid) · status (right).
  *
- * The next unpaid milestone's status is a dropdown. Paid milestones show a green check;
- * milestones after the next unpaid one show "Upcoming".
- *
- * Props:
- *  - schedule, total
- *  - standingBy: stored standing_by (undefined/null/true → Standing By; false → Due)
- *  - customerReady: stored customer_ready_for_next_stage (true → "Customer ready" wins)
- *  - onStatusChange(next: "standing" | "due" | "ready")
- *  - readOnly: non-interactive
- *  - statuses: which options to render (default ["standing","due","ready"])
+ * The next unpaid milestone's status is an icon dropdown. Paid milestones show a
+ * green check; milestones after the next unpaid one show "Upcoming".
  */
 export default function PaymentMilestoneList({
   schedule = [],
@@ -38,17 +37,19 @@ export default function PaymentMilestoneList({
   const amounts = paymentAmounts(list, total);
   const nextIdx = list.findIndex((p) => !p.paid);
   const status = customerReady ? "ready" : (standingBy !== false ? "standing" : "due");
+  const StatusIcon = STATUS_ICON[status];
 
-  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+  // Stop the click from bubbling into the parent <Link> (which opens the editor).
+  const stop = (e) => e.stopPropagation();
 
   return (
-    <div className="relative rounded-lg bg-[#1f1f1f] pl-3.5 pr-3 py-1">
-      <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-[#3b5a80]" />
+    <div className="relative rounded-lg bg-[#1f1f1f] pl-3.5 pr-2 py-0.5">
+      <div className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r bg-[#3b5a80]" />
       <div className="divide-y divide-white/5">
         {list.map((p, i) => {
           const isNext = i === nextIdx;
           return (
-            <div key={i} className="flex items-center gap-3 py-2">
+            <div key={i} className="flex items-center gap-3 py-1.5">
               <span className="flex-1 min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
               <span className="text-sm tabular-nums text-[#9ca3af] shrink-0">{formatCurrency(amounts[i])}</span>
               {p.paid ? (
@@ -56,16 +57,37 @@ export default function PaymentMilestoneList({
                   <Check className="w-3 h-3" /> Paid
                 </span>
               ) : isNext ? (
-                <select
-                  value={status}
-                  onChange={(e) => { stop(e); onStatusChange?.(e.target.value); }}
-                  disabled={readOnly || !onStatusChange}
-                  className={`text-xs font-medium rounded-full px-2 py-0.5 shrink-0 border appearance-none cursor-pointer ${STATUS_STYLE[status]} disabled:opacity-100 disabled:cursor-default`}
-                >
-                  {statuses.map((s) => (
-                    <option key={s} value={s}>{STATUS_LABEL[s]}</option>
-                  ))}
-                </select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={stop}
+                      onPointerDown={stop}
+                      disabled={readOnly || !onStatusChange}
+                      className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 shrink-0 border transition-colors ${STATUS_STYLE[status]} disabled:opacity-100 disabled:cursor-default`}
+                    >
+                      <StatusIcon className="w-3 h-3" />
+                      {STATUS_LABEL[status]}
+                      <ChevronDown className="w-3 h-3 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[10rem]">
+                    {statuses.map((s) => {
+                      const ItemIcon = STATUS_ICON[s];
+                      return (
+                        <DropdownMenuItem
+                          key={s}
+                          onClick={() => onStatusChange?.(s)}
+                          className={`gap-2 ${s === status ? "font-semibold" : ""}`}
+                        >
+                          <ItemIcon className="w-4 h-4" />
+                          {STATUS_LABEL[s]}
+                          {s === status && <Check className="w-3.5 h-3.5 ml-auto text-primary" />}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <span className="text-xs text-[#9ca3af] shrink-0">Upcoming</span>
               )}
