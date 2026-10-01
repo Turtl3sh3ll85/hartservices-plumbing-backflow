@@ -58,43 +58,80 @@ export default function PaymentMilestoneList({
             <div key={i} className="flex items-center gap-3 py-1.5">
               <span className="flex-1 min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
               <span style={{ width: "6rem", flexShrink: 0, textAlign: "left" }} className="text-sm tabular-nums text-[#9ca3af]">{formatCurrency(amounts[i])}</span>
-              <div className="w-28 shrink-0 flex justify-end">
-              {p.paid ? (
-                canUnmarkPaid && onUnmarkPaid ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onUnmarkPaid(i); }}
-                    onPointerDown={stop}
-                    title="Click to remove paid status"
-                    className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] hover:bg-[#bbf7d0] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
-                  >
-                    <Check className="w-3 h-3" /> Paid
-                  </button>
+              <div className="shrink-0 flex items-center gap-1.5 justify-end">
+                {p.paid ? (
+                  canUnmarkPaid && onUnmarkPaid ? (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onUnmarkPaid(i); }}
+                      onPointerDown={stop}
+                      title="Click to remove paid status"
+                      className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] hover:bg-[#bbf7d0] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
+                    >
+                      <Check className="w-3 h-3" /> Paid
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] rounded-full px-2 py-0.5 shrink-0">
+                      <Check className="w-3 h-3" /> Paid
+                    </span>
+                  )
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] rounded-full px-2 py-0.5 shrink-0">
-                    <Check className="w-3 h-3" /> Paid
-                  </span>
-                )
-              ) : onPayNow ? (
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); onPayNow(i); }}
-                  onPointerDown={stop}
-                  className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#d97706] border border-[#d97706]/60 bg-[#fef3c7] hover:bg-[#fde68a] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
-                >
-                  <CreditCard className="w-3 h-3" /> Pay Now
-                </button>
-              ) : canMarkPaidByCheck && onMarkPaidByCheck ? (
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); onMarkPaidByCheck(i); }}
-                  onPointerDown={stop}
-                  className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] hover:bg-[#bbf7d0] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
-                >
-                  <Banknote className="w-3 h-3" /> Mark paid
-                </button>
-              ) : null}
-                </div>
+                  <>
+                    {onPayNow ? (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onPayNow(i); }}
+                        onPointerDown={stop}
+                        className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#d97706] border border-[#d97706]/60 bg-[#fef3c7] hover:bg-[#fde68a] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
+                      >
+                        <CreditCard className="w-3 h-3" /> Pay Now
+                      </button>
+                    ) : canMarkPaidByCheck && onMarkPaidByCheck ? (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onMarkPaidByCheck(i); }}
+                        onPointerDown={stop}
+                        className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] hover:bg-[#bbf7d0] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
+                      >
+                        <Banknote className="w-3 h-3" /> Mark paid
+                      </button>
+                    ) : null}
+                    {isNext && !onPayNow && onStatusChange && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={stop}
+                            onPointerDown={stop}
+                            disabled={readOnly}
+                            className={`pointer-events-auto inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 shrink-0 border transition-colors ${STATUS_STYLE[status]} disabled:opacity-100 disabled:cursor-default`}
+                          >
+                            <StatusIcon className="w-3 h-3" />
+                            {STATUS_LABEL[status]}
+                            <ChevronDown className="w-3 h-3 opacity-60" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="min-w-[10rem]">
+                          {statuses.map((s) => {
+                            const ItemIcon = STATUS_ICON[s];
+                            return (
+                              <DropdownMenuItem
+                                key={s}
+                                onSelect={() => onStatusChange(s)}
+                                className={`gap-2 ${s === status ? "font-semibold" : ""}`}
+                              >
+                                <ItemIcon className="w-4 h-4" />
+                                {STATUS_LABEL[s]}
+                                {s === status && <Check className="w-3.5 h-3.5 ml-auto text-primary" />}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </>
+                )}
+              </div>
                 </div>
                 );
         })}
