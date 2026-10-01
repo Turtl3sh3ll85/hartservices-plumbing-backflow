@@ -30,9 +30,10 @@ export default async function(req) {
     const items = await base44.asServiceRole.entities.PlaidItem.list('-created_date', 50);
     let added = 0;
     let updated = 0;
+    const resetCursor = body.reset_cursor === true;
 
     for (const item of items) {
-      let cursor = item.cursor || undefined;
+      let cursor = resetCursor ? undefined : (item.cursor || undefined);
       let hasMore = true;
       let retried = false;
 
@@ -66,7 +67,7 @@ export default async function(req) {
         hasMore = data.has_more === true;
       }
 
-      if (cursor && cursor !== item.cursor) {
+      if (resetCursor || (cursor && cursor !== item.cursor)) {
         await base44.asServiceRole.entities.PlaidItem.update(item.id, { cursor });
       }
     }

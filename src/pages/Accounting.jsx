@@ -44,6 +44,15 @@ export default function Accounting() {
     } catch (e) { toast({ title: "Sync failed", description: e.message, variant: "destructive" }); }
     finally { setBusy(null); }
   };
+  const runFullResync = async () => {
+    setBusy("resync");
+    try {
+      const res = await base44.functions.invoke("syncPlaidTransactions", { reset_cursor: true });
+      toast({ title: `Full re-sync: ${res.data?.added ?? 0} new, ${res.data?.updated ?? 0} updated` });
+      load();
+    } catch (e) { toast({ title: "Re-sync failed", description: e.message, variant: "destructive" }); }
+    finally { setBusy(null); }
+  };
   const runReceipts = async () => {
     setBusy("receipts");
     try {
@@ -93,8 +102,11 @@ export default function Accounting() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-heading font-semibold tracking-tight">Transactions</h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={runSync} disabled={busy === "sync"}>
+          <Button variant="outline" size="sm" onClick={runSync} disabled={!!busy}>
             <RefreshCw className={`w-4 h-4 ${busy === "sync" ? "animate-spin" : ""}`} /> Sync Plaid
+          </Button>
+          <Button variant="outline" size="sm" onClick={runFullResync} disabled={!!busy}>
+            <RefreshCw className={`w-4 h-4 ${busy === "resync" ? "animate-spin" : ""}`} /> Re-sync all
           </Button>
           <Button variant="outline" size="sm" onClick={runReceipts} disabled={busy === "receipts"}>
             <MailSearch className={`w-4 h-4 ${busy === "receipts" ? "animate-spin" : ""}`} /> Find receipts
