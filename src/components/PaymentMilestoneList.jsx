@@ -78,7 +78,7 @@ export default function PaymentMilestoneList({
               ) : onPayNow ? (
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); onPayNow(); }}
+                  onClick={(e) => { e.stopPropagation(); onPayNow(i); }}
                   onPointerDown={stop}
                   className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#d97706] border border-[#d97706]/60 bg-[#fef3c7] hover:bg-[#fde68a] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
                 >
@@ -125,11 +125,7 @@ export default function PaymentMilestoneList({
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <span className="inline-flex items-center text-xs font-medium text-[#6b7280] border border-white/10 bg-white/5 rounded-full px-2 py-0.5 shrink-0">
-                  Upcoming
-                </span>
-              )}
+              ) : null}
                 </div>
                 </div>
                 );

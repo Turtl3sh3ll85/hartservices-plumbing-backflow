@@ -82,14 +82,13 @@ export default function PayInvoice() {
                   schedule={schedule}
                   total={invoice.total}
                   standingBy={invoice.standing_by}
-                  renderAction={(p, i, amt, isNext, isStanding) => {
+                  renderAction={(p, i) => {
                     if (p.paid) return <CheckCircle2 className="w-5 h-5 text-emerald-600" />;
-                    if (isNext && !isStanding) return (
+                    return (
                       <Button size="sm" onClick={() => pay(i)} disabled={paying === i}>
                         <CreditCard className="w-4 h-4" /> {paying === i ? "…" : "Pay now"}
                       </Button>
                     );
-                    return <span className="text-xs text-muted-foreground">Upcoming</span>;
                   }}
                 />
               </CardContent>
