@@ -7,10 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
-import PaymentMilestoneList from "@/components/PaymentMilestoneList";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import { useSettings } from "@/hooks/useSettings";
-import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 const MODE_LABEL = { single: "Single", a_la_carte: "À la carte", side_by_side: "Side-by-side" };
@@ -21,19 +19,8 @@ export default function Estimates() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [previewEst, setPreviewEst] = useState(null);
+  const [hideConverted, setHideConverted] = useState(false);
   const { settings } = useSettings();
-  const { toast } = useToast();
-
-  const setStatus = async (est, status) => {
-    const value = status !== "due";
-    setItems((prev) => prev.map((i) => (i.id === est.id ? { ...i, standing_by: value } : i)));
-    try {
-      await base44.entities.Estimate.update(est.id, { standing_by: value });
-    } catch (e) {
-      setItems((prev) => prev.map((i) => (i.id === est.id ? { ...i, standing_by: !value } : i)));
-      toast({ title: "Could not update status", variant: "destructive" });
-    }
-  };
 
   useEffect(() => {
     (async () => {
@@ -49,6 +36,7 @@ export default function Estimates() {
   }, []);
 
   const filtered = items.filter((e) => {
+    if (hideConverted && e.status === "converted") return false;
     const q = query.toLowerCase();
     return !q || (e.name || '').toLowerCase().includes(q) || (e.number || '').toLowerCase().includes(q);
   });
@@ -60,9 +48,20 @@ export default function Estimates() {
         <Button asChild size="sm"><Link to="/estimates/new"><Plus className="w-4 h-4" /> New estimate</Link></Button>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search estimates" className="pl-9" />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search estimates" className="pl-9" />
+        </div>
+        <label className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none min-h-11 px-2">
+          <input
+            type="checkbox"
+            checked={hideConverted}
+            onChange={(e) => setHideConverted(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          Hide converted
+        </label>
       </div>
 
       {loading ? (
@@ -84,15 +83,6 @@ export default function Estimates() {
                 <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
                 <StatusBadge status={e.status} />
                 <span className="font-medium tabular-nums">{formatCurrency(e.total)}</span>
-              </div>
-              <div className="mt-2">
-                <PaymentMilestoneList
-                  schedule={e.payment_schedule}
-                  total={e.total}
-                  standingBy={e.standing_by}
-                  statuses={["standing", "due"]}
-                  onStatusChange={(s) => setStatus(e, s)}
-                />
               </div>
             </button>
           ))}
