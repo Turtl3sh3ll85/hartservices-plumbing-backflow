@@ -5,7 +5,7 @@ import App from '@/App.jsx'
 import '@/index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
     <App />
   </ThemeProvider>
 )

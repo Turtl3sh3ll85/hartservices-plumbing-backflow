@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
+import { useTheme } from "next-themes";
 import { RefreshCw, MailSearch } from "lucide-react";
 
 export default function Settings() {
@@ -15,6 +16,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(null);
+  const { theme, setTheme } = useTheme();
 
   const load = async () => {
     setLoading(true);
@@ -123,6 +125,25 @@ export default function Settings() {
             <p className="text-xs text-muted-foreground">Email a summary of open invoices every week.</p>
           </div>
           <Switch checked={!!settings.weekly_summary_enabled} onCheckedChange={(v) => set("weekly_summary_enabled", v)} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Appearance</CardTitle></CardHeader>
+        <CardContent className="flex items-center justify-between">
+          <div>
+            <Label>Theme</Label>
+            <p className="text-xs text-muted-foreground">Choose the app color scheme. Dark is on by default.</p>
+          </div>
+          <select
+            value={theme || "dark"}
+            onChange={(e) => setTheme(e.target.value)}
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          >
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="system">System</option>
+          </select>
         </CardContent>
       </Card>
 
