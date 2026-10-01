@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
-import PaymentScheduleDisplay from "@/components/PaymentScheduleDisplay";
+import OpenedIndicator from "@/components/OpenedIndicator";
+import PaymentMilestoneList from "@/components/PaymentMilestoneList";
+import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatDate, amountPaidTotal } from "@/lib/format";
 
 export default function Invoices() {
@@ -14,6 +16,17 @@ export default function Invoices() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const { toast } = useToast();
+
+  const toggleStanding = async (inv, value) => {
+    setItems((prev) => prev.map((i) => (i.id === inv.id ? { ...i, standing_by: value } : i)));
+    try {
+      await base44.entities.Invoice.update(inv.id, { standing_by: value });
+    } catch (e) {
+      setItems((prev) => prev.map((i) => (i.id === inv.id ? { ...i, standing_by: !value } : i)));
+      toast({ title: "Could not update status", variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -73,22 +86,29 @@ export default function Invoices() {
             const paid = amountPaidTotal(inv.payment_schedule, inv.total);
             const balance = Math.max(0, (inv.total || 0) - paid);
             return (
-              <Link key={inv.id} to={`/invoices/${inv.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors">
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium truncate">{inv.name || inv.number || "Invoice"}</div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-2">
-                    <span>{formatDate(inv.due_date || inv.created_date)}</span>
-                    {inv.standing_by && <span className="text-amber-600">· Standing by</span>}
-                    {inv.customer_ready_for_next_stage && <span className="text-emerald-600">· Ready for next stage</span>}
+              <Link key={inv.id} to={`/invoices/${inv.id}`} className="block px-4 py-3 hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium truncate">{inv.name || inv.number || "Invoice"}</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span>{formatDate(inv.due_date || inv.created_date)}</span>
+                      {inv.customer_ready_for_next_stage && <span className="text-emerald-600">· Ready for next stage</span>}
+                    </div>
                   </div>
-                  <div className="mt-1.5">
-                    <PaymentScheduleDisplay compact schedule={inv.payment_schedule} total={inv.total} standingBy={inv.standing_by} />
+                  <OpenedIndicator opened={inv.opened} lastOpenedDate={inv.last_opened_date} />
+                  <StatusBadge status={inv.payment_status} />
+                  <div className="text-right">
+                    <div className="font-medium tabular-nums">{formatCurrency(balance)}</div>
+                    <div className="text-xs text-muted-foreground">of {formatCurrency(inv.total)}</div>
                   </div>
                 </div>
-                <StatusBadge status={inv.payment_status} />
-                <div className="text-right">
-                  <div className="font-medium tabular-nums">{formatCurrency(balance)}</div>
-                  <div className="text-xs text-muted-foreground">of {formatCurrency(inv.total)}</div>
+                <div className="mt-2">
+                  <PaymentMilestoneList
+                    schedule={inv.payment_schedule}
+                    total={inv.total}
+                    standingBy={inv.standing_by}
+                    onToggle={(v) => toggleStanding(inv, v)}
+                  />
                 </div>
               </Link>
             );

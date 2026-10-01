@@ -23,7 +23,7 @@ export default function InvoiceEditor() {
   const [inv, setInv] = useState({
     customer_id: "", name: "", line_items: [], tax_rate: 0, cc_fee_enabled: false,
     payment_schedule: [], status: "draft", due_date: "", notes: "",
-    phase: "", phase_note: "", work_status: "in_progress", standing_by: false,
+    phase: "", phase_note: "", work_status: "in_progress", standing_by: true,
   });
 
   useEffect(() => {
