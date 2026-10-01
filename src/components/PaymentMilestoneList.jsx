@@ -1,4 +1,4 @@
-import { Check, Hourglass, AlarmClock, UserCheck, ChevronDown, Banknote } from "lucide-react";
+import { Check, Hourglass, AlarmClock, UserCheck, ChevronDown, Banknote, CreditCard } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -35,6 +35,7 @@ export default function PaymentMilestoneList({
   canUnmarkPaid = false,
   readOnly = false,
   statuses = ["standing", "due", "ready"],
+  onPayNow,
 }) {
   const list = (schedule && schedule.length > 0)
     ? schedule
@@ -74,6 +75,15 @@ export default function PaymentMilestoneList({
                     <Check className="w-3 h-3" /> Paid
                   </span>
                 )
+              ) : onPayNow ? (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onPayNow(); }}
+                  onPointerDown={stop}
+                  className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#d97706] border border-[#d97706]/60 bg-[#fef3c7] hover:bg-[#fde68a] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
+                >
+                  <CreditCard className="w-3 h-3" /> Pay Now
+                </button>
               ) : isNext ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
