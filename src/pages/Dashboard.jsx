@@ -1,25 +1,37 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, ClipboardList, ArrowLeftRight, Clock, AlertCircle } from "lucide-react";
+import { FileText, ArrowLeftRight, Clock, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import StatusBadge from "@/components/StatusBadge";
-import { formatCurrency, formatDate, amountPaidTotal } from "@/lib/format";
+import InvoiceListItem from "@/components/InvoiceListItem";
+import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import { useSettings } from "@/hooks/useSettings";
+import { useToast } from "@/components/ui/use-toast";
+import { formatCurrency, amountPaidTotal, paymentAmounts } from "@/lib/format";
+
+const STAFF_ROLES = ["admin", "accountant", "tech"];
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { settings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ outstanding: 0, overdue: 0, unmatched: 0, readyNext: 0 });
   const [recent, setRecent] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [previewInv, setPreviewInv] = useState(null);
+  const canMarkPaidByCheck = STAFF_ROLES.includes(user?.role);
+  const canUnmarkPaid = ["admin", "accountant"].includes(user?.role);
 
   useEffect(() => {
     (async () => {
       try {
-        const [invoices, txs] = await Promise.all([
+        const [invoices, txs, custs] = await Promise.all([
           base44.entities.Invoice.list('-created_date', 50),
           base44.entities.Transaction.list('-date', 200).catch(() => []),
+          base44.entities.Customer.list('-created_date', 200),
         ]);
         const outstanding = invoices.reduce((s, inv) => s + Math.max(0, (inv.total || 0) - amountPaidTotal(inv.payment_schedule, inv.total)), 0);
         const today = new Date().toISOString().slice(0, 10);
@@ -28,6 +40,7 @@ export default function Dashboard() {
         const readyNext = invoices.filter((i) => i.customer_ready_for_next_stage).length;
         setStats({ outstanding, overdue, unmatched, readyNext });
         setRecent(invoices.slice(0, 6));
+        setCustomers(custs);
       } catch (e) {
         // ignore
       } finally {
@@ -35,6 +48,87 @@ export default function Dashboard() {
       }
     })();
   }, []);
+
+  const setStatus = async (inv, status) => {
+    const prev = {
+      standing_by: inv.standing_by,
+      customer_ready_for_next_stage: inv.customer_ready_for_next_stage,
+      ready_for_next_stage_date: inv.ready_for_next_stage_date,
+    };
+    const patch = {
+      customer_ready_for_next_stage: status === "ready",
+      standing_by: status !== "due",
+      ready_for_next_stage_date: status === "ready" ? new Date().toISOString() : null,
+    };
+    setRecent((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
+    setPreviewInv((p) => (p?.id === inv.id ? { ...p, ...patch } : p));
+    try {
+      await base44.entities.Invoice.update(inv.id, patch);
+    } catch (e) {
+      setRecent((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
+      setPreviewInv((p) => (p?.id === inv.id ? { ...p, ...prev } : p));
+      toast({ title: "Could not update status", variant: "destructive" });
+    }
+  };
+
+  const markPaidByCheck = async (inv) => {
+    const schedule = (inv.payment_schedule && inv.payment_schedule.length > 0)
+      ? inv.payment_schedule
+      : [{ label: "Payment due", type: "amount", value: Number(inv.total) || 0, paid: false }];
+    const nextIdx = schedule.findIndex((p) => !p.paid);
+    if (nextIdx === -1) return;
+    const prev = { payment_schedule: inv.payment_schedule, payment_status: inv.payment_status, amount_paid: inv.amount_paid, paid_date: inv.paid_date, payment_method: inv.payment_method, status: inv.status };
+    const updatedSchedule = schedule.map((p, i) => (i === nextIdx ? { ...p, paid: true } : p));
+    const amounts = paymentAmounts(updatedSchedule, inv.total);
+    const amountPaid = updatedSchedule.reduce((sum, p, i) => sum + (p.paid ? amounts[i] : 0), 0);
+    const allPaid = updatedSchedule.every((p) => p.paid);
+    const patch = {
+      payment_schedule: updatedSchedule,
+      amount_paid: amountPaid,
+      payment_status: allPaid ? "paid" : "partial",
+      payment_method: "check",
+      paid_date: allPaid ? new Date().toISOString().slice(0, 10) : inv.paid_date,
+      status: allPaid ? "paid" : inv.status,
+    };
+    setRecent((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
+    setPreviewInv((p) => (p?.id === inv.id ? { ...p, ...patch } : p));
+    try {
+      await base44.entities.Invoice.update(inv.id, patch);
+      toast({ title: "Marked paid by check" });
+    } catch (e) {
+      setRecent((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
+      setPreviewInv((p) => (p?.id === inv.id ? { ...p, ...prev } : p));
+      toast({ title: "Could not mark paid", variant: "destructive" });
+    }
+  };
+
+  const unmarkPaid = async (inv, index) => {
+    const schedule = (inv.payment_schedule && inv.payment_schedule.length > 0)
+      ? inv.payment_schedule
+      : [{ label: "Payment due", type: "amount", value: Number(inv.total) || 0, paid: false }];
+    const prev = { payment_schedule: inv.payment_schedule, payment_status: inv.payment_status, amount_paid: inv.amount_paid, paid_date: inv.paid_date, payment_method: inv.payment_method, status: inv.status };
+    const updatedSchedule = schedule.map((p, i) => (i === index ? { ...p, paid: false } : p));
+    const amounts = paymentAmounts(updatedSchedule, inv.total);
+    const amountPaid = updatedSchedule.reduce((sum, p, i) => sum + (p.paid ? amounts[i] : 0), 0);
+    const anyPaid = updatedSchedule.some((p) => p.paid);
+    const patch = {
+      payment_schedule: updatedSchedule,
+      amount_paid: amountPaid,
+      payment_status: anyPaid ? "partial" : "unpaid",
+      paid_date: anyPaid ? inv.paid_date : null,
+      status: inv.status === "paid" ? "sent" : inv.status,
+    };
+    setRecent((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
+    setPreviewInv((p) => (p?.id === inv.id ? { ...p, ...patch } : p));
+    try {
+      await base44.entities.Invoice.update(inv.id, patch);
+      toast({ title: "Removed paid status" });
+    } catch (e) {
+      setRecent((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
+      setPreviewInv((p) => (p?.id === inv.id ? { ...p, ...prev } : p));
+      toast({ title: "Could not update status", variant: "destructive" });
+    }
+  };
 
   const cards = [
     { label: 'Outstanding', value: formatCurrency(stats.outstanding), icon: FileText, tone: 'text-primary' },
@@ -79,19 +173,29 @@ export default function Dashboard() {
           ) : (
             <div className="divide-y">
               {recent.map((inv) => (
-                <Link key={inv.id} to={`/invoices/${inv.id}`} className="flex items-center gap-3 px-6 py-3 hover:bg-accent/50 transition-colors">
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium truncate">{inv.name || inv.number || 'Invoice'}</div>
-                    <div className="text-xs text-muted-foreground">{formatDate(inv.due_date || inv.created_date)}</div>
-                  </div>
-                  <StatusBadge status={inv.payment_status} />
-                  <span className="font-medium tabular-nums">{formatCurrency(inv.total)}</span>
-                </Link>
+                <InvoiceListItem
+                  key={inv.id}
+                  inv={inv}
+                  onPreview={setPreviewInv}
+                  onStatusChange={setStatus}
+                  onMarkPaidByCheck={markPaidByCheck}
+                  onUnmarkPaid={unmarkPaid}
+                  canMarkPaidByCheck={canMarkPaidByCheck}
+                  canUnmarkPaid={canUnmarkPaid}
+                />
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <DocumentPreviewDialog
+        doc={previewInv}
+        kind="invoice"
+        customer={customers.find((c) => c.id === previewInv?.customer_id)}
+        settings={settings}
+        onClose={() => setPreviewInv(null)}
+      />
     </div>
   );
 }
