@@ -31,6 +31,23 @@ export default function MyDocuments() {
     },
   });
 
+  const setPortalStatus = async (inv, status) => {
+    const patch = {
+      customer_ready_for_next_stage: status === "ready",
+      standing_by: status !== "due",
+      ready_for_next_stage_date: status === "ready" ? new Date().toISOString() : null,
+    };
+    queryClient.setQueryData(["customerPortal", email], (old) => {
+      if (!old) return old;
+      return { ...old, invoices: (old.invoices || []).map((i) => (i.id === inv.id ? { ...i, ...patch } : i)) };
+    });
+    try {
+      await base44.functions.invoke("setCustomerPortalInvoiceStatus", { invoice_id: inv.id, email, status });
+    } catch (e) {
+      await queryClient.invalidateQueries({ queryKey: ["customerPortal", email] });
+    }
+  };
+
   const handleFlagPhase = async (phase, note) => {
     if (!preview) return;
     setFlagging(true);
@@ -132,6 +149,7 @@ export default function MyDocuments() {
                   customers={customers}
                   settings={settings}
                   onPreview={(i) => { setPreview(i); setPreviewKind("invoice"); }}
+                  onStatusChange={setPortalStatus}
                 />
               </div>
             )}

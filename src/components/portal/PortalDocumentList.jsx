@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Loader2, FileDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,7 @@ import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
  *  - settings: business settings (for PDF rendering)
  *  - onPreview(doc): called when a row's name/number is clicked
  */
-export default function PortalDocumentList({ kind, items, customers, settings, onPreview }) {
-  const navigate = useNavigate();
+export default function PortalDocumentList({ kind, items, customers, settings, onPreview, onStatusChange }) {
   const [hidePaid, setHidePaid] = useState(false);
   const [downloading, setDownloading] = useState(null);
 
@@ -85,8 +84,8 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
                   total={i.total}
                   standingBy={i.standing_by}
                   customerReady={i.customer_ready_for_next_stage}
-                  readOnly
-                  onPayNow={() => navigate(`/pay/${i.id}`)}
+                  readOnly={!onStatusChange}
+                  onStatusChange={onStatusChange ? (s) => onStatusChange(i, s) : undefined}
                 />
               </div>
             )}

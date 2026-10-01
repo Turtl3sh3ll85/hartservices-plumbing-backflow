@@ -69,3 +69,41 @@ export async function notifyPaymentReceived(base44, { invoice, customer, amount,
     return { sent: false, error: e.message };
   }
 }
+
+export async function notifyCustomerReady(base44, { invoice, customer }) {
+  try {
+    const { brand, to } = await getBusinessContext(base44);
+    const customerName = customer?.name || "A customer";
+    const total = (Number(invoice.total) || 0).toFixed(2);
+    if (to) {
+      const subject = `${customerName} is ready for the next stage — ${invoice.number || ""}`;
+      const html = `<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:auto;color:#1f2937">
+      <h2 style="color:#1d4ed8;margin-bottom:8px">${brand}</h2>
+      <p><strong>${customerName}</strong> marked invoice <strong>${invoice.name || invoice.number || ""}</strong>${invoice.number ? ` (${invoice.number})` : ""} as <strong>ready for the next stage</strong>.</p>
+      <p>Amount: <strong>$${total}</strong>${invoice.payment_status === "partial" ? " (partially paid)" : ""}</p>
+      <p style="color:#6b7280;font-size:13px;margin-top:24px">This is an automated notification from ${brand}.</p>
+    </div>`;
+      try { await sendGmail(base44, { to, subject, html, fromName: brand }); } catch (e) {}
+    }
+    try {
+      const admins = await base44.asServiceRole.entities.User.filter({ role: "admin" }, "-created_date", 50);
+      const pushTitle = `${customerName} is ready for next stage`;
+      const pushContent = `Invoice ${invoice.number || invoice.name || ""} · $${total}`;
+      const actionUrl = invoice.id ? `https://hartservices.base44.app/invoices/${invoice.id}` : undefined;
+      for (const admin of admins) {
+        try {
+          await base44.asServiceRole.integrations.Core.SendPushNotification({
+            user_id: admin.id,
+            title: pushTitle,
+            content: pushContent,
+            action_label: "View invoice",
+            action_url: actionUrl,
+          });
+        } catch (e) {}
+      }
+    } catch (e) {}
+    return { sent: true };
+  } catch (e) {
+    return { sent: false, error: e.message };
+  }
+}
