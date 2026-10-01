@@ -56,7 +56,7 @@ export default function PaymentMilestoneList({
           return (
             <div key={i} className="flex items-center gap-3 py-1.5">
               <span className="flex-1 min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
-              <span className="text-sm tabular-nums text-[#9ca3af] shrink-0 w-24 text-right">{formatCurrency(amounts[i])}</span>
+              <span style={{ width: "6rem", flexShrink: 0, textAlign: "right" }} className="text-sm tabular-nums text-[#9ca3af]">{formatCurrency(amounts[i])}</span>
               {p.paid ? (
                 canUnmarkPaid && onUnmarkPaid ? (
                   <button
