@@ -15,7 +15,6 @@ export default function Invoices() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
   const { toast } = useToast();
 
   const toggleStanding = async (inv, value) => {
@@ -39,20 +38,8 @@ export default function Invoices() {
 
   const filtered = items.filter((i) => {
     const q = query.toLowerCase();
-    const matches = !q || (i.name || '').toLowerCase().includes(q) || (i.number || '').toLowerCase().includes(q);
-    if (!matches) return false;
-    if (filter === "open") return i.payment_status !== "paid";
-    if (filter === "ready") return i.customer_ready_for_next_stage;
-    if (filter === "standing") return i.standing_by;
-    return true;
+    return !q || (i.name || '').toLowerCase().includes(q) || (i.number || '').toLowerCase().includes(q);
   });
-
-  const tabs = [
-    { key: "all", label: "All" },
-    { key: "open", label: "Open" },
-    { key: "standing", label: "Standing by" },
-    { key: "ready", label: "Ready for next stage" },
-  ];
 
   return (
     <div className="space-y-4">
@@ -65,14 +52,6 @@ export default function Invoices() {
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search invoices" className="pl-9" />
-        </div>
-        <div className="flex gap-1 rounded-lg border bg-card p-1 overflow-x-auto">
-          {tabs.map((t) => (
-            <button key={t.key} onClick={() => setFilter(t.key)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${filter === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
-              {t.label}
-            </button>
-          ))}
         </div>
       </div>
 
