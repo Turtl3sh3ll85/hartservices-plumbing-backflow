@@ -52,7 +52,7 @@ export default function InvoiceListItem({
           customerReady={inv.customer_ready_for_next_stage}
           onStatusChange={(s) => onStatusChange(inv, s)}
           canMarkPaidByCheck={canMarkPaidByCheck}
-          onMarkPaidByCheck={() => onMarkPaidByCheck(inv)}
+          onMarkPaidByCheck={(idx) => onMarkPaidByCheck(inv, idx)}
           canUnmarkPaid={canUnmarkPaid}
           onUnmarkPaid={(idx) => onUnmarkPaid(inv, idx)}
         />

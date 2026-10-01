@@ -72,12 +72,12 @@ export default function Dashboard() {
     }
   };
 
-  const markPaidByCheck = async (inv) => {
+  const markPaidByCheck = async (inv, idx) => {
     const schedule = (inv.payment_schedule && inv.payment_schedule.length > 0)
       ? inv.payment_schedule
       : [{ label: "Payment due", type: "amount", value: Number(inv.total) || 0, paid: false }];
-    const nextIdx = schedule.findIndex((p) => !p.paid);
-    if (nextIdx === -1) return;
+    const nextIdx = idx != null ? idx : schedule.findIndex((p) => !p.paid);
+    if (nextIdx === -1 || schedule[nextIdx]?.paid) return;
     const prev = { payment_schedule: inv.payment_schedule, payment_status: inv.payment_status, amount_paid: inv.amount_paid, paid_date: inv.paid_date, payment_method: inv.payment_method, status: inv.status };
     const updatedSchedule = schedule.map((p, i) => (i === nextIdx ? { ...p, paid: true } : p));
     const amounts = paymentAmounts(updatedSchedule, inv.total);
