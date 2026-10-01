@@ -24,6 +24,7 @@ export default function Invoices() {
   const { user } = useAuth();
   const { settings } = useSettings();
   const [previewInv, setPreviewInv] = useState(null);
+  const [collapsed, setCollapsed] = useState({});
   const canMarkPaidByCheck = STAFF_ROLES.includes(user?.role);
   const canUnmarkPaid = ["admin", "accountant"].includes(user?.role);
 
@@ -129,9 +130,9 @@ export default function Invoices() {
     })();
   }, []);
 
-  const customerName = (id) => {
+  const customerInfo = (id) => {
     const c = customers.find((c) => c.id === id);
-    return c?.name || c?.company || "Unknown customer";
+    return { company: c?.company, name: c?.name || "Unknown customer" };
   };
 
   const filtered = items.filter((i) => {
@@ -165,26 +166,38 @@ export default function Invoices() {
               (acc[key] ||= []).push(inv);
               return acc;
             }, {})
-          ).map(([cid, group]) => (
+          ).map(([cid, group]) => {
+            const info = customerInfo(cid);
+            const isCollapsed = collapsed[cid];
+            return (
             <div key={cid} className="rounded-lg border bg-card overflow-hidden">
-              <CustomerGroupHeader name={customerName(cid)} count={group.length} />
-              <div className="divide-y">
-                {group.map((inv) => (
-                  <InvoiceListItem
-                    key={inv.id}
-                    inv={inv}
-                    onPreview={setPreviewInv}
-                    onStatusChange={setStatus}
-                    onMarkPaidByCheck={markPaidByCheck}
-                    onUnmarkPaid={unmarkPaid}
-                    canMarkPaidByCheck={canMarkPaidByCheck}
-                    canUnmarkPaid={canUnmarkPaid}
-                    onDelete={deleteInvoice}
-                  />
-                ))}
-              </div>
+              <CustomerGroupHeader
+                company={info.company}
+                name={info.name}
+                count={group.length}
+                collapsed={isCollapsed}
+                onToggle={() => setCollapsed((prev) => ({ ...prev, [cid]: !prev[cid] }))}
+              />
+              {!isCollapsed && (
+                <div className="divide-y">
+                  {group.map((inv) => (
+                    <InvoiceListItem
+                      key={inv.id}
+                      inv={inv}
+                      onPreview={setPreviewInv}
+                      onStatusChange={setStatus}
+                      onMarkPaidByCheck={markPaidByCheck}
+                      onUnmarkPaid={unmarkPaid}
+                      canMarkPaidByCheck={canMarkPaidByCheck}
+                      canUnmarkPaid={canUnmarkPaid}
+                      onDelete={deleteInvoice}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
