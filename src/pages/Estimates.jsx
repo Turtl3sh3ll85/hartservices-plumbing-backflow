@@ -103,23 +103,37 @@ export default function Estimates() {
         <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No estimates yet.</CardContent></Card>
       ) : (
         <div className="divide-y rounded-lg border bg-card">
-          {filtered.map((e) => (
+          {filtered.map((e) => {
+            const cust = customers.find((c) => c.id === e.customer_id);
+            const custCompany = cust?.company;
+            const custName = cust?.name;
+            return (
             <div key={e.id} className="relative px-4 py-3 hover:bg-accent/50 transition-colors">
               <button type="button" onClick={() => setPreviewEst(e)} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Preview estimate: ${e.name || e.number || "Estimate"}`} />
               <div className="relative z-10 flex items-center gap-3">
                 <div className="min-w-0 flex-1 pointer-events-none">
                   <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
                 </div>
-                <Button size="icon" variant="ghost" className="pointer-events-auto shrink-0" onClick={() => deleteEstimate(e)} aria-label="Delete estimate">
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-                <div className="hidden sm:flex items-center gap-2 pointer-events-none text-xs text-muted-foreground whitespace-nowrap">
+                <span className="font-medium tabular-nums pointer-events-none whitespace-nowrap">{formatCurrency(e.total)}</span>
+              </div>
+              {(custCompany || custName) && (
+                <div className="relative z-10 pointer-events-none text-sm text-muted-foreground truncate mt-0.5">
+                  {custCompany && <span className="text-foreground font-medium">{custCompany}</span>}
+                  {custCompany && custName && <span> · </span>}
+                  {custName && <span>{custName}</span>}
+                </div>
+              )}
+              <div className="relative z-10 flex items-center gap-3 mt-1.5">
+                <div className="flex items-center gap-2 pointer-events-none text-xs text-muted-foreground whitespace-nowrap">
                   <span>{formatDate(e.created_date)}</span>
                   <span>· {MODE_LABEL[e.selection_mode || "single"]}</span>
                 </div>
                 <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
                 <StatusBadge status={e.status} />
-                <span className="font-medium tabular-nums pointer-events-none whitespace-nowrap">{formatCurrency(e.total)}</span>
+                <div className="flex-1" />
+                <Button size="icon" variant="ghost" className="pointer-events-auto shrink-0" onClick={() => deleteEstimate(e)} aria-label="Delete estimate">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
                 <div className="flex items-center gap-1 pointer-events-auto shrink-0">
                   {e.status !== "converted" ? (
                     <Button size="sm" variant="outline" onClick={() => convertEstimate(e)} disabled={convertingId === e.id}>
@@ -135,7 +149,8 @@ export default function Estimates() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
