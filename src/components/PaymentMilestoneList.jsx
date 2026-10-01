@@ -61,7 +61,7 @@ export default function PaymentMilestoneList({
                 canUnmarkPaid && onUnmarkPaid ? (
                   <button
                     type="button"
-                    onClick={stop}
+                    onClick={(e) => { e.stopPropagation(); onUnmarkPaid(i); }}
                     onPointerDown={stop}
                     title="Click to remove paid status"
                     className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] hover:bg-[#bbf7d0] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
