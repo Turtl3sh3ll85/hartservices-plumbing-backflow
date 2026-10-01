@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { FileText, ArrowLeftRight, Clock, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import InvoiceListItem from "@/components/InvoiceListItem";
+import CustomerGroupedList from "@/components/CustomerGroupedList";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import { useSettings } from "@/hooks/useSettings";
 import { useToast } from "@/components/ui/use-toast";
@@ -158,36 +159,36 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Recent invoices</CardTitle>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-heading font-semibold">Recent invoices</h2>
           <Button variant="ghost" size="sm" asChild>
             <Link to="/invoices">View all</Link>
           </Button>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="p-6 text-sm text-muted-foreground">Loading…</div>
-          ) : recent.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">No invoices yet.</div>
-          ) : (
-            <div className="divide-y">
-              {recent.map((inv) => (
-                <InvoiceListItem
-                  key={inv.id}
-                  inv={inv}
-                  onPreview={setPreviewInv}
-                  onStatusChange={setStatus}
-                  onMarkPaidByCheck={markPaidByCheck}
-                  onUnmarkPaid={unmarkPaid}
-                  canMarkPaidByCheck={canMarkPaidByCheck}
-                  canUnmarkPaid={canUnmarkPaid}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+        {loading ? (
+          <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+        ) : recent.length === 0 ? (
+          <Card><CardContent className="p-6 text-sm text-muted-foreground">No invoices yet.</CardContent></Card>
+        ) : (
+          <CustomerGroupedList
+            items={recent}
+            customers={customers}
+            renderItem={({ item: inv }) => (
+              <InvoiceListItem
+                key={inv.id}
+                inv={inv}
+                onPreview={setPreviewInv}
+                onStatusChange={setStatus}
+                onMarkPaidByCheck={markPaidByCheck}
+                onUnmarkPaid={unmarkPaid}
+                canMarkPaidByCheck={canMarkPaidByCheck}
+                canUnmarkPaid={canUnmarkPaid}
+              />
+            )}
+          />
+        )}
+      </div>
 
       <DocumentPreviewDialog
         doc={previewInv}

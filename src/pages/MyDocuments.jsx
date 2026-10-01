@@ -14,6 +14,7 @@ import { formatMoney } from "@/lib/invoice";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 import InvoicePaymentSchedule from "@/components/portal/InvoicePaymentSchedule";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import CustomerGroupedList from "@/components/CustomerGroupedList";
 
 const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
 
@@ -157,36 +158,36 @@ export default function MyDocuments() {
                   {invoices.length === 0 ? "No invoices yet." : "All invoices are hidden."}
                 </Card>
               ) : (
-                <Card className="overflow-hidden p-0">
-                  <div className="divide-y">
-                    {visibleInvoices.map((i) => (
-                      <div key={i.id} className="p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3 min-h-11">
-                          <button type="button" onClick={() => { setPreview(i); setPreviewKind("invoice"); }} className="min-w-0 text-left min-h-11 -m-1 p-1">
-                            <div className="font-medium truncate">{i.name || "Invoice"}</div>
-                            <div className="text-sm text-muted-foreground truncate">
-                              {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
-                            </div>
-                            <PaidAmountLabel invoice={i} />
-                          </button>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                            <StatusBadge status={i.payment_status} />
-                            <Button size="sm" variant="outline" onClick={() => downloadPdf(i, "invoice")} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
-                              {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                            </Button>
-                            {i.payment_status === "paid" ? (
-                              <Button asChild size="sm" variant="outline"><Link to={`/pay/${i.id}`}>View</Link></Button>
-                            ) : (
-                              <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> View & Pay</Link></Button>
-                            )}
+                <CustomerGroupedList
+                  items={visibleInvoices}
+                  customers={customers}
+                  renderItem={({ item: i }) => (
+                    <div key={i.id} className="p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 min-h-11">
+                        <button type="button" onClick={() => { setPreview(i); setPreviewKind("invoice"); }} className="min-w-0 text-left min-h-11 -m-1 p-1">
+                          <div className="font-medium truncate">{i.name || "Invoice"}</div>
+                          <div className="text-sm text-muted-foreground truncate">
+                            {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
                           </div>
+                          <PaidAmountLabel invoice={i} />
+                        </button>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
+                          <StatusBadge status={i.payment_status} />
+                          <Button size="sm" variant="outline" onClick={() => downloadPdf(i, "invoice")} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
+                            {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                          </Button>
+                          {i.payment_status === "paid" ? (
+                            <Button asChild size="sm" variant="outline"><Link to={`/pay/${i.id}`}>View</Link></Button>
+                          ) : (
+                            <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> View & Pay</Link></Button>
+                          )}
                         </div>
-                        <InvoicePaymentSchedule invoice={i} />
                       </div>
-                    ))}
-                  </div>
-                </Card>
+                      <InvoicePaymentSchedule invoice={i} />
+                    </div>
+                  )}
+                />
               )}
             </div>
             )}
@@ -197,26 +198,26 @@ export default function MyDocuments() {
               {estimates.length === 0 ? (
                 <Card className="p-6 text-center text-sm text-muted-foreground">No estimates yet.</Card>
               ) : (
-                <Card className="overflow-hidden p-0">
-                  <div className="divide-y">
-                    {estimates.map((e) => (
-                      <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
-                        <button type="button" onClick={() => { setPreview(e); setPreviewKind("estimate"); }} className="min-w-0 text-left min-h-11 -m-1 p-1">
-                          <div className="font-medium truncate">{e.name || "Estimate"}</div>
-                          <div className="text-sm text-muted-foreground truncate">{e.number}</div>
-                        </button>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
-                          <StatusBadge status={e.status} />
-                          <Button size="sm" variant="outline" onClick={() => downloadPdf(e, "estimate")} disabled={downloading === `estimate:${e.id}`} aria-label="Download estimate PDF">
-                            {downloading === `estimate:${e.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                          </Button>
-                          <Button asChild size="sm" variant="outline"><Link to={`/accept/${e.id}`}>{e.status === "converted" ? "View" : "Review"}</Link></Button>
-                        </div>
+                <CustomerGroupedList
+                  items={estimates}
+                  customers={customers}
+                  renderItem={({ item: e }) => (
+                    <div key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-4 min-h-11">
+                      <button type="button" onClick={() => { setPreview(e); setPreviewKind("estimate"); }} className="min-w-0 text-left min-h-11 -m-1 p-1">
+                        <div className="font-medium truncate">{e.name || "Estimate"}</div>
+                        <div className="text-sm text-muted-foreground truncate">{e.number}</div>
+                      </button>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-sm font-medium tabular-nums">{formatMoney(e.total)}</span>
+                        <StatusBadge status={e.status} />
+                        <Button size="sm" variant="outline" onClick={() => downloadPdf(e, "estimate")} disabled={downloading === `estimate:${e.id}`} aria-label="Download estimate PDF">
+                          {downloading === `estimate:${e.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                        </Button>
+                        <Button asChild size="sm" variant="outline"><Link to={`/accept/${e.id}`}>{e.status === "converted" ? "View" : "Review"}</Link></Button>
                       </div>
-                    ))}
-                  </div>
-                </Card>
+                    </div>
+                  )}
+                />
               )}
             </div>
             )}

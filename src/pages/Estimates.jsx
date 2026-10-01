@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Search, FileInput, Trash2, Loader2 } from "lucide-react";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
-import CustomerGroupHeader from "@/components/CustomerGroupHeader";
+import CustomerGroupedList from "@/components/CustomerGroupedList";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import { useSettings } from "@/hooks/useSettings";
 import { useToast } from "@/components/ui/use-toast";
@@ -24,8 +23,6 @@ export default function Estimates() {
   const [previewEst, setPreviewEst] = useState(null);
   const [hideConverted, setHideConverted] = useState(false);
   const [convertingId, setConvertingId] = useState(null);
-  const [collapsed, setCollapsed] = useState({});
-  const [groupOrder, setGroupOrder] = useState([]);
   const { settings } = useSettings();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -72,39 +69,11 @@ export default function Estimates() {
     })();
   }, []);
 
-  const customerInfo = (id) => {
-    const c = customers.find((c) => c.id === id);
-    return { company: c?.company, name: c?.name || "Unknown customer" };
-  };
-
   const filtered = items.filter((e) => {
     if (hideConverted && e.status === "converted") return false;
     const q = query.toLowerCase();
     return !q || (e.name || '').toLowerCase().includes(q) || (e.number || '').toLowerCase().includes(q);
   });
-
-  const groups = Object.entries(
-    filtered.reduce((acc, est) => {
-      const key = est.customer_id || "unknown";
-      (acc[key] ||= []).push(est);
-      return acc;
-    }, {})
-  );
-  const orderedGroups = [...groups].sort((a, b) => {
-    const ai = groupOrder.indexOf(a[0]);
-    const bi = groupOrder.indexOf(b[0]);
-    if (ai === -1 && bi === -1) return 0;
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
-    return ai - bi;
-  });
-  const onDragEnd = (result) => {
-    if (!result.destination || result.destination.index === result.source.index) return;
-    const ids = orderedGroups.map(([cid]) => cid);
-    const [moved] = ids.splice(result.source.index, 1);
-    ids.splice(result.destination.index, 0, moved);
-    setGroupOrder(ids);
-  };
 
   return (
     <div className="space-y-4">
@@ -134,75 +103,46 @@ export default function Estimates() {
       ) : filtered.length === 0 ? (
         <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No estimates yet.</CardContent></Card>
       ) : (
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="customer-groups">
-            {(provided) => (
-              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
-                {orderedGroups.map(([cid, group], index) => {
-                  const info = customerInfo(cid);
-                  const isCollapsed = collapsed[cid];
-                  return (
-                    <Draggable draggableId={cid} index={index} key={cid}>
-                      {(p) => (
-                        <div ref={p.innerRef} {...p.draggableProps} className="rounded-lg border bg-card overflow-hidden">
-                          <CustomerGroupHeader
-                            company={info.company}
-                            name={info.name}
-                            count={group.length}
-                            collapsed={isCollapsed}
-                            onToggle={() => setCollapsed((prev) => ({ ...prev, [cid]: !prev[cid] }))}
-                            dragHandleProps={p.dragHandleProps}
-                          />
-                          {!isCollapsed && (
-                            <div className="divide-y">
-                              {group.map((e) => (
-                                <div key={e.id} className="relative px-4 py-3 hover:bg-accent/50 transition-colors">
-                                  <button type="button" onClick={() => setPreviewEst(e)} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Preview estimate: ${e.name || e.number || "Estimate"}`} />
-                                  <div className="relative z-10 flex items-center gap-3">
-                                    <div className="min-w-0 flex-1 pointer-events-none">
-                                      <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
-                                    </div>
-                                    <span className="font-medium tabular-nums pointer-events-none whitespace-nowrap">{formatCurrency(e.total)}</span>
-                                  </div>
-                                  <div className="relative z-10 flex items-center gap-3 mt-1.5">
-                                    <div className="flex items-center gap-2 pointer-events-none text-xs text-muted-foreground whitespace-nowrap">
-                                      <span>{formatDate(e.created_date)}</span>
-                                      <span>· {MODE_LABEL[e.selection_mode || "single"]}</span>
-                                    </div>
-                                    <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
-                                    <StatusBadge status={e.status} />
-                                    <div className="flex-1" />
-                                    <Button size="icon" variant="ghost" className="pointer-events-auto shrink-0" onClick={() => deleteEstimate(e)} aria-label="Delete estimate">
-                                      <Trash2 className="w-4 h-4 text-destructive" />
-                                    </Button>
-                                    <div className="flex items-center gap-1 pointer-events-auto shrink-0">
-                                      {e.status !== "converted" ? (
-                                        <Button size="sm" variant="outline" onClick={() => convertEstimate(e)} disabled={convertingId === e.id}>
-                                          {convertingId === e.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileInput className="w-4 h-4" />}
-                                          <span className="hidden sm:inline">Convert</span>
-                                        </Button>
-                                      ) : (
-                                        <Button size="sm" variant="ghost" onClick={() => e.converted_invoice_id && navigate(`/invoices/${e.converted_invoice_id}`)}>
-                                          <FileInput className="w-4 h-4" />
-                                          <span className="hidden sm:inline">View invoice</span>
-                                        </Button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </Draggable>
-                  );
-                })}
-                {provided.placeholder}
+        <CustomerGroupedList
+          items={filtered}
+          customers={customers}
+          renderItem={({ item: e }) => (
+            <div key={e.id} className="relative px-4 py-3 hover:bg-accent/50 transition-colors">
+              <button type="button" onClick={() => setPreviewEst(e)} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Preview estimate: ${e.name || e.number || "Estimate"}`} />
+              <div className="relative z-10 flex items-center gap-3">
+                <div className="min-w-0 flex-1 pointer-events-none">
+                  <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
+                </div>
+                <span className="font-medium tabular-nums pointer-events-none whitespace-nowrap">{formatCurrency(e.total)}</span>
               </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+              <div className="relative z-10 flex items-center gap-3 mt-1.5">
+                <div className="flex items-center gap-2 pointer-events-none text-xs text-muted-foreground whitespace-nowrap">
+                  <span>{formatDate(e.created_date)}</span>
+                  <span>· {MODE_LABEL[e.selection_mode || "single"]}</span>
+                </div>
+                <OpenedIndicator opened={e.opened} lastOpenedDate={e.last_opened_date} />
+                <StatusBadge status={e.status} />
+                <div className="flex-1" />
+                <Button size="icon" variant="ghost" className="pointer-events-auto shrink-0" onClick={() => deleteEstimate(e)} aria-label="Delete estimate">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+                <div className="flex items-center gap-1 pointer-events-auto shrink-0">
+                  {e.status !== "converted" ? (
+                    <Button size="sm" variant="outline" onClick={() => convertEstimate(e)} disabled={convertingId === e.id}>
+                      {convertingId === e.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileInput className="w-4 h-4" />}
+                      <span className="hidden sm:inline">Convert</span>
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="ghost" onClick={() => e.converted_invoice_id && navigate(`/invoices/${e.converted_invoice_id}`)}>
+                      <FileInput className="w-4 h-4" />
+                      <span className="hidden sm:inline">View invoice</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        />
       )}
 
       <DocumentPreviewDialog
