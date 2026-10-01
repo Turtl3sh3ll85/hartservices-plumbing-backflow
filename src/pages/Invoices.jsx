@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export default function Invoices() {
   const { settings } = useSettings();
   const [previewInv, setPreviewInv] = useState(null);
   const [collapsed, setCollapsed] = useState({});
+  const [groupOrder, setGroupOrder] = useState([]);
   const canMarkPaidByCheck = STAFF_ROLES.includes(user?.role);
   const canUnmarkPaid = ["admin", "accountant"].includes(user?.role);
 
@@ -140,6 +142,29 @@ export default function Invoices() {
     return !q || (i.name || '').toLowerCase().includes(q) || (i.number || '').toLowerCase().includes(q);
   });
 
+  const groups = Object.entries(
+    filtered.reduce((acc, inv) => {
+      const key = inv.customer_id || "unknown";
+      (acc[key] ||= []).push(inv);
+      return acc;
+    }, {})
+  );
+  const orderedGroups = [...groups].sort((a, b) => {
+    const ai = groupOrder.indexOf(a[0]);
+    const bi = groupOrder.indexOf(b[0]);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+  const onDragEnd = (result) => {
+    if (!result.destination || result.destination.index === result.source.index) return;
+    const ids = orderedGroups.map(([cid]) => cid);
+    const [moved] = ids.splice(result.source.index, 1);
+    ids.splice(result.destination.index, 0, moved);
+    setGroupOrder(ids);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
@@ -159,46 +184,52 @@ export default function Invoices() {
       ) : filtered.length === 0 ? (
         <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No invoices found.</CardContent></Card>
       ) : (
-        <div className="space-y-4">
-          {Object.entries(
-            filtered.reduce((acc, inv) => {
-              const key = inv.customer_id || "unknown";
-              (acc[key] ||= []).push(inv);
-              return acc;
-            }, {})
-          ).map(([cid, group]) => {
-            const info = customerInfo(cid);
-            const isCollapsed = collapsed[cid];
-            return (
-            <div key={cid} className="rounded-lg border bg-card overflow-hidden">
-              <CustomerGroupHeader
-                company={info.company}
-                name={info.name}
-                count={group.length}
-                collapsed={isCollapsed}
-                onToggle={() => setCollapsed((prev) => ({ ...prev, [cid]: !prev[cid] }))}
-              />
-              {!isCollapsed && (
-                <div className="divide-y">
-                  {group.map((inv) => (
-                    <InvoiceListItem
-                      key={inv.id}
-                      inv={inv}
-                      onPreview={setPreviewInv}
-                      onStatusChange={setStatus}
-                      onMarkPaidByCheck={markPaidByCheck}
-                      onUnmarkPaid={unmarkPaid}
-                      canMarkPaidByCheck={canMarkPaidByCheck}
-                      canUnmarkPaid={canUnmarkPaid}
-                      onDelete={deleteInvoice}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-            );
-          })}
-        </div>
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="customer-groups">
+            {(provided) => (
+              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
+                {orderedGroups.map(([cid, group], index) => {
+                  const info = customerInfo(cid);
+                  const isCollapsed = collapsed[cid];
+                  return (
+                    <Draggable draggableId={cid} index={index} key={cid}>
+                      {(p) => (
+                        <div ref={p.innerRef} {...p.draggableProps} className="rounded-lg border bg-card overflow-hidden">
+                          <CustomerGroupHeader
+                            company={info.company}
+                            name={info.name}
+                            count={group.length}
+                            collapsed={isCollapsed}
+                            onToggle={() => setCollapsed((prev) => ({ ...prev, [cid]: !prev[cid] }))}
+                            dragHandleProps={p.dragHandleProps}
+                          />
+                          {!isCollapsed && (
+                            <div className="divide-y">
+                              {group.map((inv) => (
+                                <InvoiceListItem
+                                  key={inv.id}
+                                  inv={inv}
+                                  onPreview={setPreviewInv}
+                                  onStatusChange={setStatus}
+                                  onMarkPaidByCheck={markPaidByCheck}
+                                  onUnmarkPaid={unmarkPaid}
+                                  canMarkPaidByCheck={canMarkPaidByCheck}
+                                  canUnmarkPaid={canUnmarkPaid}
+                                  onDelete={deleteInvoice}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Draggable>
+                  );
+                })}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       )}
 
       <DocumentPreviewDialog
