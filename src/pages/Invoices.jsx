@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,7 +10,9 @@ import OpenedIndicator from "@/components/OpenedIndicator";
 import PaymentMilestoneList from "@/components/PaymentMilestoneList";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
 import { useToast } from "@/components/ui/use-toast";
-import { formatCurrency, formatDate, amountPaidTotal } from "@/lib/format";
+import { formatCurrency, formatDate, amountPaidTotal, paymentAmounts } from "@/lib/format";
+
+const STAFF_ROLES = ["admin", "accountant", "tech"];
 
 export default function Invoices() {
   const [items, setItems] = useState([]);
@@ -17,6 +20,8 @@ export default function Invoices() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canMarkPaidByCheck = STAFF_ROLES.includes(user?.role);
 
   const setStatus = async (inv, status) => {
     const prev = {
@@ -35,6 +40,35 @@ export default function Invoices() {
     } catch (e) {
       setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
       toast({ title: "Could not update status", variant: "destructive" });
+    }
+  };
+
+  const markPaidByCheck = async (inv) => {
+    const schedule = (inv.payment_schedule && inv.payment_schedule.length > 0)
+      ? inv.payment_schedule
+      : [{ label: "Payment due", type: "amount", value: Number(inv.total) || 0, paid: false }];
+    const nextIdx = schedule.findIndex((p) => !p.paid);
+    if (nextIdx === -1) return;
+    const prev = { payment_schedule: inv.payment_schedule, payment_status: inv.payment_status, amount_paid: inv.amount_paid, paid_date: inv.paid_date, payment_method: inv.payment_method, status: inv.status };
+    const updatedSchedule = schedule.map((p, i) => (i === nextIdx ? { ...p, paid: true } : p));
+    const amounts = paymentAmounts(updatedSchedule, inv.total);
+    const amountPaid = updatedSchedule.reduce((sum, p, i) => sum + (p.paid ? amounts[i] : 0), 0);
+    const allPaid = updatedSchedule.every((p) => p.paid);
+    const patch = {
+      payment_schedule: updatedSchedule,
+      amount_paid: amountPaid,
+      payment_status: allPaid ? "paid" : "partial",
+      payment_method: "check",
+      paid_date: allPaid ? new Date().toISOString().slice(0, 10) : inv.paid_date,
+      status: allPaid ? "paid" : inv.status,
+    };
+    setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
+    try {
+      await base44.entities.Invoice.update(inv.id, patch);
+      toast({ title: "Marked paid by check" });
+    } catch (e) {
+      setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
+      toast({ title: "Could not mark paid", variant: "destructive" });
     }
   };
 
@@ -119,6 +153,8 @@ export default function Invoices() {
                           standingBy={inv.standing_by}
                           customerReady={inv.customer_ready_for_next_stage}
                           onStatusChange={(s) => setStatus(inv, s)}
+                          canMarkPaidByCheck={canMarkPaidByCheck}
+                          onMarkPaidByCheck={() => markPaidByCheck(inv)}
                         />
                       </div>
                     </div>

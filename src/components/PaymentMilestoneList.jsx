@@ -1,9 +1,10 @@
-import { Check, Hourglass, AlarmClock, UserCheck, ChevronDown } from "lucide-react";
+import { Check, Hourglass, AlarmClock, UserCheck, ChevronDown, Banknote } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { formatCurrency, paymentAmounts } from "@/lib/format";
 
@@ -28,6 +29,8 @@ export default function PaymentMilestoneList({
   standingBy,
   customerReady,
   onStatusChange,
+  onMarkPaidByCheck,
+  canMarkPaidByCheck = false,
   readOnly = false,
   statuses = ["standing", "due", "ready"],
 }) {
@@ -86,6 +89,15 @@ export default function PaymentMilestoneList({
                         </DropdownMenuItem>
                       );
                     })}
+                    {canMarkPaidByCheck && onMarkPaidByCheck && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => onMarkPaidByCheck()} className="gap-2">
+                          <Banknote className="w-4 h-4" />
+                          Mark paid by check
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
