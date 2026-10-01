@@ -1,0 +1,123 @@
+{
+  "name": "Transaction",
+  "type": "object",
+  "properties": {
+    "plaid_transaction_id": {
+      "type": "string",
+      "title": "Plaid Transaction ID"
+    },
+    "account_name": {
+      "type": "string",
+      "title": "Account Name"
+    },
+    "account_mask": {
+      "type": "string",
+      "title": "Account Last 4"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "title": "Date"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount (USD)"
+    },
+    "payee": {
+      "type": "string",
+      "title": "Payee / Merchant"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category"
+    },
+    "custom_category": {
+      "type": "string",
+      "title": "Custom Category"
+    },
+    "memo": {
+      "type": "string",
+      "title": "Memo"
+    },
+    "matched_invoice_id": {
+      "type": "string",
+      "title": "Matched Invoice ID"
+    },
+    "matched": {
+      "type": "string",
+      "enum": [
+        "unmatched",
+        "suggested",
+        "matched",
+        "ignored"
+      ],
+      "default": "unmatched",
+      "title": "Match Status"
+    },
+    "receipt_file_uri": {
+      "type": "string",
+      "title": "Linked Receipt File URI"
+    },
+    "receipt_email_id": {
+      "type": "string",
+      "title": "Source Gmail Message ID"
+    },
+    "last_synced_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Synced Date"
+    }
+  },
+  "required": [
+    "plaid_transaction_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

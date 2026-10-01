@@ -175,6 +175,125 @@
     "notes": {
       "type": "string",
       "title": "Notes"
+    },
+    "selection_mode": {
+      "type": "string",
+      "enum": [
+        "single",
+        "a_la_carte",
+        "side_by_side"
+      ],
+      "default": "single",
+      "title": "Selection Mode"
+    },
+    "options": {
+      "type": "array",
+      "title": "Estimate Options",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Option Label"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "line_items": {
+            "type": "array",
+            "title": "Line Items",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "title": "Description"
+                },
+                "details": {
+                  "type": "string",
+                  "title": "Details"
+                },
+                "quantity": {
+                  "type": "number",
+                  "title": "Quantity"
+                },
+                "unit_price": {
+                  "type": "number",
+                  "title": "Unit Price"
+                },
+                "image_url": {
+                  "type": "string",
+                  "title": "Thumbnail URL"
+                },
+                "photos": {
+                  "type": "array",
+                  "title": "Photos",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "section": {
+                  "type": "string",
+                  "title": "Section"
+                }
+              }
+            }
+          },
+          "subtotal": {
+            "type": "number",
+            "title": "Subtotal"
+          },
+          "tax": {
+            "type": "number",
+            "title": "Tax"
+          },
+          "total": {
+            "type": "number",
+            "title": "Total"
+          }
+        }
+      }
+    },
+    "selected_option_label": {
+      "type": "string",
+      "title": "Customer-Selected Option"
+    },
+    "selected_line_items": {
+      "type": "array",
+      "title": "Customer-Selected Line Items (a la carte)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "type": "number",
+            "title": "Unit Price"
+          }
+        }
+      }
+    },
+    "customer_ready": {
+      "type": "boolean",
+      "default": false,
+      "title": "Customer Ready to Begin"
+    },
+    "customer_ready_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Customer Ready Date"
+    },
+    "standing_by": {
+      "type": "boolean",
+      "default": true,
+      "title": "Standing By (next payment)"
     }
   },
   "required": [

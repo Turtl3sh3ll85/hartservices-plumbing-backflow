@@ -4,7 +4,7 @@ function formatOpened(dateStr) {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return "";
-  return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 export default function OpenedIndicator({ opened, lastOpenedDate, className = "" }) {
@@ -16,7 +16,7 @@ export default function OpenedIndicator({ opened, lastOpenedDate, className = ""
         title={label ? `Opened ${label}` : "Opened"}
       >
         <Eye className="w-3 h-3 shrink-0" />
-        <span>{label ? `Opened ${label}` : "Opened"}</span>
+        {label && <span>{label}</span>}
       </span>
     );
   }
@@ -24,9 +24,9 @@ export default function OpenedIndicator({ opened, lastOpenedDate, className = ""
     <span
       className={`inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full ${className}`}
       title="Not opened yet"
+      aria-label="Not opened yet"
     >
       <EyeOff className="w-3 h-3 shrink-0" />
-      <span>Not opened</span>
     </span>
   );
 }

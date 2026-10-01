@@ -1,193 +1,210 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, FileText, Trash2 } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { MobileSelect } from "@/components/ui/mobile-select";
-import StatusBadge from "@/components/StatusBadge";
+import { Card, CardContent } from "@/components/ui/card";
 import OpenedIndicator from "@/components/OpenedIndicator";
-import InvoicePaymentControl from "@/components/InvoicePaymentControl";
-import PaidAmountLabel from "@/components/PaidAmountLabel";
-import InvoicePaymentSchedule from "@/components/portal/InvoicePaymentSchedule";
-import EmptyState from "@/components/EmptyState";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import { useToast } from "@/components/ui/use-toast";
-import { formatMoney } from "@/lib/invoice";
-import { groupInvoicesByCustomer } from "@/lib/groupByCustomer";
+import PaymentMilestoneList from "@/components/PaymentMilestoneList";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
-import PhaseIndicator from "@/components/PhaseIndicator";
 import { useSettings } from "@/hooks/useSettings";
+import { useToast } from "@/components/ui/use-toast";
+import { formatCurrency, formatDate, amountPaidTotal, paymentAmounts } from "@/lib/format";
+
+const STAFF_ROLES = ["admin", "accountant", "tech"];
 
 export default function Invoices() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { data: invoices = [], isLoading: loadingInvoices } = useQuery({ queryKey: ["invoices"], queryFn: () => base44.entities.Invoice.list("-created_date", 200) });
-  const { data: customers = [], isLoading: loadingCustomers } = useQuery({ queryKey: ["customers"], queryFn: () => base44.entities.Customer.list("name", 500) });
-  const loading = loadingInvoices || loadingCustomers;
+  const [items, setItems] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [pendingDelete, setPendingDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
   const { settings } = useSettings();
-  const [preview, setPreview] = useState(null);
-  const { data: phases = [] } = useQuery({
-    queryKey: ["invoicePhases"],
-    queryFn: async () => { const res = await base44.functions.invoke("getInvoicePhases", {}); return res.data?.phases || []; },
-    staleTime: Infinity,
-  });
-  const [phaseSavingId, setPhaseSavingId] = useState(null);
-  const handleSavePhase = (inv) => async (phase, note) => {
-    setPhaseSavingId(inv.id);
-    try {
-      const res = await base44.functions.invoke("setInvoicePhaseAdmin", { invoice_id: inv.id, phase, note });
-      const updated = res.data?.invoice;
-      if (updated) {
-        queryClient.setQueryData(["invoices"], (old) => (old || []).map((x) => x.id === inv.id ? { ...x, ...updated } : x));
-        queryClient.invalidateQueries({ queryKey: ["invoices", "phaseChanges"] });
-        setPreview((p) => p && p.id === inv.id ? { ...p, ...updated } : p);
-      }
-    } catch (e) {}
-    setPhaseSavingId(null);
-  };
+  const [previewInv, setPreviewInv] = useState(null);
+  const canMarkPaidByCheck = STAFF_ROLES.includes(user?.role);
+  const canUnmarkPaid = ["admin", "accountant"].includes(user?.role);
 
-  const customerMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);
-
-  const confirmDelete = async () => {
-    if (!pendingDelete) return;
-    setDeleting(true);
-    const prev = invoices;
-    queryClient.setQueryData(["invoices"], (old) => (old || []).filter((x) => x.id !== pendingDelete.id));
+  const setStatus = async (inv, status) => {
+    const prev = {
+      standing_by: inv.standing_by,
+      customer_ready_for_next_stage: inv.customer_ready_for_next_stage,
+      ready_for_next_stage_date: inv.ready_for_next_stage_date,
+    };
+    const patch = {
+      customer_ready_for_next_stage: status === "ready",
+      standing_by: status !== "due",
+      ready_for_next_stage_date: status === "ready" ? new Date().toISOString() : null,
+    };
+    setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
     try {
-      await base44.entities.Invoice.delete(pendingDelete.id);
-      toast({ description: "Invoice deleted." });
-      setPendingDelete(null);
+      await base44.entities.Invoice.update(inv.id, patch);
     } catch (e) {
-      queryClient.setQueryData(["invoices"], prev);
-      toast({ variant: "destructive", description: "Could not delete invoice." });
-    } finally {
-      setDeleting(false);
+      setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
+      toast({ title: "Could not update status", variant: "destructive" });
     }
   };
 
-  const filtered = invoices.filter((i) => {
-    const c = customerMap[i.customer_id];
+  const markPaidByCheck = async (inv) => {
+    const schedule = (inv.payment_schedule && inv.payment_schedule.length > 0)
+      ? inv.payment_schedule
+      : [{ label: "Payment due", type: "amount", value: Number(inv.total) || 0, paid: false }];
+    const nextIdx = schedule.findIndex((p) => !p.paid);
+    if (nextIdx === -1) return;
+    const prev = { payment_schedule: inv.payment_schedule, payment_status: inv.payment_status, amount_paid: inv.amount_paid, paid_date: inv.paid_date, payment_method: inv.payment_method, status: inv.status };
+    const updatedSchedule = schedule.map((p, i) => (i === nextIdx ? { ...p, paid: true } : p));
+    const amounts = paymentAmounts(updatedSchedule, inv.total);
+    const amountPaid = updatedSchedule.reduce((sum, p, i) => sum + (p.paid ? amounts[i] : 0), 0);
+    const allPaid = updatedSchedule.every((p) => p.paid);
+    const patch = {
+      payment_schedule: updatedSchedule,
+      amount_paid: amountPaid,
+      payment_status: allPaid ? "paid" : "partial",
+      payment_method: "check",
+      paid_date: allPaid ? new Date().toISOString().slice(0, 10) : inv.paid_date,
+      status: allPaid ? "paid" : inv.status,
+    };
+    setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
+    try {
+      await base44.entities.Invoice.update(inv.id, patch);
+      toast({ title: "Marked paid by check" });
+    } catch (e) {
+      setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
+      toast({ title: "Could not mark paid", variant: "destructive" });
+    }
+  };
+
+  const unmarkPaid = async (inv, index) => {
+    const schedule = (inv.payment_schedule && inv.payment_schedule.length > 0)
+      ? inv.payment_schedule
+      : [{ label: "Payment due", type: "amount", value: Number(inv.total) || 0, paid: false }];
+    const prev = { payment_schedule: inv.payment_schedule, payment_status: inv.payment_status, amount_paid: inv.amount_paid, paid_date: inv.paid_date, payment_method: inv.payment_method, status: inv.status };
+    const updatedSchedule = schedule.map((p, i) => (i === index ? { ...p, paid: false } : p));
+    const amounts = paymentAmounts(updatedSchedule, inv.total);
+    const amountPaid = updatedSchedule.reduce((sum, p, i) => sum + (p.paid ? amounts[i] : 0), 0);
+    const anyPaid = updatedSchedule.some((p) => p.paid);
+    const patch = {
+      payment_schedule: updatedSchedule,
+      amount_paid: amountPaid,
+      payment_status: anyPaid ? "partial" : "unpaid",
+      paid_date: anyPaid ? inv.paid_date : null,
+      status: inv.status === "paid" ? "sent" : inv.status,
+    };
+    setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
+    try {
+      await base44.entities.Invoice.update(inv.id, patch);
+      toast({ title: "Removed paid status" });
+    } catch (e) {
+      setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
+      toast({ title: "Could not update status", variant: "destructive" });
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [list, custs] = await Promise.all([
+          base44.entities.Invoice.list('-created_date', 200),
+          base44.entities.Customer.list('-created_date', 200),
+        ]);
+        setItems(list);
+        setCustomers(custs);
+      } catch (e) {} finally { setLoading(false); }
+    })();
+  }, []);
+
+  const customerName = (id) => {
+    const c = customers.find((c) => c.id === id);
+    return c?.name || c?.company || "Unknown customer";
+  };
+
+  const filtered = items.filter((i) => {
     const q = query.toLowerCase();
-    const matchesQuery = !q || [i.name, i.number, c?.name].join(" ").toLowerCase().includes(q);
-    const matchesStatus = statusFilter === "all" || i.payment_status === statusFilter || i.status === statusFilter;
-    return matchesQuery && matchesStatus;
+    return !q || (i.name || '').toLowerCase().includes(q) || (i.number || '').toLowerCase().includes(q);
   });
 
-  const grouped = useMemo(() => groupInvoicesByCustomer(filtered, customerMap), [filtered, customerMap]);
-
-  const outstanding = invoices.filter((i) => i.payment_status !== "paid" && i.status !== "cancelled" && i.status !== "draft").reduce((s, i) => s + ((Number(i.total) || 0) - (Number(i.amount_paid) || 0)), 0);
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Invoices</h1>
-          <p className="text-muted-foreground text-sm mt-1">Outstanding: <span className="font-medium text-foreground">{formatMoney(outstanding)}</span></p>
-        </div>
-        <Button asChild><Link to="/invoices/new"><Plus className="w-4 h-4 mr-1" /> New invoice</Link></Button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-heading font-semibold tracking-tight">Invoices</h1>
+        <Button asChild size="sm"><Link to="/invoices/new"><Plus className="w-4 h-4" /> New invoice</Link></Button>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name, number, customer…" className="pl-9" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search invoices" className="pl-9" />
         </div>
-        <MobileSelect
-          value={statusFilter}
-          onValueChange={setStatusFilter}
-          placeholder="Status"
-          triggerClassName="w-[160px]"
-          ariaLabel="Filter by status"
-          options={[
-            { value: "all", label: "All" },
-            { value: "unpaid", label: "Unpaid" },
-            { value: "partial", label: "Partial" },
-            { value: "paid", label: "Paid" },
-            { value: "draft", label: "Draft" },
-            { value: "sent", label: "Sent" },
-            { value: "overdue", label: "Overdue" },
-          ]}
-        />
       </div>
 
       {loading ? (
-        <p className="text-muted-foreground">Loading…</p>
+        <div className="text-sm text-muted-foreground">Loading…</div>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={FileText} title="No invoices found" description="Create an invoice and name it after the tasks you performed." action={<Button asChild><Link to="/invoices/new"><Plus className="w-4 h-4 mr-1" /> New invoice</Link></Button>} />
+        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No invoices found.</CardContent></Card>
       ) : (
-        <Card className="overflow-hidden p-0">
-          <div className="divide-y">
-            {grouped.map((group) => (
-              <div key={group.key}>
-                <CustomerGroupHeader name={group.name} count={group.items.length} />
-                {group.items.map((i) => {
-                  const c = customerMap[i.customer_id];
+        <div className="space-y-4">
+          {Object.entries(
+            filtered.reduce((acc, inv) => {
+              const key = inv.customer_id || "unknown";
+              (acc[key] ||= []).push(inv);
+              return acc;
+            }, {})
+          ).map(([cid, group]) => (
+            <div key={cid} className="rounded-lg border bg-card overflow-hidden">
+              <CustomerGroupHeader name={customerName(cid)} count={group.length} />
+              <div className="divide-y">
+                {group.map((inv) => {
+                  const paid = amountPaidTotal(inv.payment_schedule, inv.total);
+                  const balance = Math.max(0, (inv.total || 0) - paid);
+                  const multiple = (inv.payment_schedule?.length || 0) > 1;
                   return (
-                    <div key={i.id} className="p-4 hover:bg-accent transition-colors">
-                      <div className="flex items-center justify-between gap-3 min-h-11">
-                        <button type="button" onClick={() => setPreview(i)} className="flex flex-1 items-center justify-between gap-3 min-w-0 min-h-11 -m-4 p-4 text-left">
-                          <div className="min-w-0">
-                            <div className="font-medium truncate">{i.name || "Untitled invoice"}</div>
-                            <div className="text-sm text-muted-foreground truncate">{i.number}{c ? ` · ${c.name}` : ""}</div>
+                    <div key={inv.id} className="relative px-4 py-3 hover:bg-accent/50 transition-colors">
+                      <button type="button" onClick={() => setPreviewInv(inv)} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Preview invoice: ${inv.name || inv.number || "Invoice"}`} />
+                      <div className="pointer-events-none flex items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{inv.name || inv.number || "Invoice"}</div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            <span>{formatDate(inv.due_date || inv.created_date)}</span>
+                            {inv.customer_ready_for_next_stage && <span className="text-emerald-600">· Ready for next stage</span>}
                           </div>
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                            <PaidAmountLabel invoice={i} />
-                            <OpenedIndicator opened={i.opened} lastOpenedDate={i.last_opened_date} />
-                          </div>
-                        </button>
-                        <PhaseIndicator invoice={i} phases={phases} onSave={handleSavePhase(i)} busy={phaseSavingId === i.id} />
-                        <InvoicePaymentControl invoice={i} />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-                          onClick={() => setPendingDelete(i)}
-                          aria-label={`Delete ${i.name || i.number || "invoice"}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        </div>
+                        <OpenedIndicator opened={inv.opened} lastOpenedDate={inv.last_opened_date} />
+                        <div className="text-right">
+                          <div className="font-medium tabular-nums">{formatCurrency(multiple ? (inv.total || 0) : balance)}</div>
+                          {multiple && <div className="text-xs text-muted-foreground">{formatCurrency(paid)} paid</div>}
+                        </div>
                       </div>
-                      <InvoicePaymentSchedule invoice={i} />
+                      <div className="relative z-10 mt-1.5 pointer-events-none">
+                        <PaymentMilestoneList
+                          schedule={inv.payment_schedule}
+                          total={inv.total}
+                          standingBy={inv.standing_by}
+                          customerReady={inv.customer_ready_for_next_stage}
+                          onStatusChange={(s) => setStatus(inv, s)}
+                          canMarkPaidByCheck={canMarkPaidByCheck}
+                          onMarkPaidByCheck={() => markPaidByCheck(inv)}
+                          canUnmarkPaid={canUnmarkPaid}
+                          onUnmarkPaid={(idx) => unmarkPaid(inv, idx)}
+                        />
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
-      <ConfirmDialog
-        open={!!pendingDelete}
-        onOpenChange={(o) => !o && setPendingDelete(null)}
-        title="Delete invoice?"
-        description={`"${pendingDelete?.name || pendingDelete?.number || "This invoice"}" will be permanently deleted. This cannot be undone.`}
-        confirmLabel="Delete"
-        destructive
-        onConfirm={confirmDelete}
-      />
-      {deleting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+            </div>
+          ))}
         </div>
       )}
+
       <DocumentPreviewDialog
-        doc={preview}
+        doc={previewInv}
         kind="invoice"
-        customer={preview ? customerMap[preview.customer_id] : null}
+        customer={customers.find((c) => c.id === previewInv?.customer_id)}
         settings={settings}
-        onClose={() => setPreview(null)}
-        phases={phases}
-        onSavePhase={preview ? handleSavePhase(preview) : null}
-        phaseSaving={!!preview && phaseSavingId === preview.id}
+        onClose={() => setPreviewInv(null)}
       />
     </div>
   );
