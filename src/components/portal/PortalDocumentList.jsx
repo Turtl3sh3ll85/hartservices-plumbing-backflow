@@ -72,7 +72,6 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
                   </button>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
-                    <StatusBadge status={i.payment_status} />
                     <Button size="sm" variant="outline" onClick={() => downloadPdf(i)} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
                       {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
                     </Button>
