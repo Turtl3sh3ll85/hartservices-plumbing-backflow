@@ -1,0 +1,73 @@
+{
+  "name": "PlaidItem",
+  "type": "object",
+  "properties": {
+    "item_id": {
+      "type": "string",
+      "title": "Plaid Item ID"
+    },
+    "access_token": {
+      "type": "string",
+      "title": "Access Token"
+    },
+    "institution_name": {
+      "type": "string",
+      "title": "Bank Name"
+    },
+    "cursor": {
+      "type": "string",
+      "title": "Sync Cursor"
+    },
+    "accounts": {
+      "type": "array",
+      "title": "Accounts",
+      "items": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "title": "Account ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Account Name"
+          },
+          "mask": {
+            "type": "string",
+            "title": "Last 4"
+          },
+          "type": {
+            "type": "string",
+            "title": "Account Type"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "item_id",
+    "access_token"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
