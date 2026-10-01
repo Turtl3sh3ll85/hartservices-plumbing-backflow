@@ -5,7 +5,6 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import PaymentMilestoneList from "@/components/PaymentMilestoneList";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
@@ -95,6 +94,7 @@ export default function Invoices() {
                 {group.map((inv) => {
                   const paid = amountPaidTotal(inv.payment_schedule, inv.total);
                   const balance = Math.max(0, (inv.total || 0) - paid);
+                  const multiple = (inv.payment_schedule?.length || 0) > 1;
                   return (
                     <Link key={inv.id} to={`/invoices/${inv.id}`} className="block px-4 py-3 hover:bg-accent/50 transition-colors">
                       <div className="flex items-center gap-3">
@@ -106,10 +106,9 @@ export default function Invoices() {
                           </div>
                         </div>
                         <OpenedIndicator opened={inv.opened} lastOpenedDate={inv.last_opened_date} />
-                        <StatusBadge status={inv.payment_status} />
                         <div className="text-right">
-                          <div className="font-medium tabular-nums">{formatCurrency(balance)}</div>
-                          <div className="text-xs text-muted-foreground">of {formatCurrency(inv.total)}</div>
+                          <div className="font-medium tabular-nums">{formatCurrency(multiple ? (inv.total || 0) : balance)}</div>
+                          {multiple && <div className="text-xs text-muted-foreground">{formatCurrency(paid)} paid</div>}
                         </div>
                       </div>
                       <div className="mt-2">
