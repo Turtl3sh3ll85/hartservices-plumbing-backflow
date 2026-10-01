@@ -24,8 +24,16 @@ export default function Customers() {
   const load = async () => {
     setLoading(true);
     try {
-      const list = await base44.entities.Customer.list('-created_date', 200);
-      setCustomers(list);
+      const [list, invoices, estimates] = await Promise.all([
+        base44.entities.Customer.list('-created_date', 200),
+        base44.entities.Invoice.list('-created_date', 200),
+        base44.entities.Estimate.list('-created_date', 200),
+      ]);
+      const withDocs = new Set([
+        ...invoices.map((i) => i.customer_id),
+        ...estimates.map((e) => e.customer_id),
+      ].filter(Boolean));
+      setCustomers(list.filter((c) => withDocs.has(c.id)));
     } catch (e) {
       toast({ title: "Failed to load customers", variant: "destructive" });
     } finally {
