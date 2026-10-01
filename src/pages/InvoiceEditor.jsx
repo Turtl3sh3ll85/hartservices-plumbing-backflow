@@ -43,7 +43,7 @@ export default function InvoiceEditor() {
 
   const set = (k, v) => setInv((s) => ({ ...s, [k]: v }));
   const totals = computeTotals(inv.line_items, inv.tax_rate, inv.cc_fee_enabled);
-  const paid = amountPaidTotal(inv.payment_schedule);
+  const paid = amountPaidTotal(inv.payment_schedule, totals.total);
   const balance = Math.max(0, totals.total - paid);
   const next = nextDuePayment(inv.payment_schedule, totals.total);
 

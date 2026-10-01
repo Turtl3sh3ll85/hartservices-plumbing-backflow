@@ -36,13 +36,9 @@ export function paymentAmounts(schedule, total) {
   });
 }
 
-export function amountPaidTotal(schedule) {
-  return (schedule || []).reduce((sum, p) => sum + (p.paid ? paymentValue(p) : 0), 0);
-}
-
-function paymentValue(p) {
-  // stored computed amount if present, else value
-  return Number(p.amount ?? p.value) || 0;
+export function amountPaidTotal(schedule, total = 0) {
+  const amounts = paymentAmounts(schedule, total);
+  return (schedule || []).reduce((sum, p, i) => sum + (p.paid ? amounts[i] : 0), 0);
 }
 
 export function nextDuePayment(schedule, total) {

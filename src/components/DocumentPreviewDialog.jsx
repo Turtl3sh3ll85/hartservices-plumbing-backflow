@@ -9,6 +9,7 @@ import BillTo from "@/components/BillTo";
 import StatusBadge from "@/components/StatusBadge";
 import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection, installmentAmount } from "@/lib/invoice";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
+import PaymentScheduleDisplay from "@/components/PaymentScheduleDisplay";
 
 export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onSavePhase, phaseSaving }) {
   const navigate = useNavigate();
@@ -121,7 +122,13 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
             </div>
           </div>
 
-          {(doc.payment_schedule || []).length > 0 && (
+          {isInvoice ? (
+            <PaymentScheduleDisplay
+              schedule={doc.payment_schedule}
+              total={doc.total}
+              standingBy={doc.standing_by}
+            />
+          ) : (doc.payment_schedule || []).length > 0 && (
             <div>
               <div className="font-medium text-sm mb-2">Payment Schedule</div>
               <div className="border rounded-lg divide-y">
@@ -130,7 +137,7 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
                     <span>{p.label || `Payment ${i + 1}`}</span>
                     <div className="flex items-center gap-3">
                       <span className="tabular-nums">{formatMoney(installmentAmount(p, doc.total))}</span>
-                      {isInvoice && <StatusBadge status={p.paid ? "paid" : "unpaid"} label={p.paid ? "Paid" : "Due"} />}
+                      <StatusBadge status={p.paid ? "paid" : "unpaid"} label={p.paid ? "Paid" : "Due"} />
                     </div>
                   </div>
                 ))}

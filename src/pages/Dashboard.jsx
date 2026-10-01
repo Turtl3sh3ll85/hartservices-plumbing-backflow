@@ -21,7 +21,7 @@ export default function Dashboard() {
           base44.entities.Invoice.list('-created_date', 50),
           base44.entities.Transaction.list('-date', 200).catch(() => []),
         ]);
-        const outstanding = invoices.reduce((s, inv) => s + Math.max(0, (inv.total || 0) - amountPaidTotal(inv.payment_schedule)), 0);
+        const outstanding = invoices.reduce((s, inv) => s + Math.max(0, (inv.total || 0) - amountPaidTotal(inv.payment_schedule, inv.total)), 0);
         const today = new Date().toISOString().slice(0, 10);
         const overdue = invoices.filter((i) => i.due_date && i.due_date < today && i.payment_status !== 'paid').length;
         const unmatched = txs.filter((t) => t.matched === 'unmatched').length;

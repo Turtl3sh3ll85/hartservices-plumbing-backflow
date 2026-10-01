@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
+import PaymentScheduleDisplay from "@/components/PaymentScheduleDisplay";
 import { formatCurrency, formatDate, amountPaidTotal } from "@/lib/format";
 
 export default function Invoices() {
@@ -69,7 +70,7 @@ export default function Invoices() {
       ) : (
         <div className="divide-y rounded-lg border bg-card">
           {filtered.map((inv) => {
-            const paid = amountPaidTotal(inv.payment_schedule);
+            const paid = amountPaidTotal(inv.payment_schedule, inv.total);
             const balance = Math.max(0, (inv.total || 0) - paid);
             return (
               <Link key={inv.id} to={`/invoices/${inv.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors">
@@ -79,6 +80,9 @@ export default function Invoices() {
                     <span>{formatDate(inv.due_date || inv.created_date)}</span>
                     {inv.standing_by && <span className="text-amber-600">· Standing by</span>}
                     {inv.customer_ready_for_next_stage && <span className="text-emerald-600">· Ready for next stage</span>}
+                  </div>
+                  <div className="mt-1.5">
+                    <PaymentScheduleDisplay compact schedule={inv.payment_schedule} total={inv.total} standingBy={inv.standing_by} />
                   </div>
                 </div>
                 <StatusBadge status={inv.payment_status} />
