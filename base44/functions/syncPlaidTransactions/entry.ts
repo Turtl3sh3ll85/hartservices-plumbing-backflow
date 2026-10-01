@@ -29,6 +29,17 @@ export default async function(req) {
       return Response.json({ error: 'Plaid credentials not configured (PLAID_CLIENT_ID / PLAID_SECRET)' }, { status: 500 });
     }
 
+    // Load account labels for auto-categorization (personal accounts, merges)
+    const labels = await base44.asServiceRole.entities.AccountLabel.list();
+    const labelType = Object.fromEntries(labels.filter((l) => l.type).map((l) => [l.account_name, l.type]));
+    const mergeInto = Object.fromEntries(labels.filter((l) => l.merge_into).map((l) => [l.account_name, l.merge_into]));
+    const resolveType = (name) => {
+      let cur = name;
+      const seen = new Set();
+      while (mergeInto[cur] && !seen.has(cur)) { seen.add(cur); cur = mergeInto[cur]; }
+      return labelType[cur] || null;
+    };
+
     // Get all connected Plaid items
     const items = await base44.asServiceRole.entities.PlaidItem.list('-created_date', 100);
     if (!items || items.length === 0) {
@@ -50,16 +61,9 @@ export default async function(req) {
 
         // Fetch existing Plaid-sourced transactions for this item to avoid duplicates
         const existing = await base44.asServiceRole.entities.YnabTransaction.list('-date', 500);
-        const existingIds = new Set(
-          (existing || [])
-            .filter((t) => (t.ynab_id || '').startsWith(`plaid_${item.item_id}_`))
-            .map((t) => t.ynab_id)
-        );
-        const existingByPlaidId = new Map(
-          (existing || [])
-            .filter((t) => (t.ynab_id || '').startsWith(`plaid_${item.item_id}_`))
-            .map((t) => [t.ynab_id, t])
-        );
+        const plaidExisting = (existing || []).filter((t) => (t.ynab_id || '').startsWith(`plaid_${item.item_id}_`));
+        const existingIds = new Set(plaidExisting.map((t) => t.ynab_id));
+        const existingByPlaidId = new Map(plaidExisting.map((t) => [t.ynab_id, t]));
 
         let cursor = item.cursor || undefined;
         let hasMore = true;
@@ -102,18 +106,34 @@ export default async function(req) {
             if (existingIds.has(txId)) continue;
 
             const accountName = accountMap.get(tx.account_id) || item.institution_name || 'Plaid Account';
-            toCreate.push({
+            const isPersonal = resolveType(accountName) === 'personal';
+            const plaidCategory = (tx.category || []).join(' > ');
+            const isTransfer = plaidCategory.toLowerCase().startsWith('transfer');
+
+            const record = {
               ynab_id: txId,
               account_name: accountName,
               date: tx.date,
-              amount: Math.round((tx.amount || 0) * 1000), // dollars → milliunits
+              amount: Math.round((tx.amount || 0) * 100) / 100, // dollars (matches YNAB sync format)
               payee: tx.merchant_name || tx.name || 'Unknown',
-              category: (tx.category || []).join(' > '),
+              category: plaidCategory,
               memo: tx.pending ? 'Pending' : '',
               cleared: tx.pending ? 'uncleared' : 'cleared',
-              matched: 'unmatched',
               last_synced_date: new Date().toISOString(),
-            });
+            };
+
+            // Auto-categorize: personal accounts and transfers are ignored
+            if (isPersonal) {
+              record.custom_category = 'Personal';
+              record.matched = 'ignored';
+            } else if (isTransfer) {
+              record.custom_category = 'Transfer';
+              record.matched = 'ignored';
+            } else {
+              record.matched = 'unmatched';
+            }
+
+            toCreate.push(record);
             existingIds.add(txId);
           }
 
@@ -144,6 +164,26 @@ export default async function(req) {
       } catch (err) {
         errors.push({ item_id: item.item_id, institution: item.institution_name, error: err.message });
       }
+    }
+
+    // Apply Personal auto-categorization to any existing Plaid transactions from personal accounts
+    // (covers transactions that existed before an account was labeled personal)
+    const personalAccounts = labels.filter((l) => resolveType(l.account_name) === 'personal').map((l) => l.account_name);
+    if (personalAccounts.length) {
+      let batch;
+      do {
+        batch = await base44.asServiceRole.entities.YnabTransaction.updateMany(
+          {
+            account_name: { $in: personalAccounts },
+            $or: [
+              { custom_category: { $in: [null, ''] } },
+              { custom_category: { $exists: false } },
+              { custom_category: { $regex: '^\\s*$' } },
+            ],
+          },
+          { $set: { custom_category: 'Personal', matched: 'ignored', matched_invoice_id: null } },
+        );
+      } while (batch?.has_more);
     }
 
     return Response.json({
