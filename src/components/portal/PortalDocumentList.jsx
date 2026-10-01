@@ -69,11 +69,7 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
                       {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
                     </div>
                   </button>
-                  <div className="flex flex-col items-end gap-3 shrink-0 sm:flex-row sm:items-center">
-                    <div className="text-right">
-                      <div className="font-medium tabular-nums">{formatMoney(i.total)}</div>
-                      {(() => { const paid = amountPaidTotal(i.payment_schedule, i.total); return paid > 0 ? <div className="text-xs text-muted-foreground tabular-nums">{formatMoney(paid)} paid</div> : null; })()}
-                    </div>
+                  <div className="flex items-center gap-3 shrink-0">
                     <Button size="sm" variant="outline" onClick={() => downloadPdf(i)} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
                       {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
                     </Button>
@@ -82,6 +78,10 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
                     ) : (
                       <Button asChild size="sm"><Link to={`/pay/${i.id}`}><CreditCard className="w-4 h-4 mr-1" /> View & Pay</Link></Button>
                     )}
+                    <div className="text-right ml-1">
+                      <div className="font-medium tabular-nums">{formatMoney(i.total)}</div>
+                      {(() => { const paid = amountPaidTotal(i.payment_schedule, i.total); return paid > 0 ? <div className="text-xs text-muted-foreground tabular-nums">{formatMoney(paid)} paid</div> : null; })()}
+                    </div>
                   </div>
                 </div>
                 <PaymentMilestoneList
