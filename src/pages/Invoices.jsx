@@ -8,11 +8,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import PaymentMilestoneList from "@/components/PaymentMilestoneList";
+import CustomerGroupHeader from "@/components/CustomerGroupHeader";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatDate, amountPaidTotal } from "@/lib/format";
 
 export default function Invoices() {
   const [items, setItems] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const { toast } = useToast();
@@ -30,11 +32,20 @@ export default function Invoices() {
   useEffect(() => {
     (async () => {
       try {
-        const list = await base44.entities.Invoice.list('-created_date', 200);
+        const [list, custs] = await Promise.all([
+          base44.entities.Invoice.list('-created_date', 200),
+          base44.entities.Customer.list('-created_date', 200),
+        ]);
         setItems(list);
+        setCustomers(custs);
       } catch (e) {} finally { setLoading(false); }
     })();
   }, []);
+
+  const customerName = (id) => {
+    const c = customers.find((c) => c.id === id);
+    return c?.name || c?.company || "Unknown customer";
+  };
 
   const filtered = items.filter((i) => {
     const q = query.toLowerCase();
@@ -60,38 +71,51 @@ export default function Invoices() {
       ) : filtered.length === 0 ? (
         <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No invoices found.</CardContent></Card>
       ) : (
-        <div className="divide-y rounded-lg border bg-card">
-          {filtered.map((inv) => {
-            const paid = amountPaidTotal(inv.payment_schedule, inv.total);
-            const balance = Math.max(0, (inv.total || 0) - paid);
-            return (
-              <Link key={inv.id} to={`/invoices/${inv.id}`} className="block px-4 py-3 hover:bg-accent/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium truncate">{inv.name || inv.number || "Invoice"}</div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span>{formatDate(inv.due_date || inv.created_date)}</span>
-                      {inv.customer_ready_for_next_stage && <span className="text-emerald-600">· Ready for next stage</span>}
-                    </div>
-                  </div>
-                  <OpenedIndicator opened={inv.opened} lastOpenedDate={inv.last_opened_date} />
-                  <StatusBadge status={inv.payment_status} />
-                  <div className="text-right">
-                    <div className="font-medium tabular-nums">{formatCurrency(balance)}</div>
-                    <div className="text-xs text-muted-foreground">of {formatCurrency(inv.total)}</div>
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <PaymentMilestoneList
-                    schedule={inv.payment_schedule}
-                    total={inv.total}
-                    standingBy={inv.standing_by}
-                    onToggle={(v) => toggleStanding(inv, v)}
-                  />
-                </div>
-              </Link>
-            );
-          })}
+        <div className="space-y-4">
+          {Object.entries(
+            filtered.reduce((acc, inv) => {
+              const key = inv.customer_id || "unknown";
+              (acc[key] ||= []).push(inv);
+              return acc;
+            }, {})
+          ).map(([cid, group]) => (
+            <div key={cid} className="rounded-lg border bg-card overflow-hidden">
+              <CustomerGroupHeader name={customerName(cid)} count={group.length} />
+              <div className="divide-y">
+                {group.map((inv) => {
+                  const paid = amountPaidTotal(inv.payment_schedule, inv.total);
+                  const balance = Math.max(0, (inv.total || 0) - paid);
+                  return (
+                    <Link key={inv.id} to={`/invoices/${inv.id}`} className="block px-4 py-3 hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{inv.name || inv.number || "Invoice"}</div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            <span>{formatDate(inv.due_date || inv.created_date)}</span>
+                            {inv.customer_ready_for_next_stage && <span className="text-emerald-600">· Ready for next stage</span>}
+                          </div>
+                        </div>
+                        <OpenedIndicator opened={inv.opened} lastOpenedDate={inv.last_opened_date} />
+                        <StatusBadge status={inv.payment_status} />
+                        <div className="text-right">
+                          <div className="font-medium tabular-nums">{formatCurrency(balance)}</div>
+                          <div className="text-xs text-muted-foreground">of {formatCurrency(inv.total)}</div>
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <PaymentMilestoneList
+                          schedule={inv.payment_schedule}
+                          total={inv.total}
+                          standingBy={inv.standing_by}
+                          onToggle={(v) => toggleStanding(inv, v)}
+                        />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
