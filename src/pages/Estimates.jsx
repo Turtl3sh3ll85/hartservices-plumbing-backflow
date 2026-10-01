@@ -19,7 +19,8 @@ export default function Estimates() {
   const [query, setQuery] = useState("");
   const { toast } = useToast();
 
-  const toggleStanding = async (est, value) => {
+  const setStatus = async (est, status) => {
+    const value = status !== "due";
     setItems((prev) => prev.map((i) => (i.id === est.id ? { ...i, standing_by: value } : i)));
     try {
       await base44.entities.Estimate.update(est.id, { standing_by: value });
@@ -80,7 +81,8 @@ export default function Estimates() {
                   schedule={e.payment_schedule}
                   total={e.total}
                   standingBy={e.standing_by}
-                  onToggle={(v) => toggleStanding(e, v)}
+                  statuses={["standing", "due"]}
+                  onStatusChange={(s) => setStatus(e, s)}
                 />
               </div>
             </Link>

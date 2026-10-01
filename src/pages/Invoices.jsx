@@ -19,12 +19,22 @@ export default function Invoices() {
   const [query, setQuery] = useState("");
   const { toast } = useToast();
 
-  const toggleStanding = async (inv, value) => {
-    setItems((prev) => prev.map((i) => (i.id === inv.id ? { ...i, standing_by: value } : i)));
+  const setStatus = async (inv, status) => {
+    const prev = {
+      standing_by: inv.standing_by,
+      customer_ready_for_next_stage: inv.customer_ready_for_next_stage,
+      ready_for_next_stage_date: inv.ready_for_next_stage_date,
+    };
+    const patch = {
+      customer_ready_for_next_stage: status === "ready",
+      standing_by: status !== "due",
+      ready_for_next_stage_date: status === "ready" ? new Date().toISOString() : null,
+    };
+    setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
     try {
-      await base44.entities.Invoice.update(inv.id, { standing_by: value });
+      await base44.entities.Invoice.update(inv.id, patch);
     } catch (e) {
-      setItems((prev) => prev.map((i) => (i.id === inv.id ? { ...i, standing_by: !value } : i)));
+      setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
       toast({ title: "Could not update status", variant: "destructive" });
     }
   };
@@ -107,7 +117,8 @@ export default function Invoices() {
                           schedule={inv.payment_schedule}
                           total={inv.total}
                           standingBy={inv.standing_by}
-                          onToggle={(v) => toggleStanding(inv, v)}
+                          customerReady={inv.customer_ready_for_next_stage}
+                          onStatusChange={(s) => setStatus(inv, s)}
                         />
                       </div>
                     </Link>

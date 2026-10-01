@@ -1,27 +1,43 @@
 import { Check } from "lucide-react";
 import { formatCurrency, paymentAmounts } from "@/lib/format";
 
+const STATUS_LABEL = { standing: "Standing By", due: "Due", ready: "Customer ready" };
+const STATUS_STYLE = {
+  standing: "text-slate-300 border-slate-500/60 bg-slate-700/40",
+  due: "text-[#d97706] border-[#d97706]/60 bg-[#fef3c7]",
+  ready: "text-[#10b981] border-[#10b981]/60 bg-[#d1fae5]",
+};
+
 /**
  * Payment milestone list matching the dark reference card:
- * label (left) · amount (mid) · status badge (right).
+ * label (left) · amount (mid) · status (right).
  *
- * The next unpaid milestone's badge is a toggle between
- * "Standing By" (default) and "Due". Paid milestones show a green check.
+ * The next unpaid milestone's status is a dropdown. Paid milestones show a green check;
+ * milestones after the next unpaid one show "Upcoming".
  *
  * Props:
  *  - schedule, total
- *  - standingBy: stored standing_by value (undefined/null/true → Standing By; false → Due)
- *  - onToggle(nextValue: boolean): persist standing_by — false when switching
- *    Standing By → Due, true when switching Due → Standing By
- *  - readOnly: when true the toggle is non-interactive
+ *  - standingBy: stored standing_by (undefined/null/true → Standing By; false → Due)
+ *  - customerReady: stored customer_ready_for_next_stage (true → "Customer ready" wins)
+ *  - onStatusChange(next: "standing" | "due" | "ready")
+ *  - readOnly: non-interactive
+ *  - statuses: which options to render (default ["standing","due","ready"])
  */
-export default function PaymentMilestoneList({ schedule = [], total = 0, standingBy, onToggle, readOnly = false }) {
+export default function PaymentMilestoneList({
+  schedule = [],
+  total = 0,
+  standingBy,
+  customerReady,
+  onStatusChange,
+  readOnly = false,
+  statuses = ["standing", "due", "ready"],
+}) {
   const list = (schedule && schedule.length > 0)
     ? schedule
     : [{ label: "Payment due", type: "amount", value: Number(total) || 0, paid: false }];
   const amounts = paymentAmounts(list, total);
   const nextIdx = list.findIndex((p) => !p.paid);
-  const isStanding = standingBy !== false; // default Standing By
+  const status = customerReady ? "ready" : (standingBy !== false ? "standing" : "due");
 
   const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
 
@@ -40,25 +56,16 @@ export default function PaymentMilestoneList({ schedule = [], total = 0, standin
                   <Check className="w-3 h-3" /> Paid
                 </span>
               ) : isNext ? (
-                isStanding ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { stop(e); onToggle?.(false); }}
-                    disabled={readOnly || !onToggle}
-                    className="text-xs font-medium text-slate-300 border border-slate-500/60 bg-slate-700/40 rounded-full px-2 py-0.5 shrink-0 hover:bg-slate-700/70 disabled:opacity-100 disabled:cursor-default"
-                  >
-                    Standing By
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => { stop(e); onToggle?.(true); }}
-                    disabled={readOnly || !onToggle}
-                    className="text-xs font-medium text-[#d97706] border border-[#d97706]/60 bg-[#fef3c7] rounded-full px-2 py-0.5 shrink-0 hover:bg-[#fde68a] disabled:opacity-100 disabled:cursor-default"
-                  >
-                    Due
-                  </button>
-                )
+                <select
+                  value={status}
+                  onChange={(e) => { stop(e); onStatusChange?.(e.target.value); }}
+                  disabled={readOnly || !onStatusChange}
+                  className={`text-xs font-medium rounded-full px-2 py-0.5 shrink-0 border appearance-none cursor-pointer ${STATUS_STYLE[status]} disabled:opacity-100 disabled:cursor-default`}
+                >
+                  {statuses.map((s) => (
+                    <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+                  ))}
+                </select>
               ) : (
                 <span className="text-xs text-[#9ca3af] shrink-0">Upcoming</span>
               )}

@@ -98,19 +98,18 @@ export default function PayInvoice() {
             <Card>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <Clock className="w-4 h-4" /> Ready for next stage?
+                  <Clock className="w-4 h-4" /> Next stage status
                 </div>
                 <p className="text-xs text-muted-foreground">Let {settings?.business_name || "us"} know when you're ready for the next phase of work to begin.</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => saveReady(true)} disabled={savingReady}
-                    className={`rounded-lg border-2 p-3 text-sm font-medium transition-colors ${ready === true ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-border hover:bg-accent/50"}`}>
-                    Yes, ready to begin
-                  </button>
-                  <button onClick={() => saveReady(false)} disabled={savingReady}
-                    className={`rounded-lg border-2 p-3 text-sm font-medium transition-colors ${ready === false ? "border-amber-500 bg-amber-50 text-amber-700" : "border-border hover:bg-accent/50"}`}>
-                    Not yet
-                  </button>
-                </div>
+                <select
+                  value={ready ? "ready" : "not_ready"}
+                  onChange={(e) => saveReady(e.target.value === "ready")}
+                  disabled={savingReady}
+                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                >
+                  <option value="not_ready">Not ready</option>
+                  <option value="ready">Customer ready</option>
+                </select>
                 {ready === true && <p className="text-xs text-emerald-600 text-center">Thanks — we'll be in touch to schedule the next stage.</p>}
               </CardContent>
             </Card>
