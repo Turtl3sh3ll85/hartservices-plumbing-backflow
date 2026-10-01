@@ -167,12 +167,10 @@ export default function Invoices() {
                             {inv.customer_ready_for_next_stage && <span className="text-emerald-600">· Ready for next stage</span>}
                           </div>
                         </div>
-                        <div style={{ width: "6rem", flexShrink: 0, textAlign: "left" }} className="tabular-nums">
-                          <div className="font-medium">{formatCurrency(multiple ? (inv.total || 0) : balance)}</div>
+                        <OpenedIndicator opened={inv.opened} lastOpenedDate={inv.last_opened_date} />
+                        <div className="text-right">
+                          <div className="font-medium tabular-nums">{formatCurrency(multiple ? (inv.total || 0) : balance)}</div>
                           {multiple && <div className="text-xs text-muted-foreground">{formatCurrency(paid)} paid</div>}
-                        </div>
-                        <div className="w-28 shrink-0 flex justify-end items-center">
-                          <OpenedIndicator opened={inv.opened} lastOpenedDate={inv.last_opened_date} />
                         </div>
                       </div>
                       <div className="relative z-10 mt-1.5 pointer-events-none">
