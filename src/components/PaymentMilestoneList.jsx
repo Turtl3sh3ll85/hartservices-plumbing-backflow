@@ -31,6 +31,8 @@ export default function PaymentMilestoneList({
   onStatusChange,
   onMarkPaidByCheck,
   canMarkPaidByCheck = false,
+  onUnmarkPaid,
+  canUnmarkPaid = false,
   readOnly = false,
   statuses = ["standing", "due", "ready"],
 }) {
@@ -56,9 +58,21 @@ export default function PaymentMilestoneList({
               <span className="flex-1 min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
               <span className="text-sm tabular-nums text-[#9ca3af] shrink-0">{formatCurrency(amounts[i])}</span>
               {p.paid ? (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] rounded-full px-2 py-0.5 shrink-0">
-                  <Check className="w-3 h-3" /> Paid
-                </span>
+                canUnmarkPaid && onUnmarkPaid ? (
+                  <button
+                    type="button"
+                    onClick={stop}
+                    onPointerDown={stop}
+                    title="Click to remove paid status"
+                    className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] hover:bg-[#bbf7d0] rounded-full px-2 py-0.5 shrink-0 transition-colors cursor-pointer"
+                  >
+                    <Check className="w-3 h-3" /> Paid
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-[#10b981] border border-[#10b981]/60 bg-[#d1fae5] rounded-full px-2 py-0.5 shrink-0">
+                    <Check className="w-3 h-3" /> Paid
+                  </span>
+                )
               ) : isNext ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

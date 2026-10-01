@@ -22,6 +22,7 @@ export default function Invoices() {
   const { toast } = useToast();
   const { user } = useAuth();
   const canMarkPaidByCheck = STAFF_ROLES.includes(user?.role);
+  const canUnmarkPaid = ["admin", "accountant"].includes(user?.role);
 
   const setStatus = async (inv, status) => {
     const prev = {
@@ -69,6 +70,32 @@ export default function Invoices() {
     } catch (e) {
       setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
       toast({ title: "Could not mark paid", variant: "destructive" });
+    }
+  };
+
+  const unmarkPaid = async (inv, index) => {
+    const schedule = (inv.payment_schedule && inv.payment_schedule.length > 0)
+      ? inv.payment_schedule
+      : [{ label: "Payment due", type: "amount", value: Number(inv.total) || 0, paid: false }];
+    const prev = { payment_schedule: inv.payment_schedule, payment_status: inv.payment_status, amount_paid: inv.amount_paid, paid_date: inv.paid_date, payment_method: inv.payment_method, status: inv.status };
+    const updatedSchedule = schedule.map((p, i) => (i === index ? { ...p, paid: false } : p));
+    const amounts = paymentAmounts(updatedSchedule, inv.total);
+    const amountPaid = updatedSchedule.reduce((sum, p, i) => sum + (p.paid ? amounts[i] : 0), 0);
+    const anyPaid = updatedSchedule.some((p) => p.paid);
+    const patch = {
+      payment_schedule: updatedSchedule,
+      amount_paid: amountPaid,
+      payment_status: anyPaid ? "partial" : "unpaid",
+      paid_date: anyPaid ? inv.paid_date : null,
+      status: inv.status === "paid" ? "sent" : inv.status,
+    };
+    setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...patch } : i)));
+    try {
+      await base44.entities.Invoice.update(inv.id, patch);
+      toast({ title: "Removed paid status" });
+    } catch (e) {
+      setItems((prevItems) => prevItems.map((i) => (i.id === inv.id ? { ...i, ...prev } : i)));
+      toast({ title: "Could not update status", variant: "destructive" });
     }
   };
 
@@ -155,6 +182,8 @@ export default function Invoices() {
                           onStatusChange={(s) => setStatus(inv, s)}
                           canMarkPaidByCheck={canMarkPaidByCheck}
                           onMarkPaidByCheck={() => markPaidByCheck(inv)}
+                          canUnmarkPaid={canUnmarkPaid}
+                          onUnmarkPaid={(idx) => unmarkPaid(inv, idx)}
                         />
                       </div>
                     </div>
