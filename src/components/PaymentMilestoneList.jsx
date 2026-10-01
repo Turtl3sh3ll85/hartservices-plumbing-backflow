@@ -116,10 +116,37 @@ export default function PaymentMilestoneList({
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-300 border border-slate-500/60 bg-slate-700/40 rounded-full px-2 py-0.5 shrink-0">
-                  <Hourglass className="w-3 h-3" />
-                  Standing By
-                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={stop}
+                      onPointerDown={stop}
+                      disabled={readOnly || !onStatusChange}
+                      className={`pointer-events-auto inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 shrink-0 border transition-colors ${STATUS_STYLE[status]} disabled:opacity-100 disabled:cursor-default`}
+                    >
+                      <StatusIcon className="w-3 h-3" />
+                      {STATUS_LABEL[status]}
+                      <ChevronDown className="w-3 h-3 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[10rem]">
+                    {statuses.map((s) => {
+                      const ItemIcon = STATUS_ICON[s];
+                      return (
+                        <DropdownMenuItem
+                          key={s}
+                          onSelect={() => onStatusChange?.(s)}
+                          className={`gap-2 ${s === status ? "font-semibold" : ""}`}
+                        >
+                          <ItemIcon className="w-4 h-4" />
+                          {STATUS_LABEL[s]}
+                          {s === status && <Check className="w-3.5 h-3.5 ml-auto text-primary" />}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 )}
                 </div>
                 </div>
