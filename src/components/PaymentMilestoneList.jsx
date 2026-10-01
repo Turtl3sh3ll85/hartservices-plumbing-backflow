@@ -48,7 +48,7 @@ export default function PaymentMilestoneList({
   const stop = (e) => e.stopPropagation();
 
   return (
-    <div className="relative rounded-lg bg-[#1f1f1f] pl-3.5 pr-2 py-0.5">
+    <div className="relative rounded-lg bg-[#1f1f1f] pl-3.5 pr-0 py-0.5">
       <div className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r bg-[#3b5a80]" />
       <div className="divide-y divide-white/5">
         {list.map((p, i) => {
@@ -57,6 +57,7 @@ export default function PaymentMilestoneList({
             <div key={i} className="flex items-center gap-3 py-1.5">
               <span className="flex-1 min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
               <span style={{ width: "6rem", flexShrink: 0, textAlign: "left" }} className="text-sm tabular-nums text-[#9ca3af]">{formatCurrency(amounts[i])}</span>
+              <div className="w-28 shrink-0 flex justify-end">
               {p.paid ? (
                 canUnmarkPaid && onUnmarkPaid ? (
                   <button
@@ -116,9 +117,10 @@ export default function PaymentMilestoneList({
                 </DropdownMenu>
               ) : (
                 <span className="text-xs text-[#9ca3af] shrink-0">Upcoming</span>
-              )}
-            </div>
-          );
+                )}
+                </div>
+                </div>
+                );
         })}
       </div>
     </div>
