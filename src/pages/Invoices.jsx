@@ -9,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import PaymentMilestoneList from "@/components/PaymentMilestoneList";
 import CustomerGroupHeader from "@/components/CustomerGroupHeader";
+import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import { useSettings } from "@/hooks/useSettings";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatDate, amountPaidTotal, paymentAmounts } from "@/lib/format";
 
@@ -21,6 +23,8 @@ export default function Invoices() {
   const [query, setQuery] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
+  const { settings } = useSettings();
+  const [previewInv, setPreviewInv] = useState(null);
   const canMarkPaidByCheck = STAFF_ROLES.includes(user?.role);
   const canUnmarkPaid = ["admin", "accountant"].includes(user?.role);
 
@@ -158,7 +162,7 @@ export default function Invoices() {
                   const multiple = (inv.payment_schedule?.length || 0) > 1;
                   return (
                     <div key={inv.id} className="relative px-4 py-3 hover:bg-accent/50 transition-colors">
-                      <Link to={`/invoices/${inv.id}`} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Open invoice: ${inv.name || inv.number || "Invoice"}`} />
+                      <button type="button" onClick={() => setPreviewInv(inv)} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Preview invoice: ${inv.name || inv.number || "Invoice"}`} />
                       <div className="pointer-events-none flex items-center gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="font-medium truncate">{inv.name || inv.number || "Invoice"}</div>
@@ -194,6 +198,14 @@ export default function Invoices() {
           ))}
         </div>
       )}
+
+      <DocumentPreviewDialog
+        doc={previewInv}
+        kind="invoice"
+        customer={customers.find((c) => c.id === previewInv?.customer_id)}
+        settings={settings}
+        onClose={() => setPreviewInv(null)}
+      />
     </div>
   );
 }

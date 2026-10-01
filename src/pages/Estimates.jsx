@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import PaymentMilestoneList from "@/components/PaymentMilestoneList";
+import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import { useSettings } from "@/hooks/useSettings";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatDate } from "@/lib/format";
 
@@ -15,8 +17,11 @@ const MODE_LABEL = { single: "Single", a_la_carte: "À la carte", side_by_side: 
 
 export default function Estimates() {
   const [items, setItems] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [previewEst, setPreviewEst] = useState(null);
+  const { settings } = useSettings();
   const { toast } = useToast();
 
   const setStatus = async (est, status) => {
@@ -33,8 +38,12 @@ export default function Estimates() {
   useEffect(() => {
     (async () => {
       try {
-        const list = await base44.entities.Estimate.list('-created_date', 200);
+        const [list, custs] = await Promise.all([
+          base44.entities.Estimate.list('-created_date', 200),
+          base44.entities.Customer.list('-created_date', 200),
+        ]);
         setItems(list);
+        setCustomers(custs);
       } catch (e) {} finally { setLoading(false); }
     })();
   }, []);
@@ -63,7 +72,7 @@ export default function Estimates() {
       ) : (
         <div className="divide-y rounded-lg border bg-card">
           {filtered.map((e) => (
-            <Link key={e.id} to={`/estimates/${e.id}`} className="block px-4 py-3 hover:bg-accent/50 transition-colors">
+            <button key={e.id} type="button" onClick={() => setPreviewEst(e)} className="block w-full text-left px-4 py-3 hover:bg-accent/50 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
@@ -85,10 +94,18 @@ export default function Estimates() {
                   onStatusChange={(s) => setStatus(e, s)}
                 />
               </div>
-            </Link>
+            </button>
           ))}
         </div>
       )}
+
+      <DocumentPreviewDialog
+        doc={previewEst}
+        kind="estimate"
+        customer={customers.find((c) => c.id === previewEst?.customer_id)}
+        settings={settings}
+        onClose={() => setPreviewEst(null)}
+      />
     </div>
   );
 }
