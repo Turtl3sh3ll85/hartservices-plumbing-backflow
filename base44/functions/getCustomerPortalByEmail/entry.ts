@@ -21,7 +21,7 @@ export default async function(req) {
 
     return Response.json({
       invoices: invoices.filter((i) => match(i.customer_email)),
-      estimates: estimates.filter((e) => match(e.customer_email)),
+      estimates: estimates.filter((e) => match(e.customer_email) && e.status !== "converted"),
       customers: myCustomers,
       backflow_reports: backflowReports.filter((r) => customerIds.has(r.customer_id)),
       resolved_email: email,
