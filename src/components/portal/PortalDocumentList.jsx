@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import CustomerGroupedList from "@/components/CustomerGroupedList";
 import StatusBadge from "@/components/StatusBadge";
 import PaidAmountLabel from "@/components/PaidAmountLabel";
-import InvoicePaymentSchedule from "@/components/portal/InvoicePaymentSchedule";
+import PaymentMilestoneList from "@/components/PaymentMilestoneList";
 import { formatMoney } from "@/lib/invoice";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 
@@ -83,7 +83,13 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
                     )}
                   </div>
                 </div>
-                <InvoicePaymentSchedule invoice={i} />
+                <PaymentMilestoneList
+                  schedule={i.payment_schedule}
+                  total={i.total}
+                  standingBy={i.standing_by}
+                  customerReady={i.customer_ready_for_next_stage}
+                  readOnly
+                />
               </div>
             )}
           />
