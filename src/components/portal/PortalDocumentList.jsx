@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import CustomerGroupedList from "@/components/CustomerGroupedList";
 import StatusBadge from "@/components/StatusBadge";
-import PaidAmountLabel from "@/components/PaidAmountLabel";
 import PaymentMilestoneList from "@/components/PaymentMilestoneList";
 import { formatMoney } from "@/lib/invoice";
+import { amountPaidTotal } from "@/lib/format";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 
 /**
@@ -68,10 +68,12 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
                     <div className="text-sm text-muted-foreground truncate">
                       {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
                     </div>
-                    <PaidAmountLabel invoice={i} />
                   </button>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-sm font-medium tabular-nums">{formatMoney(i.total)}</span>
+                  <div className="flex flex-col items-end gap-3 shrink-0 sm:flex-row sm:items-center">
+                    <div className="text-right">
+                      <div className="font-medium tabular-nums">{formatMoney(i.total)}</div>
+                      {(() => { const paid = amountPaidTotal(i.payment_schedule, i.total); return paid > 0 ? <div className="text-xs text-muted-foreground tabular-nums">{formatMoney(paid)} paid</div> : null; })()}
+                    </div>
                     <Button size="sm" variant="outline" onClick={() => downloadPdf(i)} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
                       {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
                     </Button>

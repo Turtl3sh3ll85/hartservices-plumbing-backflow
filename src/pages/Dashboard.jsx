@@ -103,6 +103,20 @@ export default function Dashboard() {
     }
   };
 
+  const deleteInvoice = async (inv) => {
+    if (!window.confirm(`Delete invoice "${inv.name || inv.number || "Invoice"}"? This cannot be undone.`)) return;
+    const prev = recent;
+    setRecent((items) => items.filter((i) => i.id !== inv.id));
+    setPreviewInv((p) => (p?.id === inv.id ? null : p));
+    try {
+      await base44.entities.Invoice.delete(inv.id);
+      toast({ title: "Invoice deleted" });
+    } catch (e) {
+      setRecent(prev);
+      toast({ title: "Could not delete invoice", variant: "destructive" });
+    }
+  };
+
   const unmarkPaid = async (inv, index) => {
     const schedule = (inv.payment_schedule && inv.payment_schedule.length > 0)
       ? inv.payment_schedule
@@ -184,6 +198,7 @@ export default function Dashboard() {
                 onUnmarkPaid={unmarkPaid}
                 canMarkPaidByCheck={canMarkPaidByCheck}
                 canUnmarkPaid={canUnmarkPaid}
+                onDelete={deleteInvoice}
               />
             )}
           />
