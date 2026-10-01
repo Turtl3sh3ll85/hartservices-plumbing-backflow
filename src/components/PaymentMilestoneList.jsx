@@ -77,7 +77,8 @@ export default function PaymentMilestoneList({
                       return (
                         <DropdownMenuItem
                           key={s}
-                          onClick={() => onStatusChange?.(s)}
+                          onSelect={() => onStatusChange?.(s)}
+                          onPointerDown={(e) => e.preventDefault()}
                           className={`gap-2 ${s === status ? "font-semibold" : ""}`}
                         >
                           <ItemIcon className="w-4 h-4" />
