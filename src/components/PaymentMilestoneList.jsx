@@ -39,7 +39,7 @@ export default function PaymentMilestoneList({
   const status = customerReady ? "ready" : (standingBy !== false ? "standing" : "due");
   const StatusIcon = STATUS_ICON[status];
 
-  // Stop the click from bubbling into the parent <Link> (which opens the editor).
+  // Keep status control clicks local; invoice navigation is a separate sibling link.
   const stop = (e) => e.stopPropagation();
 
   return (
@@ -64,7 +64,7 @@ export default function PaymentMilestoneList({
                       onClick={stop}
                       onPointerDown={stop}
                       disabled={readOnly || !onStatusChange}
-                      className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 shrink-0 border transition-colors ${STATUS_STYLE[status]} disabled:opacity-100 disabled:cursor-default`}
+                      className={`pointer-events-auto inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 shrink-0 border transition-colors ${STATUS_STYLE[status]} disabled:opacity-100 disabled:cursor-default`}
                     >
                       <StatusIcon className="w-3 h-3" />
                       {STATUS_LABEL[status]}
@@ -78,7 +78,6 @@ export default function PaymentMilestoneList({
                         <DropdownMenuItem
                           key={s}
                           onSelect={() => onStatusChange?.(s)}
-                          onPointerDown={(e) => e.preventDefault()}
                           className={`gap-2 ${s === status ? "font-semibold" : ""}`}
                         >
                           <ItemIcon className="w-4 h-4" />

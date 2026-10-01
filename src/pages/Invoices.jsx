@@ -96,8 +96,9 @@ export default function Invoices() {
                   const balance = Math.max(0, (inv.total || 0) - paid);
                   const multiple = (inv.payment_schedule?.length || 0) > 1;
                   return (
-                    <Link key={inv.id} to={`/invoices/${inv.id}`} className="block px-4 py-3 hover:bg-accent/50 transition-colors">
-                      <div className="flex items-center gap-3">
+                    <div key={inv.id} className="relative px-4 py-3 hover:bg-accent/50 transition-colors">
+                      <Link to={`/invoices/${inv.id}`} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Open invoice: ${inv.name || inv.number || "Invoice"}`} />
+                      <div className="pointer-events-none flex items-center gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="font-medium truncate">{inv.name || inv.number || "Invoice"}</div>
                           <div className="text-xs text-muted-foreground flex items-center gap-2">
@@ -111,7 +112,7 @@ export default function Invoices() {
                           {multiple && <div className="text-xs text-muted-foreground">{formatCurrency(paid)} paid</div>}
                         </div>
                       </div>
-                      <div className="mt-1.5">
+                      <div className="relative z-10 mt-1.5 pointer-events-none">
                         <PaymentMilestoneList
                           schedule={inv.payment_schedule}
                           total={inv.total}
@@ -120,7 +121,7 @@ export default function Invoices() {
                           onStatusChange={(s) => setStatus(inv, s)}
                         />
                       </div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>

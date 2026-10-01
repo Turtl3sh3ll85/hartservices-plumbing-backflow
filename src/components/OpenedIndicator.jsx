@@ -24,9 +24,9 @@ export default function OpenedIndicator({ opened, lastOpenedDate, className = ""
     <span
       className={`inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full ${className}`}
       title="Not opened yet"
+      aria-label="Not opened yet"
     >
       <EyeOff className="w-3 h-3 shrink-0" />
-      <span>Not opened</span>
     </span>
   );
 }
