@@ -116,7 +116,10 @@ export default function PaymentMilestoneList({
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <span />
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-300 border border-slate-500/60 bg-slate-700/40 rounded-full px-2 py-0.5 shrink-0">
+                  <Hourglass className="w-3 h-3" />
+                  Standing By
+                </span>
                 )}
                 </div>
                 </div>
