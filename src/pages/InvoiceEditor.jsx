@@ -128,21 +128,6 @@ export default function InvoiceEditor() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Work status</CardTitle></CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
-          <div>
-            <Label>Status</Label>
-            <select value={inv.work_status || "in_progress"} onChange={(e) => set("work_status", e.target.value)} className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-              <option value="in_progress">In progress</option>
-              <option value="next_payment_due">Next payment due</option>
-            </select>
-          </div>
-          <div><Label>Current phase</Label><Input value={inv.phase || ""} onChange={(e) => set("phase", e.target.value)} placeholder="e.g. Rough-in" /></div>
-          <div><Label>Phase note</Label><Input value={inv.phase_note || ""} onChange={(e) => set("phase_note", e.target.value)} /></div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
         <CardContent><Textarea value={inv.notes || ""} onChange={(e) => set("notes", e.target.value)} rows={3} /></CardContent>
       </Card>
