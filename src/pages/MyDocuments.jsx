@@ -9,6 +9,7 @@ import { Image } from "@/components/ui/image";
 import { useSettings } from "@/hooks/useSettings";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import PortalDocumentList from "@/components/portal/PortalDocumentList";
+import ScheduledMaintenanceTeaser from "@/components/portal/ScheduledMaintenanceTeaser";
 import usePortalMilestoneStatus from "@/components/portal/usePortalMilestoneStatus";
 
 const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
@@ -160,6 +161,8 @@ export default function MyDocuments() {
                 />
               </div>
             )}
+
+            <ScheduledMaintenanceTeaser />
           </>
         )}
         <DocumentPreviewDialog
