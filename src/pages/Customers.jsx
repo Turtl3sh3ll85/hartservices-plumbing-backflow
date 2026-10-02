@@ -113,6 +113,24 @@ export default function Customers() {
                   {c.email && <div className="text-sm text-muted-foreground truncate">{c.email}</div>}
                   {c.phone && <div className="text-sm text-muted-foreground">{c.phone}</div>}
                 </div>
+                <div className="mt-3 pt-3 border-t flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">Reminders</span>
+                  <div className="flex gap-1">
+                    {["off", "weekly", "biweekly"].map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => updateReminderFreq(c, f)}
+                        className={`px-2 py-0.5 text-xs rounded-full capitalize transition-colors ${
+                          (c.invoice_reminder_frequency || "biweekly") === f
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {f === "biweekly" ? "Bi-weekly" : f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ))}

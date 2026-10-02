@@ -5,7 +5,7 @@
       "trigger_type": "scheduled",
       "events": [],
       "schedule_mode": "recurring",
-      "cron_expression": "0 8 * * *",
+      "cron_expression": "0 8 * * 2,4",
       "one_time_date": null,
       "timezone": "America/Chicago",
       "interval_value": null,
@@ -16,11 +16,11 @@
       "ends_after_count": null
     }
   },
-  "description": "Sends a reminder email for each unpaid invoice at 8am every day",
+  "description": "Sends per-customer invoice reminders on Tuesday (biweekly) and Thursday (weekly + biweekly) at 8am. Each email includes a link to the customer's invoice portal.",
   "definition": {
     "document": {
       "dsl": "1.0.0",
-      "name": "daily_invoice_reminders",
+      "name": "invoice_reminders",
       "version": "1.0",
       "namespace": "base44"
     },
@@ -29,16 +29,16 @@
         "remind": {
           "call": "invoke_backend_function",
           "with": {
-            "function_name": "sendUnpaidInvoiceReminders"
+            "function_name": "sendInvoiceReminders"
           },
           "then": "end",
           "x-base44": {
-            "title": "Send unpaid invoice reminders",
-            "description": "Emails customers with open invoices"
+            "title": "Send invoice reminders",
+            "description": "Per-customer reminder emails with portal link"
           }
         }
       }
     ]
   },
-  "name": "Daily Invoice Reminders"
+  "name": "Invoice Reminders"
 }
