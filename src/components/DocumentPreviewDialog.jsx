@@ -22,7 +22,6 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
   if (!doc) return null;
   const isInvoice = kind === "invoice";
   const canSeeProfit = isInvoice && (user?.role === "admin" || user?.role === "accountant");
-  const canSeeMarkup = user?.role === "admin" || user?.role === "tech" || user?.role === "accountant";
   const title = isInvoice ? "Invoice" : "Estimate";
   const editPath = isInvoice ? `/invoices/${doc.id}` : `/estimates/${doc.id}`;
 
@@ -137,7 +136,7 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
                       )}
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">{li.description || "—"}</div>
-                        <div className="text-xs text-muted-foreground">{li.quantity ?? 0}{li.unit ? ` ${li.unit}` : ""} × {formatMoney(canSeeMarkup ? li.unit_price : displayUnitPrice(li))}{canSeeMarkup && li.markup ? ` (+${li.markup}% markup)` : ""}</div>
+                        <div className="text-xs text-muted-foreground">{li.quantity ?? 0}{li.unit ? ` ${li.unit}` : ""} × {formatMoney(displayUnitPrice(li))}</div>
                         {li.details && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{li.details}</div>}
                         {li.modifiers && li.modifiers.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-1.5">

@@ -7,7 +7,7 @@ import { Image } from "@/components/ui/image";
 import BillTo from "@/components/BillTo";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
-import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection, installmentAmount } from "@/lib/invoice";
+import { formatMoney, lineTotal, displayUnitPrice, fullAddress, groupLineItemsBySection, installmentAmount } from "@/lib/invoice";
 import { downloadEstimatePdf } from "@/lib/invoicePdf";
 
 const MODE_LABEL = { single: "Single", a_la_carte: "À la carte", side_by_side: "Side-by-side" };
@@ -59,7 +59,7 @@ export default function EstimatePreviewDialog({ doc, customer, settings, onClose
                 )}
                 <div className="min-w-0">
                   <div className="text-sm font-medium truncate">{li.description || "—"}</div>
-                  <div className="text-xs text-muted-foreground">{li.quantity ?? 0}{li.unit ? ` ${li.unit}` : ""} × {formatMoney(li.unit_price)}{li.markup ? ` (+${li.markup}% markup)` : ""}</div>
+                  <div className="text-xs text-muted-foreground">{li.quantity ?? 0}{li.unit ? ` ${li.unit}` : ""} × {formatMoney(displayUnitPrice(li))}</div>
                   {li.details && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{li.details}</div>}
                   {li.modifiers && li.modifiers.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
