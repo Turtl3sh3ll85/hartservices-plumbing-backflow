@@ -36,8 +36,8 @@ export default function TransactionsByAccountView({
   const [labels, setLabels] = useState([]);
   const [collapsed, setCollapsed] = useState({});
   const [merging, setMerging] = useState(null);
-  const [hideIgnored, setHideIgnored] = useState(false);
-  const [hidePersonal, setHidePersonal] = useState(false);
+  const [hideIgnored, setHideIgnored] = useState(true);
+  const [hidePersonal, setHidePersonal] = useState(true);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
