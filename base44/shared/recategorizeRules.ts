@@ -109,16 +109,19 @@ export function isNotAJobCategory(category, pinnableMap) {
 // Pinnable pass: column C of the categories sheet decides whether a
 // transaction in a category is a matchable job. "false" marks the record
 // "not_a_job" and unlinks any invoice; "true" restores it to "unmatched".
-export async function applyRecategorizeToStored(base44, entityName, rules, pinnableMap) {
+export async function applyRecategorizeToStored(base44, entityName, rules, pinnableMap, opts = {}) {
   const entity = base44.asServiceRole.entities[entityName];
   const all = await entity.list("-date", 1000);
+  const forceOverride = !!opts.forceOverride;
 
   const updates = [];
   for (const t of all) {
-    // 1. Recategorize pass: only override blank or "Personal" custom categories.
+    // 1. Recategorize pass: override blank or "Personal" custom categories, or —
+    // when forceOverride is set (AI "deep think" re-categorization) — any
+    // existing custom category, so short flat names replace old tiered ones.
     const c = (t.custom_category || "").trim().toLowerCase();
     let ruleMatch = null;
-    if (!c || c === "personal") {
+    if (forceOverride || !c || c === "personal") {
       for (const r of rules.rules) {
         if (matches(t.payee, r.text)) { ruleMatch = r; break; }
       }
