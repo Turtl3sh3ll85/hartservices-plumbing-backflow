@@ -182,14 +182,19 @@ export default function Settings() {
           <div>
             <Label>Additional auto-ignore categories</Label>
             <p className="text-xs text-muted-foreground mb-2">Plaid personal finance categories to auto-ignore beyond transfers. These are ignored on every sync.</p>
-            <div className="flex flex-wrap gap-1.5 mb-2">
+            <div className="space-y-2 mb-2">
               {(settings.auto_ignore_categories || []).map((cat, i) => (
-                <span key={i} className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs">
-                  {cat}
-                  <button type="button" onClick={() => set("auto_ignore_categories", (settings.auto_ignore_categories || []).filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground">
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+                <div key={cat} className="flex items-center justify-between rounded-md border px-3 py-2">
+                  <span className="text-sm font-mono">{cat}</span>
+                  <Switch
+                    checked={true}
+                    onCheckedChange={(on) => {
+                      if (!on) {
+                        set("auto_ignore_categories", (settings.auto_ignore_categories || []).filter((_, idx) => idx !== i));
+                      }
+                    }}
+                  />
+                </div>
               ))}
             </div>
             <div className="flex gap-2">
