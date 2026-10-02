@@ -11,6 +11,7 @@ import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection, installme
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 import PaymentScheduleDisplay from "@/components/PaymentScheduleDisplay";
 import InvoiceProfitability from "@/components/InvoiceProfitability";
+import InvoiceAttachments from "@/components/InvoiceAttachments";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onSavePhase, phaseSaving, onConvert, onDelete }) {
@@ -194,6 +195,12 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
           {canSeeProfit && (
             <div className="border-t pt-4">
               <InvoiceProfitability invoiceId={doc.id} invoiceTotal={doc.total} />
+            </div>
+          )}
+
+          {isInvoice && (user?.role === "admin" || user?.role === "tech" || user?.role === "accountant") && (
+            <div className="border-t pt-4">
+              <InvoiceAttachments invoiceId={doc.id} />
             </div>
           )}
         </div>
