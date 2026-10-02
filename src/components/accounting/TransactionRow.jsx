@@ -76,14 +76,6 @@ export default function TransactionRow({
           </div>
         ) : null}
       </div>
-      <div className="text-right shrink-0">
-        <div className="font-medium tabular-nums">{formatCurrency(t.amount)}</div>
-        {invoice ? (
-          <div className="text-xs text-primary truncate max-w-[160px]">{invoice.name || invoice.number}</div>
-        ) : (
-          <StatusBadge status={t.matched} />
-        )}
-      </div>
       <div className="flex gap-1 shrink-0">
         {t.receipt_file_uri ? (
           <Button variant="ghost" size="icon" onClick={downloadReceipt} disabled={downloading} aria-label="Download receipt">
@@ -111,6 +103,14 @@ export default function TransactionRow({
           <Button variant="ghost" size="icon" onClick={() => onIgnore?.(t)} aria-label="Toggle ignore">
             <Ban className={`w-4 h-4 ${t.matched === "ignored" ? "text-muted-foreground" : "text-destructive"}`} />
           </Button>
+        )}
+      </div>
+      <div className="text-right shrink-0">
+        <div className="font-medium tabular-nums">{formatCurrency(t.amount)}</div>
+        {invoice ? (
+          <div className="text-xs text-primary truncate max-w-[160px]">{invoice.name || invoice.number}</div>
+        ) : (
+          <StatusBadge status={t.matched} />
         )}
       </div>
     </div>
