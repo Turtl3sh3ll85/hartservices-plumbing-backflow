@@ -17,6 +17,7 @@ export default function CategoriesView({
 }) {
   const [collapsed, setCollapsed] = useState({});
   const [hideIgnored, setHideIgnored] = useState(false);
+  const [hideNotAJob, setHideNotAJob] = useState(false);
   const [pinnableMap, setPinnableMap] = useState({});
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function CategoriesView({
     const map = {};
     for (const t of txs) {
       if (hideIgnored && t.matched === "ignored") continue;
+      if (hideNotAJob && t.matched === "not_a_job") continue;
       const cat = t.custom_category || t.category || "Uncategorized";
       (map[cat] ||= []).push(t);
     }
@@ -46,13 +48,21 @@ export default function CategoriesView({
       if (b[0] === "Uncategorized") return -1;
       return a[0].localeCompare(b[0]);
     });
-  }, [txs, hideIgnored]);
+  }, [txs, hideIgnored, hideNotAJob]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2 flex-wrap">
+        <Button
+          variant={hideNotAJob ? "default" : "outline"}
+          size="sm"
+          onClick={() => setHideNotAJob((v) => !v)}
+          className="min-h-11 sm:min-h-9"
+        >
+          {hideNotAJob ? "Show Not a Job" : "Hide Not a Job"}
+        </Button>
         <Button
           variant={hideIgnored ? "default" : "outline"}
           size="sm"
