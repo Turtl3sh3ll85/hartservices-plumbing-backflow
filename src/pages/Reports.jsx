@@ -18,10 +18,14 @@ export default function Reports() {
     queryFn: () => base44.entities.YnabTransaction.list("-date", 500),
   });
 
+  const HIDDEN_CATEGORIES = ["transfer", "income", "inflows", "ready to assign"];
+  const isHidden = (cat) => HIDDEN_CATEGORIES.includes(cat.trim().toLowerCase());
+
   const byCategory = useMemo(() => {
     const map = new Map();
     for (const tx of transactions) {
       const cat = (tx.custom_category || "").trim() || (tx.category || "").trim() || "Uncategorized";
+      if (isHidden(cat)) continue;
       const amt = Math.abs(Number(tx.amount) || 0);
       map.set(cat, (map.get(cat) || 0) + amt);
     }
@@ -50,8 +54,8 @@ export default function Reports() {
         ) : byCategory.length === 0 ? (
           <div className="py-20 text-center text-sm text-muted-foreground">No transactions to display.</div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-6 items-center">
-            <div className="relative" style={{ height: 320 }}>
+          <div className="space-y-6">
+            <div className="relative w-full" style={{ height: 360 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -60,8 +64,8 @@ export default function Reports() {
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    innerRadius={70}
-                    outerRadius={120}
+                    innerRadius={80}
+                    outerRadius={140}
                     paddingAngle={2}
                   >
                     {byCategory.map((_, i) => (
@@ -80,7 +84,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
               {byCategory.map((entry, i) => {
                 const pct = total ? (entry.value / total) * 100 : 0;
                 return (
