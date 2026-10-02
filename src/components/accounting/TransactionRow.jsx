@@ -55,7 +55,7 @@ export default function TransactionRow({
             <Unlink className="w-4 h-4" />
           </Button>
         )}
-        {t.matched !== "matched" && t.matched !== "not_a_job" && (
+        {t.matched !== "matched" && t.matched !== "not_a_job" && t.matched !== "ignored" && (
           <Button variant="ghost" size="icon" onClick={() => onLink?.(t)} aria-label="Link invoice">
             <Link2 className="w-4 h-4" />
           </Button>
