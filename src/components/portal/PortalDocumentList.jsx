@@ -118,7 +118,7 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
                 <Button size="sm" variant="outline" onClick={() => downloadPdf(e)} disabled={downloading === `estimate:${e.id}`} aria-label="Download estimate PDF">
                   {downloading === `estimate:${e.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
                 </Button>
-                <Button asChild size="sm" variant="outline"><Link to={`/accept/${e.id}`}>{e.status === "converted" ? "View" : "Review"}</Link></Button>
+                <Button asChild size="sm"><Link to={`/accept/${e.id}`}>{e.status === "converted" ? "View" : "Review Details"}</Link></Button>
               </div>
             </div>
           )}
