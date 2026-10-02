@@ -8,6 +8,10 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import PullToRefresh from "@/components/PullToRefresh";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { useState } from "react";
+
+const PRIMARY_MOBILE_TABS = new Set(["/estimates", "/invoices", "/receipts"]);
 
 const allNav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ["admin", "tech", "accountant"] },
@@ -16,7 +20,7 @@ const allNav = [
   { to: "/customers", label: "Customers", icon: UserCog, roles: ["admin"] },
   { to: "/transactions", label: "Transactions", icon: ArrowLeftRight, roles: ["admin", "accountant"] },
   { to: "/reports", label: "Expense Graph", icon: BarChart3, roles: ["admin", "accountant"] },
-  { to: "/receipts", label: "Snap Receipt", icon: Camera, roles: ["admin", "accountant"] },
+  { to: "/receipts", label: "Receipt Scan", icon: Camera, roles: ["admin", "accountant"] },
   { to: "/users", label: "Users", icon: UserCog, roles: ["admin"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
 ];
@@ -41,6 +45,9 @@ export default function Layout() {
   const brand = settings?.business_name || "";
   const short = brand ? brand.split(" ")[0] : "";
   const nav = allNav.filter((item) => item.roles.includes(user?.role));
+  const mobilePrimary = nav.filter((item) => PRIMARY_MOBILE_TABS.has(item.to));
+  const mobileMore = nav.filter((item) => !PRIMARY_MOBILE_TABS.has(item.to));
+  const [moreOpen, setMoreOpen] = useState(false);
   const TAB_ROUTES_KEY = "proinvoice_tabRoutes";
   const tabRoutes = useRef({});
   const pendingRestore = useRef(null);
@@ -170,7 +177,11 @@ export default function Layout() {
               <span>Back</span>
             </button>
           ) : (
-            <div className="md:hidden flex items-center gap-2.5 min-w-0">
+            <button
+              onClick={() => setMoreOpen(true)}
+              className="md:hidden flex items-center gap-2.5 min-w-0 min-h-11 -ml-1 px-1 rounded-lg hover:bg-accent transition-colors"
+              aria-label="Open menu"
+            >
               <BrandMark settings={settings} size="sm" />
               <span className="font-heading font-semibold shrink-0">{short}</span>
               {activeItem && (
@@ -179,7 +190,7 @@ export default function Layout() {
                   <span className="text-sm font-medium text-muted-foreground truncate min-w-0">{activeItem.label}</span>
                 </>
               )}
-            </div>
+            </button>
           )}
           <div className="hidden md:flex items-center gap-3 ml-1 min-w-0">
             {activeItem && (
@@ -221,7 +232,7 @@ export default function Layout() {
         className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-card border-t flex justify-around px-1 py-1.5 select-none"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        {nav.map((item) => (
+        {mobilePrimary.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -256,6 +267,40 @@ export default function Layout() {
           </NavLink>
         ))}
       </nav>
+
+      <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
+        <DrawerContent className="max-h-[70vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Menu</DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-2 pb-6">
+            {mobileMore.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={() => setMoreOpen(false)}
+                className={({ isActive }) =>
+                  `flex w-full items-center gap-3 rounded-md px-3 min-h-11 py-2.5 text-sm text-left transition-colors ${
+                    isActive ? "bg-primary/10 text-primary font-medium" : "hover:bg-accent"
+                  }`
+                }
+              >
+                <item.icon className="w-[18px] h-[18px]" />
+                {item.label}
+              </NavLink>
+            ))}
+            <button
+              type="button"
+              onClick={() => { setMoreOpen(false); logout(); }}
+              className="flex w-full items-center gap-3 rounded-md px-3 min-h-11 py-2.5 text-sm text-left text-muted-foreground hover:bg-accent transition-colors"
+            >
+              <LogOut className="w-[18px] h-[18px]" />
+              Log out
+            </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
