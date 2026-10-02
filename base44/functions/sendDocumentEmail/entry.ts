@@ -31,13 +31,20 @@ export default async function(req) {
     const customerName = customer?.name || "there";
     const subject = type === "estimate" ? `Your estimate from ${brand}` : `Your invoice from ${brand}`;
     const cta = type === "estimate" ? "Review &amp; accept estimate" : "Pay now";
+    const portalTab = type === "estimate" ? "estimates" : "invoices";
+    const portalParams = new URLSearchParams();
+    if (customer?.email) portalParams.set("email", customer.email);
+    portalParams.set("tab", portalTab);
+    const portalLink = `${origin}/portal?${portalParams.toString()}`;
 
     const html = `<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:auto;color:#1f2937">
       <h2 style="color:#1d4ed8;margin-bottom:8px">${brand}</h2>
       <p>Hi ${customerName},</p>
       <p>Please review your ${docLabel} <strong>${doc.name || doc.number || ""}</strong>${doc.number ? ` (${doc.number})` : ""} for <strong>$${total}</strong>.</p>
       <p style="margin:24px 0"><a href="${link}" style="background:#1d4ed8;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">${cta}</a></p>
-      <p style="color:#6b7280;font-size:13px;word-break:break-all">Link: ${link}</p>
+      <p style="margin:8px 0"><a href="${portalLink}" style="background:#fff;color:#1d4ed8;border:1px solid #1d4ed8;padding:11px 24px;border-radius:8px;text-decoration:none;font-weight:600">View all my documents</a></p>
+      <p style="color:#6b7280;font-size:13px;word-break:break-all">${type === "estimate" ? "Estimate" : "Invoice"} link: ${link}</p>
+      <p style="color:#6b7280;font-size:13px;word-break:break-all">Portal link: ${portalLink}</p>
       ${doc.notes ? `<p style="color:#374151"><em>Note:</em> ${doc.notes}</p>` : ""}
       <p style="color:#6b7280;font-size:13px;margin-top:24px">${brand}${biz.business_phone ? ` &middot; ${biz.business_phone}` : ""}</p>
     </div>`;
