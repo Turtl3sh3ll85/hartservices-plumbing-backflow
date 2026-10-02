@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Paperclip, Upload, Trash2, FileText, Loader2, ExternalLink, Clock, Lock } from "lucide-react";
+import { Paperclip, Upload, Trash2, FileText, Loader2, ExternalLink, Clock, Lock, Pencil } from "lucide-react";
+import RenameAttachmentDialog from "@/components/RenameAttachmentDialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Image } from "@/components/ui/image";
@@ -15,6 +16,8 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
   const customerAttachments = attachments.filter((a) => !a.internal);
   const internalAttachments = attachments.filter((a) => a.internal);
   const canViewInternal = user?.role === "admin" || user?.role === "accountant";
+  const canRename = !readOnly && (user?.role === "admin" || user?.role === "accountant" || user?.role === "tech");
+  const [renaming, setRenaming] = useState(null);
 
   const load = async () => {
     if (preloaded) { setAttachments(preloaded); return; }
@@ -65,6 +68,11 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
       await base44.entities.InvoiceAttachment.delete(att.id);
       setAttachments((prev) => prev.filter((a) => a.id !== att.id));
     } catch (e) {}
+  };
+
+  const rename = async (att, newName) => {
+    await base44.entities.InvoiceAttachment.update(att.id, { file_name: newName });
+    setAttachments((prev) => prev.map((a) => (a.id === att.id ? { ...a, file_name: newName } : a)));
   };
 
   return (
@@ -124,9 +132,16 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
                 </a>
               </div>
               {!readOnly && (
-                <Button type="button" variant="ghost" size="icon" className="shrink-0 h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(att)} aria-label="Delete attachment">
-                  <Trash2 className="w-4 h-4 text-muted-foreground" />
-                </Button>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {canRename && (
+                    <Button type="button" variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => setRenaming(att)} aria-label="Rename attachment">
+                      <Pencil className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  )}
+                  <Button type="button" variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(att)} aria-label="Delete attachment">
+                    <Trash2 className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                </div>
               )}
             </div>
           ))}
@@ -176,14 +191,28 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
                     Open in Drive <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
-                <Button type="button" variant="ghost" size="icon" className="shrink-0 h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(att)} aria-label="Delete internal file">
-                  <Trash2 className="w-4 h-4 text-muted-foreground" />
-                </Button>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {canRename && (
+                    <Button type="button" variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => setRenaming(att)} aria-label="Rename internal file">
+                      <Pencil className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  )}
+                  <Button type="button" variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(att)} aria-label="Delete internal file">
+                    <Trash2 className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      <RenameAttachmentDialog
+        open={!!renaming}
+        attachment={renaming}
+        onOpenChange={(o) => { if (!o) setRenaming(null); }}
+        onRenamed={rename}
+      />
     </div>
   );
 }
