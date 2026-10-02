@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { secrets, waitUntil } from 'base44:runtime';
-import { fetchRecategorizeRules, recategorize, applyRecategorizeToStored } from '../../shared/recategorizeRules.ts';
+import { fetchRecategorizeRules, recategorize, applyRecategorizeToStored, fetchPinnableCategories, isNotAJobCategory } from '../../shared/recategorizeRules.ts';
 import { runReceiptMatch } from '../../shared/receiptMatching.ts';
 
 const YNAB_BASE = 'https://api.ynab.com/v1';
@@ -23,9 +23,11 @@ export default async function(req) {
     // Auto-recategorize transactions to Transfer / Rebate categories based on
     // payee name rules pulled from the categories spreadsheet.
     let recategorized = { recategorized: 0 };
+    let pinnableMap = null;
     try {
       const rules = await fetchRecategorizeRules(base44);
-      recategorized = await applyRecategorizeToStored(base44, 'YnabTransaction', rules);
+      pinnableMap = await fetchPinnableCategories(base44);
+      recategorized = await applyRecategorizeToStored(base44, 'YnabTransaction', rules, pinnableMap);
     } catch (e) {
       // Non-fatal: connector may be temporarily unavailable.
     }
@@ -156,6 +158,9 @@ export default async function(req) {
             record.matched = 'ignored';
             record.matched_invoice_id = null;
           }
+        }
+        if (!record.matched && isNotAJobCategory(record.custom_category || record.category, pinnableMap)) {
+          record.matched = 'not_a_job';
         }
       }
       const existing = existingMap[tx.id];

@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
-import { fetchRecategorizeRules, applyRecategorizeToStored } from '../../shared/recategorizeRules.ts';
+import { fetchRecategorizeRules, applyRecategorizeToStored, fetchPinnableCategories } from '../../shared/recategorizeRules.ts';
 
 // Re-applies the spreadsheet recategorization rules to all stored Plaid and
 // YNAB transactions. Used by the "Force refresh" button on the transactions page
@@ -15,8 +15,9 @@ export default async function(req) {
     }
 
     const rules = await fetchRecategorizeRules(base44);
-    const plaid = await applyRecategorizeToStored(base44, 'Transaction', rules);
-    const ynab = await applyRecategorizeToStored(base44, 'YnabTransaction', rules);
+    const pinnableMap = await fetchPinnableCategories(base44);
+    const plaid = await applyRecategorizeToStored(base44, 'Transaction', rules, pinnableMap);
+    const ynab = await applyRecategorizeToStored(base44, 'YnabTransaction', rules, pinnableMap);
 
     return Response.json({
       ok: true,

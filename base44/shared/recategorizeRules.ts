@@ -53,29 +53,106 @@ export function recategorize(payee, rules) {
 // "Personal" tag (the personal-account default bucket), because the sheet rules
 // are authoritative reclassifications. Deliberate business categories are
 // preserved. Recategorizations to "Transfer" also mark the record ignored.
-export async function applyRecategorizeToStored(base44, entityName, rules) {
+// Reads the category catalog (first tab) and returns a Map of lowercased
+// category name -> pinnable boolean (column C: "true" = pinnable / a job).
+// Categories not present in the sheet are left out of the map (unknown).
+export async function fetchPinnableCategories(base44) {
+  const { accessToken } = await base44.asServiceRole.connectors.getConnection("googleworkspace");
+  const headers = { Authorization: `Bearer ${accessToken}` };
+
+  const metaRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${CATEGORIES_SHEET_ID}?fields=sheets.properties.title`,
+    { headers },
+  );
+  const meta = await metaRes.json();
+  const firstSheet = meta?.sheets?.[0]?.properties?.title;
+  if (!firstSheet) return new Map();
+
+  const valsRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${CATEGORIES_SHEET_ID}/values/${encodeURIComponent(firstSheet)}`,
+    { headers },
+  );
+  const vals = await valsRes.json();
+  const rows = vals.values || [];
+
+  const map = new Map();
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i] || [];
+    const name = String(row[0] || "").trim();
+    if (!name) continue;
+    map.set(name.toLowerCase(), String(row[2] || "").trim().toLowerCase() === "true");
+  }
+  return map;
+}
+
+// Returns true when the category is explicitly marked NOT pinnable (column C
+// = "false"/blank) in the categories sheet, meaning the transaction is not a
+// job and should not be matchable to an invoice. Unknown categories -> false.
+export function isNotAJobCategory(category, pinnableMap) {
+  if (!pinnableMap) return false;
+  const key = (category || "").trim().toLowerCase();
+  if (!key || !pinnableMap.has(key)) return false;
+  return pinnableMap.get(key) === false;
+}
+
+// Applies the rules across all stored transactions for the given entity.
+// Recategorization overrides a blank custom_category OR an auto-applied
+// "Personal" tag (the personal-account default bucket), because the sheet rules
+// are authoritative reclassifications. Deliberate business categories are
+// preserved. Recategorizations to "Transfer" also mark the record ignored.
+//
+// Pinnable pass: column C of the categories sheet decides whether a
+// transaction in a category is a matchable job. "false" marks the record
+// "not_a_job" and unlinks any invoice; "true" restores it to "unmatched".
+export async function applyRecategorizeToStored(base44, entityName, rules, pinnableMap) {
   const entity = base44.asServiceRole.entities[entityName];
   const all = await entity.list("-date", 1000);
-  const candidates = all.filter((t) => {
-    const c = (t.custom_category || "").trim().toLowerCase();
-    return !c || c === "personal";
-  });
 
   const updates = [];
-  for (const t of candidates) {
-    for (const r of rules.rules) {
-      if (matches(t.payee, r.text)) {
-        const patch = { id: t.id, custom_category: r.category };
-        if (r.category.toLowerCase() === "transfer") {
-          patch.matched = "ignored";
-          patch.matched_invoice_id = null;
-        }
-        updates.push(patch);
-        break;
+  for (const t of all) {
+    // 1. Recategorize pass: only override blank or "Personal" custom categories.
+    const c = (t.custom_category || "").trim().toLowerCase();
+    let newCategory = null;
+    if (!c || c === "personal") {
+      for (const r of rules.rules) {
+        if (matches(t.payee, r.text)) { newCategory = r.category; break; }
       }
     }
+
+    const effectiveCategory = (newCategory || t.custom_category || t.category || "").trim();
+    const patch = { id: t.id };
+    let changed = false;
+
+    if (newCategory) {
+      patch.custom_category = newCategory;
+      changed = true;
+      if (newCategory.toLowerCase() === "transfer") {
+        patch.matched = "ignored";
+        patch.matched_invoice_id = null;
+      }
+    }
+
+    // 2. Pinnable pass (column C of the categories sheet).
+    if (pinnableMap && effectiveCategory) {
+      const key = effectiveCategory.toLowerCase();
+      if (pinnableMap.has(key)) {
+        const pinnable = pinnableMap.get(key);
+        if (!pinnable && t.matched !== "not_a_job") {
+          patch.matched = "not_a_job";
+          patch.matched_invoice_id = null;
+          changed = true;
+        } else if (pinnable && t.matched === "not_a_job") {
+          patch.matched = "unmatched";
+          changed = true;
+        }
+      }
+    }
+
+    if (changed) updates.push(patch);
   }
 
-  if (updates.length) await entity.bulkUpdate(updates);
+  for (let i = 0; i < updates.length; i += 500) {
+    await entity.bulkUpdate(updates.slice(i, i + 500));
+  }
   return { recategorized: updates.length };
 }

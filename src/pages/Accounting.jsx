@@ -16,7 +16,6 @@ export default function Accounting() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
-  const [filter, setFilter] = useState("unmatched");
   const [query, setQuery] = useState("");
   const [linking, setLinking] = useState(null); // transaction being linked
   const [invoiceQuery, setInvoiceQuery] = useState("");
@@ -93,9 +92,6 @@ export default function Accounting() {
   const ignore = (tx) => updateTx(tx.id, { matched: tx.matched === "ignored" ? "unmatched" : "ignored" });
 
   const filtered = txs.filter((t) => {
-    if (filter === "unmatched" && t.matched !== "unmatched") return false;
-    if (filter === "matched" && t.matched !== "matched") return false;
-    if (filter === "ignored" && t.matched !== "ignored") return false;
     const q = query.toLowerCase();
     if (q && !(`${t.payee} ${t.category} ${t.custom_category}`.toLowerCase().includes(q))) return false;
     return true;
@@ -106,12 +102,6 @@ export default function Accounting() {
     const q = invoiceQuery.toLowerCase();
     return !q || (i.name || '').toLowerCase().includes(q) || (i.number || '').toLowerCase().includes(q);
   });
-
-  const tabs = [
-    { key: "unmatched", label: "Unmatched" },
-    { key: "matched", label: "Matched" },
-    { key: "ignored", label: "Ignored" },
-  ];
 
   return (
     <div className="space-y-4">
@@ -164,14 +154,6 @@ export default function Accounting() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search payee or category" className="pl-9" />
         </div>
-        <div className="flex gap-1 rounded-lg border bg-card p-1">
-          {tabs.map((t) => (
-            <button key={t.key} onClick={() => setFilter(t.key)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filter === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {loading ? (
@@ -209,9 +191,10 @@ export default function Accounting() {
                   )}
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  {t.matched === "matched" ? (
+                  {t.matched === "matched" && (
                     <Button variant="ghost" size="icon" onClick={() => unlink(t)} aria-label="Unlink"><Unlink className="w-4 h-4" /></Button>
-                  ) : (
+                  )}
+                  {t.matched !== "matched" && t.matched !== "not_a_job" && (
                     <Button variant="ghost" size="icon" onClick={() => { setLinking(t); setInvoiceQuery(""); }} aria-label="Link invoice"><Link2 className="w-4 h-4" /></Button>
                   )}
                   <Button variant="ghost" size="icon" onClick={() => ignore(t)} aria-label="Toggle ignore">

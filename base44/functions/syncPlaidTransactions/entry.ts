@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { secrets, waitUntil } from 'base44:runtime';
-import { fetchRecategorizeRules, recategorize, applyRecategorizeToStored } from '../../shared/recategorizeRules.ts';
+import { fetchRecategorizeRules, recategorize, applyRecategorizeToStored, fetchPinnableCategories, isNotAJobCategory } from '../../shared/recategorizeRules.ts';
 import { runReceiptMatch } from '../../shared/receiptMatching.ts';
 
 function plaidBaseUrl() {
@@ -38,9 +38,11 @@ export default async function(req) {
     // based on payee name rules pulled from the categories spreadsheet.
     let recategorized = { recategorized: 0 };
     let rules = null;
+    let pinnableMap = null;
     try {
       rules = await fetchRecategorizeRules(base44);
-      recategorized = await applyRecategorizeToStored(base44, 'Transaction', rules);
+      pinnableMap = await fetchPinnableCategories(base44);
+      recategorized = await applyRecategorizeToStored(base44, 'Transaction', rules, pinnableMap);
     } catch (e) {
       // Non-fatal: connector may be temporarily unavailable.
     }
@@ -69,11 +71,11 @@ export default async function(req) {
 
         const data = await syncRes.json();
         for (const tx of (data.added || [])) {
-          await upsertTransaction(base44, item, tx, rules);
+          await upsertTransaction(base44, item, tx, rules, pinnableMap);
           added++;
         }
         for (const tx of (data.modified || [])) {
-          await upsertTransaction(base44, item, tx, rules);
+          await upsertTransaction(base44, item, tx, rules, pinnableMap);
           updated++;
         }
         cursor = data.next_cursor;
@@ -95,7 +97,7 @@ export default async function(req) {
   }
 }
 
-async function upsertTransaction(base44, item, tx, rules) {
+async function upsertTransaction(base44, item, tx, rules, pinnableMap) {
   const plaidId = tx.transaction_id;
   const account = (item.accounts || []).find((a) => a.account_id === tx.account_id);
   const existing = await base44.asServiceRole.entities.Transaction.filter({ plaid_transaction_id: plaidId }, '-created_date', 1);
@@ -132,6 +134,10 @@ async function upsertTransaction(base44, item, tx, rules) {
         create.matched = 'ignored';
         create.matched_invoice_id = null;
       }
+    }
+    if (create.matched === 'unmatched' && isNotAJobCategory(ruleCat || payload.category, pinnableMap)) {
+      create.matched = 'not_a_job';
+      create.matched_invoice_id = null;
     }
     await base44.asServiceRole.entities.Transaction.create(create);
   }
