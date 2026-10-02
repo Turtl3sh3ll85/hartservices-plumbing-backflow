@@ -22,7 +22,11 @@ export function formatDateTime(d) {
 }
 
 export function computeTotals(lineItems, taxRate = 0, ccFeeEnabled = false) {
-  const subtotal = (lineItems || []).reduce((sum, li) => sum + (Number(li.quantity) || 0) * (Number(li.unit_price) || 0), 0);
+  const subtotal = (lineItems || []).reduce((sum, li) => {
+    const base = (Number(li.quantity) || 0) * (Number(li.unit_price) || 0);
+    const mods = (li.modifiers || []).reduce((s, m) => s + (Number(m?.price_adjustment) || 0), 0);
+    return sum + base + mods;
+  }, 0);
   const tax = subtotal * (Number(taxRate) || 0) / 100;
   const ccFee = ccFeeEnabled ? Math.round((subtotal * 0.03) * 100) / 100 : 0;
   const total = subtotal + tax + ccFee;

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatMoney } from "@/lib/invoice";
 
-export default function SheetItemsDialog({ open, onOpenChange, onPick, defaultSheetId }) {
+export default function SheetItemsDialog({ open, onOpenChange, onPick, defaultSheetId, sheetName }) {
   const [sheetId, setSheetId] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,7 +32,7 @@ export default function SheetItemsDialog({ open, onOpenChange, onPick, defaultSh
     setLoading(true);
     setError("");
     try {
-      const res = await base44.functions.invoke("getSheetLineItems", { sheet_id: sid });
+      const res = await base44.functions.invoke("getSheetLineItems", { sheet_id: sid, sheet_name: sheetName });
       setItems(res.data?.line_items || []);
       setSelected({});
     } catch (e) {

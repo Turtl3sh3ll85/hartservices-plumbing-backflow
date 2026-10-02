@@ -22,6 +22,7 @@ export default async function(req) {
 
     const body = await req.json().catch(() => ({}));
     const sheetId = body.sheet_id && String(body.sheet_id).trim();
+    const sheetName = body.sheet_name && String(body.sheet_name).trim();
     if (!sheetId) return Response.json({ error: "No modifier sheet ID provided." }, { status: 400 });
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googleworkspace");
@@ -35,7 +36,12 @@ export default async function(req) {
       return Response.json({ error: err?.error?.message || "Failed to read spreadsheet metadata." }, { status: metaRes.status });
     }
     const meta = await metaRes.json();
-    const firstSheet = meta?.sheets?.[0]?.properties?.title;
+    const sheets = meta?.sheets || [];
+    let firstSheet = sheets[0]?.properties?.title;
+    if (sheetName) {
+      const found = sheets.find((s) => s?.properties?.title === sheetName);
+      if (found) firstSheet = found.properties.title;
+    }
     if (!firstSheet) return Response.json({ error: "Spreadsheet has no sheets." }, { status: 400 });
 
     const valsRes = await fetch(

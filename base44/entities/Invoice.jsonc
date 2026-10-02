@@ -54,6 +54,23 @@
           "section": {
             "type": "string",
             "title": "Section"
+          },
+          "modifiers": {
+            "type": "array",
+            "title": "Modifiers",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "Modifier Name"
+                },
+                "price_adjustment": {
+                  "type": "number",
+                  "title": "Price Adjustment"
+                }
+              }
+            }
           }
         }
       }
