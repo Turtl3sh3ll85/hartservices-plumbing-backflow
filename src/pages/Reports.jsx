@@ -96,15 +96,17 @@ export default function Reports() {
                     key={entry.name}
                     type="button"
                     onClick={() => setSelectedCategory(entry.name)}
-                    className="flex items-center gap-3 min-h-11 px-3 py-2 rounded-lg border bg-card hover:bg-accent/60 transition-colors text-left"
+                    className="flex items-center gap-3 min-h-11 px-3 py-2 rounded-lg border bg-card text-card-foreground hover:bg-accent/60 transition-colors text-left"
                   >
                     <span
-                      className="w-3.5 h-3.5 rounded-full shrink-0"
+                      className="w-3.5 h-3.5 rounded-full shrink-0 mt-0.5"
                       style={{ background: PALETTE[i % PALETTE.length] }}
                     />
-                    <span className="flex-1 text-sm font-medium truncate">{entry.name}</span>
-                    <span className="text-xs text-muted-foreground tabular-nums shrink-0">{pct.toFixed(1)}%</span>
-                    <span className="text-sm font-semibold tabular-nums w-24 text-right shrink-0">{formatMoney(entry.value)}</span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-medium truncate">{entry.name}</span>
+                      <span className="block text-xs text-muted-foreground tabular-nums">{pct.toFixed(1)}%</span>
+                    </span>
+                    <span className="text-sm font-semibold tabular-nums shrink-0">{formatMoney(entry.value)}</span>
                   </button>
                 );
               })}
