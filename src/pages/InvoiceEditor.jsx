@@ -105,16 +105,6 @@ export default function InvoiceEditor() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Tax & fees</CardTitle></CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
-          <div><Label>Tax rate (%)</Label><Input type="number" step="0.01" value={inv.tax_rate ?? 0} onChange={(e) => set("tax_rate", parseFloat(e.target.value) || 0)} /></div>
-          <div className="flex items-end gap-2 pb-1">
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!inv.cc_fee_enabled} onChange={(e) => set("cc_fee_enabled", e.target.checked)} className="w-4 h-4" /> 3% credit-card fee</label>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader><CardTitle className="text-base">Payment schedule</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <PaymentScheduleEditor schedule={inv.payment_schedule} onChange={(s) => set("payment_schedule", s)} total={totals.total} />
