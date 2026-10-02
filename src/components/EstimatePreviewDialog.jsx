@@ -61,6 +61,15 @@ export default function EstimatePreviewDialog({ doc, customer, settings, onClose
                   <div className="text-sm font-medium truncate">{li.description || "—"}</div>
                   <div className="text-xs text-muted-foreground">{li.quantity ?? 0} × {formatMoney(li.unit_price)}</div>
                   {li.details && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{li.details}</div>}
+                  {li.modifiers && li.modifiers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {li.modifiers.map((m, mi) => (
+                        <span key={mi} className="inline-flex items-center rounded-full bg-secondary text-secondary-foreground px-2 py-0.5 text-xs">
+                          {m.name}{m.price_adjustment ? ` (${m.price_adjustment >= 0 ? "+" : ""}${formatMoney(m.price_adjustment)})` : ""}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="text-sm font-medium tabular-nums shrink-0">{formatMoney(lineTotal(li))}</div>

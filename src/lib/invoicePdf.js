@@ -162,6 +162,12 @@ async function buildDocumentPdf({ doc, customer, settings, kind }) {
       docPdf.setFontSize(8);
       docPdf.setTextColor(120);
       docPdf.text(`${li.quantity ?? ""} × ${formatMoney(li.unit_price)}`, M + textIndent, y + 11);
+      if (li.modifiers && li.modifiers.length > 0) {
+        const modText = li.modifiers.map(m => `${m.name}${m.price_adjustment ? ` (${m.price_adjustment >= 0 ? "+" : ""}${formatMoney(m.price_adjustment)})` : ""}`).join("  ·  ");
+        docPdf.setFontSize(7);
+        docPdf.text(modText, M + textIndent, y + 19);
+        docPdf.setFontSize(8);
+      }
       docPdf.setTextColor(0);
       docPdf.setFont("helvetica", "normal");
       docPdf.setFontSize(10);
