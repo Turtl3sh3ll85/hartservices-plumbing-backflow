@@ -108,8 +108,8 @@ export default function Customers() {
             <Card key={c.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setPreviewCustomer(c)}>
               <CardContent className="p-4">
                 <div className="min-w-0">
+                  <div className={`${c.company ? "text-sm text-muted-foreground" : "font-medium"} truncate`}>{c.name}</div>
                   {c.company && <div className="font-medium truncate">{c.company}</div>}
-                  <div className="text-sm text-muted-foreground truncate">{c.name}</div>
                   {c.email && <div className="text-sm text-muted-foreground truncate">{c.email}</div>}
                   {c.phone && <div className="text-sm text-muted-foreground">{c.phone}</div>}
                 </div>
