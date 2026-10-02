@@ -53,3 +53,11 @@ export function nextDuePayment(schedule, total) {
   if (idx === -1) return null;
   return { index: idx, payment: schedule[idx], amount: amounts[idx] };
 }
+
+export function scheduleIsValid(schedule, total) {
+  const list = schedule || [];
+  if (!list.length) return true;
+  const amounts = paymentAmounts(list, total);
+  const sum = amounts.reduce((a, b) => a + b, 0);
+  return Math.abs(sum - (Number(total) || 0)) < 0.01;
+}

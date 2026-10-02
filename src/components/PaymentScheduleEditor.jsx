@@ -1,20 +1,33 @@
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { formatCurrency, paymentAmounts } from "@/lib/format";
 
 export default function PaymentScheduleEditor({ schedule, onChange, total }) {
   const list = schedule || [];
   const amounts = paymentAmounts(list, total);
   const sum = amounts.reduce((a, b) => a + b, 0);
+  const type = list.length ? (list[0].type || "amount") : "amount";
+
+  const remaining = type === "percentage"
+    ? Math.max(0, 100 - list.reduce((s, p) => s + (Number(p.value) || 0), 0))
+    : Math.max(0, (Number(total) || 0) - sum);
 
   const update = (i, patch) => {
     const next = [...list];
     next[i] = { ...next[i], ...patch };
     onChange(next);
   };
-  const add = () => onChange([...list, { label: "", type: list.length ? (list[0].type || "amount") : "amount", value: 0, paid: false }]);
+
+  const setType = (newType) => {
+    if (newType === type) return;
+    onChange(list.map((p) => ({ ...p, type: newType })));
+  };
+
+  const add = () => {
+    onChange([...list, { label: "", type, value: Math.round(remaining), paid: false }]);
+  };
+
   const remove = (i) => onChange(list.filter((_, idx) => idx !== i));
 
   return (
@@ -33,23 +46,31 @@ export default function PaymentScheduleEditor({ schedule, onChange, total }) {
             </Button>
           </div>
           <div className="flex gap-2 items-center">
-            <select
-              value={p.type || "percentage"}
-              onChange={(e) => update(i, { type: e.target.value })}
-              className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
-            >
-              <option value="percentage">Percentage</option>
-              <option value="amount">Fixed amount</option>
-            </select>
+            <div className="inline-flex rounded-md border overflow-hidden shrink-0">
+              <button
+                type="button"
+                onClick={() => setType("amount")}
+                className={`px-3 py-2 text-xs font-medium transition-colors ${type === "amount" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
+              >
+                $
+              </button>
+              <button
+                type="button"
+                onClick={() => setType("percentage")}
+                className={`px-3 py-2 text-xs font-medium transition-colors ${type === "percentage" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
+              >
+                %
+              </button>
+            </div>
             <Input
               type="number"
-              step={p.type === "percentage" ? "1" : "0.01"}
+              step="1"
               min="0"
               value={p.value ?? 0}
-              onChange={(e) => update(i, { value: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => update(i, { value: parseInt(e.target.value, 10) || 0 })}
               className="w-32"
             />
-            <span className="text-sm text-muted-foreground">= {formatCurrency(amounts[i])}</span>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">= {formatCurrency(amounts[i])}</span>
             <label className="ml-auto flex items-center gap-1.5 text-sm">
               <input
                 type="checkbox"
@@ -68,6 +89,11 @@ export default function PaymentScheduleEditor({ schedule, onChange, total }) {
         </Button>
         <span className={Math.abs(sum - (total || 0)) < 0.01 ? "text-emerald-600" : "text-amber-600"}>
           Scheduled: {formatCurrency(sum)} / {formatCurrency(total)}
+          {list.length > 0 && remaining > 0.01 && (
+            <span className="ml-1 text-muted-foreground">
+              ({type === "percentage" ? `${remaining}%` : formatCurrency(remaining)} remaining)
+            </span>
+          )}
         </span>
       </div>
     </div>

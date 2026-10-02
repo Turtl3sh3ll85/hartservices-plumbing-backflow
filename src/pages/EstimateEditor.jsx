@@ -12,7 +12,7 @@ import LineItemsEditor from "@/components/LineItemsEditor";
 import CustomerFormDialog from "@/components/CustomerFormDialog";
 import CustomerPicker from "@/components/CustomerPicker";
 import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
-import { computeTotals, formatCurrency } from "@/lib/format";
+import { computeTotals, formatCurrency, scheduleIsValid } from "@/lib/format";
 
 const MODES = [
   { value: "single", label: "Single estimate", desc: "One set of line items." },
@@ -100,6 +100,8 @@ export default function EstimateEditor() {
       setSaving(false);
     }
   };
+
+  const scheduleValid = scheduleIsValid(est.payment_schedule, totals.total);
 
   // option helpers
   const addOption = () => set("options", [...(est.options || []), { label: `Option ${(est.options || []).length + 1}`, line_items: [], subtotal: 0, tax: 0, total: 0 }]);
@@ -205,7 +207,7 @@ export default function EstimateEditor() {
           </span>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => save(false)} disabled={saving}>{saving ? "Saving…" : "Save draft"}</Button>
-            <Button onClick={() => save(true)} disabled={saving}><Send className="w-4 h-4" /> Save & send</Button>
+            <Button onClick={() => save(true)} disabled={saving || !scheduleValid}><Send className="w-4 h-4" /> Save & send</Button>
           </div>
         </div>
       </div>

@@ -15,7 +15,7 @@ import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
 import InvoiceAttachments from "@/components/InvoiceAttachments";
 import InvoiceProfitability from "@/components/InvoiceProfitability";
 import { useAuth } from "@/lib/AuthContext";
-import { computeTotals, formatCurrency, amountPaidTotal, nextDuePayment } from "@/lib/format";
+import { computeTotals, formatCurrency, amountPaidTotal, nextDuePayment, scheduleIsValid } from "@/lib/format";
 
 export default function InvoiceEditor() {
   const { id } = useParams();
@@ -55,6 +55,7 @@ export default function InvoiceEditor() {
   const paid = amountPaidTotal(inv.payment_schedule, totals.total);
   const balance = Math.max(0, totals.total - paid);
   const next = nextDuePayment(inv.payment_schedule, totals.total);
+  const scheduleValid = scheduleIsValid(inv.payment_schedule, totals.total);
 
   const save = async (send) => {
     if (!inv.customer_id) { toast({ title: "Pick a customer first", variant: "destructive" }); return; }
@@ -190,7 +191,7 @@ export default function InvoiceEditor() {
           </span>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => save(false)} disabled={saving}>{saving ? "Saving…" : "Save draft"}</Button>
-            <Button onClick={() => save(true)} disabled={saving}><Send className="w-4 h-4" /> Save & send</Button>
+            <Button onClick={() => save(true)} disabled={saving || !scheduleValid}><Send className="w-4 h-4" /> Save & send</Button>
           </div>
         </div>
       </div>
