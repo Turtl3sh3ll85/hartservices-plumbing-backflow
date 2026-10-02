@@ -109,13 +109,13 @@ export default function Estimates() {
           renderItem={({ item: e }) => (
             <div key={e.id} className="relative px-4 py-3 hover:bg-accent/50 transition-colors">
               <button type="button" onClick={() => setPreviewEst(e)} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={`Preview estimate: ${e.name || e.number || "Estimate"}`} />
-              <div className="relative z-10 flex items-center gap-3">
-                <div className="min-w-0 flex-1 pointer-events-none">
+              <div className="relative z-10 pointer-events-none flex items-center gap-3">
+                <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">{e.name || e.number || "Untitled estimate"}</div>
                 </div>
-                <span className="font-medium tabular-nums pointer-events-none whitespace-nowrap">{formatCurrency(e.total)}</span>
+                <span className="font-medium tabular-nums whitespace-nowrap">{formatCurrency(e.total)}</span>
               </div>
-              <div className="relative z-10 flex items-center gap-3 mt-1.5">
+              <div className="relative z-10 pointer-events-none flex items-center gap-3 mt-1.5">
                 <div className="flex items-center gap-2 pointer-events-none text-xs text-muted-foreground whitespace-nowrap">
                   <span>{formatDate(e.created_date)}</span>
                   <span>· {MODE_LABEL[e.selection_mode || "single"]}</span>
