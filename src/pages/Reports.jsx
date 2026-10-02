@@ -88,7 +88,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-2">
+            <div className="flex flex-col gap-1.5">
               {byCategory.map((entry, i) => {
                 const pct = total ? (entry.value / total) * 100 : 0;
                 return (
@@ -102,11 +102,9 @@ export default function Reports() {
                       className="w-3.5 h-3.5 rounded-full shrink-0 mt-0.5"
                       style={{ background: PALETTE[i % PALETTE.length] }}
                     />
-                    <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-medium truncate">{entry.name}</span>
-                      <span className="block text-xs text-muted-foreground tabular-nums">{pct.toFixed(1)}%</span>
-                    </span>
-                    <span className="text-sm font-semibold tabular-nums shrink-0">{formatMoney(entry.value)}</span>
+                    <span className="flex-1 min-w-0 text-sm font-medium truncate">{entry.name}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums shrink-0 w-14 text-right">{pct.toFixed(1)}%</span>
+                    <span className="text-sm font-semibold tabular-nums shrink-0 w-28 text-right">{formatMoney(entry.value)}</span>
                   </button>
                 );
               })}
