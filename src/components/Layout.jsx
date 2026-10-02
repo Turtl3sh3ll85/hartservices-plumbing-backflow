@@ -84,10 +84,18 @@ export default function Layout() {
   useEffect(() => {
     if (activeItem) {
       const stack = tabRoutes.current[activeItem.to] || [];
-      const top = stack[stack.length - 1];
-      if (!top || top.path !== location.pathname) {
-        tabRoutes.current[activeItem.to] = [...stack, { path: location.pathname, scroll: 0 }];
-        persist();
+      const existingIdx = stack.findIndex((e) => e && e.path === location.pathname);
+      if (existingIdx >= 0) {
+        if (existingIdx !== stack.length - 1) {
+          tabRoutes.current[activeItem.to] = stack.slice(0, existingIdx + 1);
+          persist();
+        }
+      } else {
+        const top = stack[stack.length - 1];
+        if (!top || top.path !== location.pathname) {
+          tabRoutes.current[activeItem.to] = [...stack, { path: location.pathname, scroll: 0 }];
+          persist();
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

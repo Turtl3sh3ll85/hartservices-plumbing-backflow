@@ -3,6 +3,7 @@ import { GitBranch, Loader2, ChevronDown } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MobileSelect } from "@/components/ui/mobile-select";
 
 export default function PhaseIndicator({ invoice, phases = [], onSave, busy = false, editable = true }) {
   const [open, setOpen] = useState(false);
@@ -44,14 +45,14 @@ export default function PhaseIndicator({ invoice, phases = [], onSave, busy = fa
       <PopoverContent className="w-72" align="start">
         <div className="space-y-3">
           <div className="text-sm font-medium flex items-center gap-2"><GitBranch className="w-4 h-4" /> Set phase</div>
-          <select
+          <MobileSelect
             value={phase}
-            onChange={(e) => setPhase(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-10"
-          >
-            <option value="" disabled>Select a phase…</option>
-            {phases.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
+            onValueChange={(v) => setPhase(v)}
+            placeholder="Select a phase…"
+            ariaLabel="Select phase"
+            options={phases.map((p) => ({ value: p, label: p }))}
+            triggerClassName="min-h-10"
+          />
           <Textarea
             placeholder="Add a note (optional)"
             value={note}

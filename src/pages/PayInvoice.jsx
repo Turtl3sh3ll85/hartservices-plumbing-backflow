@@ -5,6 +5,7 @@ import { CreditCard, CheckCircle2, Clock } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { MobileSelect } from "@/components/ui/mobile-select";
 import PaymentScheduleDisplay from "@/components/PaymentScheduleDisplay";
 
 export default function PayInvoice() {
@@ -100,15 +101,17 @@ export default function PayInvoice() {
                   <Clock className="w-4 h-4" /> Next stage status
                 </div>
                 <p className="text-xs text-muted-foreground">Let {settings?.business_name || "us"} know when you're ready for the next phase of work to begin.</p>
-                <select
+                <MobileSelect
                   value={ready ? "ready" : "not_ready"}
-                  onChange={(e) => saveReady(e.target.value === "ready")}
-                  disabled={savingReady}
-                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                >
-                  <option value="not_ready">Not ready</option>
-                  <option value="ready">Customer ready</option>
-                </select>
+                  onValueChange={(v) => saveReady(v === "ready")}
+                  placeholder="Status"
+                  ariaLabel="Next stage status"
+                  options={[
+                    { value: "not_ready", label: "Not ready" },
+                    { value: "ready", label: "Customer ready" },
+                  ]}
+                  triggerClassName="w-full"
+                />
                 {ready === true && <p className="text-xs text-emerald-600 text-center">Thanks — we'll be in touch to schedule the next stage.</p>}
               </CardContent>
             </Card>

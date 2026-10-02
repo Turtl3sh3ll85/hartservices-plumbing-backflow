@@ -8,7 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { useTheme } from "next-themes";
-import { RefreshCw, MailSearch } from "lucide-react";
+import { RefreshCw, MailSearch, Trash2 } from "lucide-react";
+import { MobileSelect } from "@/components/ui/mobile-select";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Settings() {
   const { toast } = useToast();
@@ -16,7 +19,10 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { logout } = useAuth();
 
   const load = async () => {
     setLoading(true);
@@ -68,6 +74,19 @@ export default function Settings() {
     } catch (e) {
       toast({ title: "Receipt scan failed", description: e.message, variant: "destructive" });
     } finally { setBusy(null); }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await base44.functions.invoke("deleteAccount", {});
+      await logout();
+    } catch (e) {
+      toast({ title: "Delete failed", description: e.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
   };
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
@@ -135,17 +154,43 @@ export default function Settings() {
             <Label>Theme</Label>
             <p className="text-xs text-muted-foreground">Choose the app color scheme. Dark is on by default.</p>
           </div>
-          <select
+          <MobileSelect
             value={theme || "dark"}
-            onChange={(e) => setTheme(e.target.value)}
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-          >
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="system">System</option>
-          </select>
+            onValueChange={(v) => setTheme(v)}
+            placeholder="Theme"
+            ariaLabel="Theme"
+            options={[
+              { value: "dark", label: "Dark" },
+              { value: "light", label: "Light" },
+              { value: "system", label: "System" },
+            ]}
+            triggerClassName="w-40"
+          />
         </CardContent>
       </Card>
+
+      <Card className="border-destructive/50">
+        <CardHeader><CardTitle className="text-base text-destructive">Danger Zone</CardTitle></CardHeader>
+        <CardContent className="flex items-center justify-between">
+          <div>
+            <Label>Delete Account</Label>
+            <p className="text-xs text-muted-foreground">Permanently delete your account and all associated data. This cannot be undone.</p>
+          </div>
+          <Button variant="destructive" onClick={() => setDeleteOpen(true)} disabled={deleting}>
+            <Trash2 className="w-4 h-4" /> Delete Account
+          </Button>
+        </CardContent>
+      </Card>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Account"
+        description="Your account will be deleted permanently. This action cannot be undone."
+        confirmLabel="Delete Account"
+        destructive
+        onConfirm={handleDeleteAccount}
+      />
 
       <div className="flex justify-end">
         <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save settings"}</Button>
