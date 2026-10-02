@@ -122,6 +122,8 @@ export default function Accounting() {
   const unlink = (tx) => updateTx(tx.id, { matched_invoice_id: "", matched: "unmatched" });
   const ignore = (tx) =>
     updateTx(tx.id, { matched: tx.matched === "ignored" ? "unmatched" : "ignored" });
+  const toggleUnmatchable = (tx) =>
+    updateTx(tx.id, { matched: tx.matched === "unmatchable" ? "unmatched" : "unmatchable" });
 
   const onCategoryChange = (id, value) =>
     setTxs((p) => p.map((x) => (x.id === id ? { ...x, custom_category: value } : x)));
@@ -214,6 +216,7 @@ export default function Accounting() {
             onLink={onRequestLink}
             onUnlink={unlink}
             onPinReceipt={pinReceipt}
+            onToggleUnmatchable={toggleUnmatchable}
           />
         </TabsContent>
         <TabsContent value="categorize" className="mt-4">

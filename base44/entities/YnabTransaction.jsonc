@@ -50,7 +50,8 @@
         "suggested",
         "matched",
         "ignored",
-        "not_a_job"
+        "not_a_job",
+        "unmatchable"
       ],
       "default": "unmatched",
       "title": "Match Status"

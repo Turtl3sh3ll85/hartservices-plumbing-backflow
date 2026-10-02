@@ -15,9 +15,11 @@ export default function TransactionRow({
   onCategoryChange,
   onCategoryBlur,
   onPinReceipt,
+  onToggleUnmatchable,
   editableCategory = true,
   showIgnore = true,
   showAccount = true,
+  showUnmatchableToggle = false,
 }) {
   const fileRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -94,7 +96,17 @@ export default function TransactionRow({
             <Unlink className="w-4 h-4" />
           </Button>
         )}
-        {t.matched !== "matched" && t.matched !== "not_a_job" && t.matched !== "ignored" && (
+        {showUnmatchableToggle && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onToggleUnmatchable?.(t)}
+            aria-label={t.matched === "unmatchable" ? "Mark matchable" : "Mark unmatchable"}
+          >
+            <Ban className={`w-4 h-4 ${t.matched === "unmatchable" ? "text-destructive" : "text-muted-foreground"}`} />
+          </Button>
+        )}
+        {t.matched !== "matched" && t.matched !== "not_a_job" && t.matched !== "ignored" && t.matched !== "unmatchable" && (
           <Button variant="ghost" size="icon" onClick={() => onLink?.(t)} aria-label="Link invoice">
             <Link2 className="w-4 h-4" />
           </Button>

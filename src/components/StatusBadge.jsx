@@ -9,6 +9,7 @@ export default function StatusBadge({ status, label }) {
     converted: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     matched: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     not_a_job: "bg-slate-500/15 text-slate-600 dark:text-slate-400",
+    unmatchable: "bg-slate-500/15 text-slate-600 dark:text-slate-400",
     suggested: "bg-primary/15 text-primary",
     in_progress: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
     scheduled: "bg-primary/15 text-primary",
