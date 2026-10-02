@@ -82,7 +82,9 @@ export default function InvoiceProfitability({ invoiceId, invoiceTotal }) {
         {loading ? (
           <div className="text-sm text-muted-foreground">Loading…</div>
         ) : txs.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No transactions pinned to this invoice yet.</div>
+          <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+            No transactions pinned to this invoice.
+          </div>
         ) : (
           <div className="divide-y rounded-lg border">
             {txs.map((t) => (
