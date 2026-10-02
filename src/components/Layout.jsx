@@ -30,7 +30,9 @@ function BrandMark({ settings, size = "md" }) {
   const dim = size === "sm" ? "w-8 h-8" : "w-9 h-9";
   const icon = size === "sm" ? "w-4 h-4" : "w-5 h-5";
   const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isDark = mounted && (resolvedTheme === "dark" || (!resolvedTheme && typeof document !== "undefined" && document.documentElement.classList.contains("dark")));
   const logoUrl = (isDark && settings?.dark_logo_url) ? settings.dark_logo_url : (settings?.logo_url || "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg");
   return (
     <div className={`${dim} rounded-xl overflow-hidden bg-card border shrink-0`}>
