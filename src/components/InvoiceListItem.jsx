@@ -30,6 +30,7 @@ export default function InvoiceListItem({
           <div className="font-medium truncate">{inv.name || inv.number || "Invoice"}</div>
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             <span>{formatDate(inv.due_date || inv.created_date)}</span>
+            {inv.number && <span>· {inv.number}</span>}
             {inv.customer_ready_for_next_stage && <span className="text-emerald-600">· Ready for next stage</span>}
           </div>
         </div>
