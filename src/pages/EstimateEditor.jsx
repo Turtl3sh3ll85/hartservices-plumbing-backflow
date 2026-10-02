@@ -62,7 +62,7 @@ export default function EstimateEditor() {
   const set = (k, v) => setEst((s) => ({ ...s, [k]: v }));
 
   // Derived totals (never mutate state during render)
-  const optionTotals = (est.options || []).map((o) => computeTotals(o.line_items, est.tax_rate, est.cc_fee_enabled));
+  const optionTotals = (est.options || []).map((o) => computeTotals(o.line_items, est.tax_rate, o.cc_fee_enabled));
   let totals;
   if (est.selection_mode === "side_by_side") {
     totals = optionTotals.reduce((acc, o) => ({
@@ -107,13 +107,15 @@ export default function EstimateEditor() {
     }
   };
 
-  const scheduleValid = scheduleIsValid(est.payment_schedule, totals.total);
+  const scheduleValid = est.selection_mode === "side_by_side"
+    ? (est.options || []).every((o, i) => scheduleIsValid(o.payment_schedule || [], optionTotals[i]?.total || 0))
+    : scheduleIsValid(est.payment_schedule, totals.total);
   const hasLineItems = est.selection_mode === "side_by_side"
     ? (est.options || []).some((o) => (o.line_items || []).length > 0)
     : (est.line_items || []).length > 0;
 
   // option helpers
-  const addOption = () => set("options", [...(est.options || []), { label: `Option ${(est.options || []).length + 1}`, line_items: [], subtotal: 0, tax: 0, total: 0 }]);
+  const addOption = () => set("options", [...(est.options || []), { label: `Option ${(est.options || []).length + 1}`, line_items: [], payment_schedule: [], notes: "", cc_fee_enabled: false, subtotal: 0, tax: 0, total: 0 }]);
   const updateOption = (i, patch) => {
     const next = [...(est.options || [])];
     next[i] = { ...next[i], ...patch };
@@ -171,13 +173,25 @@ export default function EstimateEditor() {
           </CardHeader>
           <CardContent className="space-y-4">
             {(est.options || []).map((o, i) => (
-              <div key={i} className="rounded-lg border p-3 space-y-2">
+              <div key={i} className="rounded-lg border p-3 space-y-3">
                 <div className="flex gap-2 items-center">
                   <Input value={o.label} onChange={(e) => updateOption(i, { label: e.target.value })} placeholder="Option label" className="flex-1" />
                   <span className="font-medium tabular-nums">{formatCurrency(optionTotals[i]?.total)}</span>
                   <Button variant="ghost" size="icon" onClick={() => removeOption(i)} aria-label="Remove option"><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
                 <LineItemsEditor items={o.line_items} onChange={(li) => updateOption(i, { line_items: li })} />
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Payment schedule</Label>
+                  <PaymentScheduleEditor schedule={o.payment_schedule || []} onChange={(s) => updateOption(i, { payment_schedule: s })} total={optionTotals[i]?.total || 0} />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Notes</Label>
+                  <Textarea value={o.notes || ""} onChange={(e) => updateOption(i, { notes: e.target.value })} rows={2} />
+                </div>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={!!o.cc_fee_enabled} onChange={(e) => updateOption(i, { cc_fee_enabled: e.target.checked })} className="w-4 h-4 rounded" />
+                  Add 3% credit-card fee
+                </label>
               </div>
             ))}
             {(est.options || []).length === 0 && <p className="text-sm text-muted-foreground">Add an option to get started.</p>}
@@ -192,28 +206,38 @@ export default function EstimateEditor() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Payment schedule</CardTitle></CardHeader>
-        <CardContent>
-          <PaymentScheduleEditor schedule={est.payment_schedule} onChange={(s) => set("payment_schedule", s)} total={totals.total} />
-        </CardContent>
-      </Card>
+      {est.selection_mode !== "side_by_side" && (
+        <>
+          <Card>
+            <CardHeader><CardTitle className="text-base">Payment schedule</CardTitle></CardHeader>
+            <CardContent>
+              <PaymentScheduleEditor schedule={est.payment_schedule} onChange={(s) => set("payment_schedule", s)} total={totals.total} />
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
-        <CardContent><Textarea value={est.notes || ""} onChange={(e) => set("notes", e.target.value)} rows={3} /></CardContent>
-      </Card>
+          <Card>
+            <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
+            <CardContent><Textarea value={est.notes || ""} onChange={(e) => set("notes", e.target.value)} rows={3} /></CardContent>
+          </Card>
+        </>
+      )}
 
       <div className="flex items-center justify-between sticky bottom-0 bg-background/95 backdrop-blur border-t px-4 py-3 gap-4">
-        <label className="flex items-center gap-2 text-sm cursor-pointer shrink-0">
-          <input type="checkbox" checked={!!est.cc_fee_enabled} onChange={(e) => set("cc_fee_enabled", e.target.checked)} className="w-4 h-4 rounded" />
-          Add 3% credit-card fee
-        </label>
+        {est.selection_mode === "side_by_side" ? (
+          <span className="text-sm text-muted-foreground">Each option has its own schedule, notes & fee.</span>
+        ) : (
+          <label className="flex items-center gap-2 text-sm cursor-pointer shrink-0">
+            <input type="checkbox" checked={!!est.cc_fee_enabled} onChange={(e) => set("cc_fee_enabled", e.target.checked)} className="w-4 h-4 rounded" />
+            Add 3% credit-card fee
+          </label>
+        )}
         <div className="flex items-center gap-3 shrink-0">
-          <span className="text-sm whitespace-nowrap">
-            <span className="text-muted-foreground">Total: </span>
-            <span className="font-semibold">{formatCurrency(totals.total)}</span>
-          </span>
+          {est.selection_mode !== "side_by_side" && (
+            <span className="text-sm whitespace-nowrap">
+              <span className="text-muted-foreground">Total: </span>
+              <span className="font-semibold">{formatCurrency(totals.total)}</span>
+            </span>
+          )}
           <Button variant="outline" size="icon" onClick={() => save(false)} disabled={saving} aria-label="Save draft" className="shrink-0"><Save className="w-4 h-4" /></Button>
           <Button size="icon" onClick={() => save(true)} disabled={saving || !scheduleValid || !est.customer_id || !hasLineItems} aria-label="Save & send" className="shrink-0"><Send className="w-4 h-4" /></Button>
         </div>

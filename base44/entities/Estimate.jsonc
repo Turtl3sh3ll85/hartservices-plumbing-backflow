@@ -298,9 +298,54 @@
             "type": "number",
             "title": "Tax"
           },
+          "cc_fee_enabled": {
+            "type": "boolean",
+            "default": false,
+            "title": "Credit Card Fee Enabled"
+          },
+          "cc_fee": {
+            "type": "number",
+            "default": 0,
+            "title": "Credit Card Fee"
+          },
           "total": {
             "type": "number",
             "title": "Total"
+          },
+          "payment_schedule": {
+            "type": "array",
+            "title": "Payment Schedule",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "title": "Label"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "percentage",
+                    "amount"
+                  ],
+                  "default": "percentage",
+                  "title": "Type"
+                },
+                "value": {
+                  "type": "number",
+                  "title": "Value"
+                },
+                "paid": {
+                  "type": "boolean",
+                  "default": false,
+                  "title": "Paid"
+                }
+              }
+            }
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
           }
         }
       }
