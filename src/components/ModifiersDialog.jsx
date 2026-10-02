@@ -80,7 +80,7 @@ export default function ModifiersDialog({ open, onOpenChange, onPick, sheetId, s
                 </div>
               )}
               <Button type="button" onClick={addSelected} disabled={!count} className="w-full">
-                <FileSpreadsheet className="w-4 h-4 mr-1" /> Add {count > 0 ? `${count} ` : ""}from sheet
+                <FileSpreadsheet className="w-4 h-4" />
               </Button>
             </>
           )}
