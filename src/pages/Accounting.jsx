@@ -18,6 +18,7 @@ import { formatCurrency } from "@/lib/format";
 import MatchTransactionsView from "@/components/accounting/MatchTransactionsView";
 import CategorizeTransactionsView from "@/components/accounting/CategorizeTransactionsView";
 import TransactionsByAccountView from "@/components/accounting/TransactionsByAccountView";
+import CategoriesView from "@/components/accounting/CategoriesView";
 
 export default function Accounting() {
   const { toast } = useToast();
@@ -188,6 +189,7 @@ export default function Accounting() {
           <TabsTrigger value="match">Match to Invoices</TabsTrigger>
           <TabsTrigger value="categorize">Categorize Transactions</TabsTrigger>
           <TabsTrigger value="accounts">Accounts</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
         </TabsList>
         <TabsContent value="match" className="mt-4">
           <MatchTransactionsView
@@ -212,6 +214,18 @@ export default function Accounting() {
         </TabsContent>
         <TabsContent value="accounts" className="mt-4">
           <TransactionsByAccountView
+            txs={txs}
+            invoices={invoices}
+            loading={loading}
+            onLink={onRequestLink}
+            onUnlink={unlink}
+            onIgnore={ignore}
+            onCategoryChange={onCategoryChange}
+            onCategoryBlur={onCategoryBlur}
+          />
+        </TabsContent>
+        <TabsContent value="categories" className="mt-4">
+          <CategoriesView
             txs={txs}
             invoices={invoices}
             loading={loading}
