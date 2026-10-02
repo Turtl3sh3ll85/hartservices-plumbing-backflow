@@ -1,14 +1,23 @@
 import { useEffect, useState } from "react";
-import { RefreshCw, MailSearch, Link2, Unlink, Ban, Paperclip, Search, Menu } from "lucide-react";
+import { RefreshCw, MailSearch, Menu, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import StatusBadge from "@/components/StatusBadge";
-import { formatCurrency, formatDate, paymentAmounts } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
+import MatchTransactionsView from "@/components/accounting/MatchTransactionsView";
+import CategorizeTransactionsView from "@/components/accounting/CategorizeTransactionsView";
+import TransactionsByAccountView from "@/components/accounting/TransactionsByAccountView";
 
 export default function Accounting() {
   const { toast } = useToast();
@@ -16,24 +25,27 @@ export default function Accounting() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
-  const [query, setQuery] = useState("");
-  const [linking, setLinking] = useState(null); // transaction being linked
+  const [linking, setLinking] = useState(null);
   const [invoiceQuery, setInvoiceQuery] = useState("");
 
   const load = async () => {
     setLoading(true);
     try {
       const [t, i] = await Promise.all([
-        base44.entities.Transaction.list('-date', 200),
-        base44.entities.Invoice.list('-created_date', 200),
+        base44.entities.Transaction.list("-date", 200),
+        base44.entities.Invoice.list("-created_date", 200),
       ]);
       setTxs(t);
       setInvoices(i);
     } catch (e) {
       toast({ title: "Failed to load", variant: "destructive" });
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const runSync = async () => {
     setBusy("sync");
@@ -41,8 +53,11 @@ export default function Accounting() {
       const res = await base44.functions.invoke("syncPlaidTransactions", {});
       toast({ title: `Synced ${res.data?.added ?? 0} new, ${res.data?.updated ?? 0} updated` });
       load();
-    } catch (e) { toast({ title: "Sync failed", description: e.message, variant: "destructive" }); }
-    finally { setBusy(null); }
+    } catch (e) {
+      toast({ title: "Sync failed", description: e.message, variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
   };
   const runFullResync = async () => {
     setBusy("resync");
@@ -50,8 +65,11 @@ export default function Accounting() {
       const res = await base44.functions.invoke("syncPlaidTransactions", { reset_cursor: true });
       toast({ title: `Full re-sync: ${res.data?.added ?? 0} new, ${res.data?.updated ?? 0} updated` });
       load();
-    } catch (e) { toast({ title: "Re-sync failed", description: e.message, variant: "destructive" }); }
-    finally { setBusy(null); }
+    } catch (e) {
+      toast({ title: "Re-sync failed", description: e.message, variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
   };
   const runReceipts = async () => {
     setBusy("receipts");
@@ -59,8 +77,11 @@ export default function Accounting() {
       const res = await base44.functions.invoke("findReceiptsInEmail", {});
       toast({ title: `Scanned ${res.data?.scanned ?? 0} emails, matched ${res.data?.matched ?? 0}` });
       load();
-    } catch (e) { toast({ title: "Scan failed", description: e.message, variant: "destructive" }); }
-    finally { setBusy(null); }
+    } catch (e) {
+      toast({ title: "Scan failed", description: e.message, variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
   };
   const runForceRefresh = async () => {
     setBusy("refresh");
@@ -68,18 +89,27 @@ export default function Accounting() {
       const res = await base44.functions.invoke("refreshRecategorization", {});
       toast({ title: `Recategorized ${res.data?.plaid ?? 0} Plaid · ${res.data?.ynab ?? 0} YNAB` });
       load();
-    } catch (e) { toast({ title: "Refresh failed", description: e.message, variant: "destructive" }); }
-    finally { setBusy(null); }
+    } catch (e) {
+      toast({ title: "Refresh failed", description: e.message, variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
   };
 
   // Auto-refresh recategorization every 30 minutes while the page is open.
   useEffect(() => {
-    const id = setInterval(() => { runForceRefresh(); }, 30 * 60 * 1000);
+    const id = setInterval(() => {
+      runForceRefresh();
+    }, 30 * 60 * 1000);
     return () => clearInterval(id);
   }, []);
 
   const updateTx = async (id, patch) => {
-    try { await base44.entities.Transaction.update(id, patch); } catch (e) { toast({ title: "Update failed", variant: "destructive" }); }
+    try {
+      await base44.entities.Transaction.update(id, patch);
+    } catch (e) {
+      toast({ title: "Update failed", variant: "destructive" });
+    }
     setTxs((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   };
 
@@ -89,18 +119,20 @@ export default function Accounting() {
     toast({ title: "Transaction linked to invoice" });
   };
   const unlink = (tx) => updateTx(tx.id, { matched_invoice_id: "", matched: "unmatched" });
-  const ignore = (tx) => updateTx(tx.id, { matched: tx.matched === "ignored" ? "unmatched" : "ignored" });
+  const ignore = (tx) =>
+    updateTx(tx.id, { matched: tx.matched === "ignored" ? "unmatched" : "ignored" });
 
-  const filtered = txs.filter((t) => {
-    const q = query.toLowerCase();
-    if (q && !(`${t.payee} ${t.category} ${t.custom_category}`.toLowerCase().includes(q))) return false;
-    return true;
-  });
+  const onCategoryChange = (id, value) =>
+    setTxs((p) => p.map((x) => (x.id === id ? { ...x, custom_category: value } : x)));
+  const onCategoryBlur = (id, value) => updateTx(id, { custom_category: value });
+  const onRequestLink = (tx) => {
+    setLinking(tx);
+    setInvoiceQuery("");
+  };
 
-  const invoiceFor = (id) => invoices.find((i) => i.id === id);
   const invoiceOptions = invoices.filter((i) => {
     const q = invoiceQuery.toLowerCase();
-    return !q || (i.name || '').toLowerCase().includes(q) || (i.number || '').toLowerCase().includes(q);
+    return !q || (i.name || "").toLowerCase().includes(q) || (i.number || "").toLowerCase().includes(q);
   });
 
   return (
@@ -114,7 +146,9 @@ export default function Accounting() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
-            <DropdownMenuLabel className="font-normal text-muted-foreground text-xs">Transaction tools</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
+              Transaction tools
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={runSync} disabled={!!busy}>
               <RefreshCw className={`w-4 h-4 ${busy === "sync" ? "animate-spin" : ""}`} />
@@ -149,80 +183,76 @@ export default function Accounting() {
         </DropdownMenu>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search payee or category" className="pl-9" />
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="text-sm text-muted-foreground">Loading…</div>
-      ) : filtered.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No transactions.</CardContent></Card>
-      ) : (
-        <div className="divide-y rounded-lg border bg-card">
-          {filtered.map((t) => {
-            const inv = invoiceFor(t.matched_invoice_id);
-            return (
-              <div key={t.id} className="px-4 py-3 flex items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium truncate">{t.payee || "Unknown"}</span>
-                    {(t.receipt_email_id || t.receipt_file_uri) && <Paperclip className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatDate(t.date)} · {t.account_name}{t.account_mask ? ` ···${t.account_mask}` : ""}
-                  </div>
-                  <input
-                    value={t.custom_category || t.category || ""}
-                    onChange={(e) => setTxs((p) => p.map((x) => (x.id === t.id ? { ...x, custom_category: e.target.value } : x)))}
-                    onBlur={(e) => updateTx(t.id, { custom_category: e.target.value })}
-                    placeholder="Category"
-                    className="mt-1 text-xs text-muted-foreground bg-transparent border-none p-0 w-full focus:outline-none focus:ring-0"
-                  />
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="font-medium tabular-nums">{formatCurrency(t.amount)}</div>
-                  {inv ? (
-                    <div className="text-xs text-primary truncate max-w-[160px]">{inv.name || inv.number}</div>
-                  ) : (
-                    <StatusBadge status={t.matched} />
-                  )}
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  {t.matched === "matched" && (
-                    <Button variant="ghost" size="icon" onClick={() => unlink(t)} aria-label="Unlink"><Unlink className="w-4 h-4" /></Button>
-                  )}
-                  {t.matched !== "matched" && t.matched !== "not_a_job" && (
-                    <Button variant="ghost" size="icon" onClick={() => { setLinking(t); setInvoiceQuery(""); }} aria-label="Link invoice"><Link2 className="w-4 h-4" /></Button>
-                  )}
-                  <Button variant="ghost" size="icon" onClick={() => ignore(t)} aria-label="Toggle ignore">
-                    <Ban className={`w-4 h-4 ${t.matched === "ignored" ? "text-muted-foreground" : "text-destructive"}`} />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <Tabs defaultValue="match">
+        <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="match">Match Transactions to Invoices</TabsTrigger>
+          <TabsTrigger value="categorize">Categorize Transactions</TabsTrigger>
+          <TabsTrigger value="accounts">Transactions by Account</TabsTrigger>
+        </TabsList>
+        <TabsContent value="match" className="mt-4">
+          <MatchTransactionsView
+            txs={txs}
+            invoices={invoices}
+            loading={loading}
+            onLink={onRequestLink}
+            onUnlink={unlink}
+          />
+        </TabsContent>
+        <TabsContent value="categorize" className="mt-4">
+          <CategorizeTransactionsView
+            txs={txs}
+            invoices={invoices}
+            loading={loading}
+            onLink={onRequestLink}
+            onUnlink={unlink}
+            onIgnore={ignore}
+            onCategoryChange={onCategoryChange}
+            onCategoryBlur={onCategoryBlur}
+          />
+        </TabsContent>
+        <TabsContent value="accounts" className="mt-4">
+          <TransactionsByAccountView
+            txs={txs}
+            invoices={invoices}
+            loading={loading}
+            onLink={onRequestLink}
+            onUnlink={unlink}
+            onIgnore={ignore}
+            onCategoryChange={onCategoryChange}
+            onCategoryBlur={onCategoryBlur}
+          />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={!!linking} onOpenChange={(o) => !o && setLinking(null)}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Link to invoice</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Link to invoice</DialogTitle>
+          </DialogHeader>
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input value={invoiceQuery} onChange={(e) => setInvoiceQuery(e.target.value)} placeholder="Search invoices" className="pl-9 mb-2" autoFocus />
+            <Input
+              value={invoiceQuery}
+              onChange={(e) => setInvoiceQuery(e.target.value)}
+              placeholder="Search invoices"
+              className="pl-9 mb-2"
+              autoFocus
+            />
           </div>
           <div className="max-h-72 overflow-y-auto divide-y rounded-lg border">
             {invoiceOptions.slice(0, 30).map((i) => (
-              <button key={i.id} onClick={() => linkInvoice(linking, i.id)}
-                className="w-full text-left px-3 py-2 hover:bg-accent/50 transition-colors">
+              <button
+                key={i.id}
+                onClick={() => linkInvoice(linking, i.id)}
+                className="w-full text-left px-3 py-2 hover:bg-accent/50 transition-colors"
+              >
                 <div className="font-medium text-sm truncate">{i.name || i.number}</div>
                 <div className="text-xs text-muted-foreground">{formatCurrency(i.total)}</div>
               </button>
             ))}
-            {invoiceOptions.length === 0 && <div className="p-4 text-sm text-muted-foreground text-center">No invoices.</div>}
+            {invoiceOptions.length === 0 && (
+              <div className="p-4 text-sm text-muted-foreground text-center">No invoices.</div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
