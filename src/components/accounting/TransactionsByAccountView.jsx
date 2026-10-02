@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Ban, Search } from "lucide-react";
+import { Ban, Building2, Route, Search, Tag, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,13 @@ import { Input } from "@/components/ui/input";
 import AccountGroup from "./AccountGroup";
 import MergeAccountsDialog from "./MergeAccountsDialog";
 import TransactionRow from "./TransactionRow";
+
+const TYPE_ORDER = [
+  { type: "business", label: "Business", icon: Building2, color: "text-primary" },
+  { type: "personal", label: "Personal", icon: User, color: "text-emerald-600" },
+  { type: "routing", label: "Routing", icon: Route, color: "text-amber-600" },
+  { type: null, label: "Unlabeled", icon: Tag, color: "text-muted-foreground" },
+];
 
 const matches = (t, q) => {
   const hay = [t.payee, t.merchant, t.account_name, t.custom_category, t.category, String(t.amount ?? "")].join(" ").toLowerCase();
@@ -189,22 +197,35 @@ export default function TransactionsByAccountView({
       {groups.length === 0 && (
         <div className="text-sm text-muted-foreground">No accounts.</div>
       )}
-      {groups.map(([account, list]) => (
-        <AccountGroup
-          key={account}
-          account={account}
-          txs={list}
-          collapsed={collapsed[account]}
-          onToggleCollapse={() => setCollapsed((p) => ({ ...p, [account]: !p[account] }))}
-          renderSection={renderSection}
-          categorize={categorize}
-          labelType={labelType[account]}
-          onSetLabel={(type) => setLabel(account, type)}
-          mergedSources={mergedSourcesOf(account)}
-          onUnmerge={unmerge}
-          onMerge={() => setMerging(account)}
-        />
-      ))}
+      {TYPE_ORDER.map(({ type, label, icon: Icon, color }) => {
+        const accs = groups.filter(([account]) => (labelType[account] || null) === type);
+        if (!accs.length) return null;
+        return (
+          <div key={label} className="space-y-2">
+            <div className="flex items-center gap-2 px-1 pt-2">
+              <Icon className={cn("w-4 h-4", color)} />
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{label}</h3>
+              <span className="text-xs text-muted-foreground">· {accs.length}</span>
+            </div>
+            {accs.map(([account, list]) => (
+              <AccountGroup
+                key={account}
+                account={account}
+                txs={list}
+                collapsed={collapsed[account]}
+                onToggleCollapse={() => setCollapsed((p) => ({ ...p, [account]: !p[account] }))}
+                renderSection={renderSection}
+                categorize={categorize}
+                labelType={labelType[account]}
+                onSetLabel={(type) => setLabel(account, type)}
+                mergedSources={mergedSourcesOf(account)}
+                onUnmerge={unmerge}
+                onMerge={() => setMerging(account)}
+              />
+            ))}
+          </div>
+        );
+      })}
       <MergeAccountsDialog
         open={!!merging}
         account={merging}
