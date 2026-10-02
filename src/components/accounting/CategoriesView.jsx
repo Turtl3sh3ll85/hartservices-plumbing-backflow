@@ -25,12 +25,12 @@ export default function CategoriesView({
 }) {
   const { toast } = useToast();
   const [collapsed, setCollapsed] = useState({});
-  const [hideIgnored, setHideIgnored] = useState(false);
+  const [hideIgnored, setHideIgnored] = useState(true);
   const [hideNotAJob, setHideNotAJob] = useState(false);
   const [pinnableMap, setPinnableMap] = useState({});
   const [catLoading, setCatLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [hidePersonal, setHidePersonal] = useState(false);
+  const [hidePersonal, setHidePersonal] = useState(true);
   const [personalAccounts, setPersonalAccounts] = useState(() => new Set());
 
   const loadCategories = useCallback(async () => {
