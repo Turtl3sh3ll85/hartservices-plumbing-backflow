@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { base44 } from "@/api/base44Client";
 import TransactionRow from "./TransactionRow";
 
 export default function CategoriesView({
@@ -16,6 +17,20 @@ export default function CategoriesView({
 }) {
   const [collapsed, setCollapsed] = useState({});
   const [hideIgnored, setHideIgnored] = useState(false);
+  const [pinnableMap, setPinnableMap] = useState({});
+
+  useEffect(() => {
+    let live = true;
+    base44.functions
+      .invoke("getSheetCategories", {})
+      .then((res) => {
+        const map = {};
+        for (const it of res.data?.items || []) map[it.name.toLowerCase()] = it.pinnable;
+        if (live) setPinnableMap(map);
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, []);
 
   const invoiceFor = (id) => invoices.find((i) => i.id === id);
 
@@ -63,6 +78,25 @@ export default function CategoriesView({
               <Tag className="w-4 h-4 text-muted-foreground shrink-0" />
               <h2 className="font-heading text-lg font-semibold truncate">{category}</h2>
               <span className="text-sm text-muted-foreground shrink-0">· {list.length}</span>
+              {(() => {
+                const key = category.toLowerCase();
+                const known = key in pinnableMap;
+                const matchable = pinnableMap[key];
+                return (
+                  <span
+                    className={cn(
+                      "ml-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium shrink-0",
+                      !known
+                        ? "bg-muted text-muted-foreground"
+                        : matchable
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-700"
+                    )}
+                  >
+                    {!known ? "Unknown" : matchable ? "Matchable" : "Not a job"}
+                  </span>
+                );
+              })()}
             </button>
             {!isCollapsed && (
               <div className="divide-y rounded-lg border bg-card">
