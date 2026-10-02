@@ -50,10 +50,10 @@ export default function PaymentMilestoneList({
             ? (customerReady ? "ready" : standingBy !== false ? "standing" : "due")
             : "standing");
           return (
-            <div key={i} className="flex items-center gap-3 py-1.5">
-              <span className="flex-1 min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
-              <span style={{ width: "6rem", flexShrink: 0, textAlign: "left" }} className="text-sm tabular-nums text-[#9ca3af]">{formatCurrency(amounts[i])}</span>
-              <div className="shrink-0 flex items-center gap-1.5 justify-end">
+            <div key={i} className="grid items-center gap-2 py-1.5" style={{ gridTemplateColumns: "minmax(0,1fr) 6rem 12rem" }}>
+              <span className="min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
+              <span className="text-sm tabular-nums text-[#9ca3af] text-left">{formatCurrency(amounts[i])}</span>
+              <div className="flex items-center gap-1.5 justify-end">
                 {p.paid ? (
                   canUnmarkPaid && onUnmarkPaid ? (
                     <button
