@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
 
 export default function TransactionCategoryPicker({ value, onChange, disabled }) {
   const [open, setOpen] = useState(false);
-  const [manual, setManual] = useState(false);
   const [input, setInput] = useState("");
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
   const popRef = useRef(null);
+  const inputRef = useRef(null);
   const current = value || "";
 
   const { data: sheetCategories = [] } = useQuery({
@@ -23,10 +23,16 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
     staleTime: 5 * 60 * 1000,
   });
 
+  const filtered = useMemo(() => {
+    const q = input.trim().toLowerCase();
+    if (!q) return sheetCategories;
+    return sheetCategories.filter((c) => c.toLowerCase().includes(q));
+  }, [sheetCategories, input]);
+
   useLayoutEffect(() => {
     if (!open || !btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    const popW = 192;
+    const popW = 208;
     let left = r.right - popW;
     if (left < 8) left = 8;
     setCoords({ top: r.bottom + 4, left });
@@ -44,10 +50,11 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
   }, [open]);
 
   useEffect(() => {
-    if (!open) { setManual(false); setInput(""); }
+    if (!open) setInput("");
+    else setTimeout(() => inputRef.current?.focus(), 0);
   }, [open]);
 
-  const commitManual = () => {
+  const commitInput = () => {
     const v = input.trim();
     if (v) { onChange(v); setOpen(false); }
   };
@@ -83,48 +90,47 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
       {open && createPortal(
         <div
           ref={popRef}
-          style={{ position: "fixed", top: coords.top, left: coords.left, width: 192 }}
-          className="z-[100] rounded-md border bg-popover shadow-lg py-1 max-h-72 overflow-y-auto"
+          style={{ position: "fixed", top: coords.top, left: coords.left, width: 208 }}
+          className="z-[100] rounded-md border bg-popover shadow-lg py-1 max-h-80 overflow-hidden flex flex-col"
         >
-          {sheetCategories.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => { onChange(opt); setOpen(false); }}
-              className="flex items-center justify-between w-full px-3 py-2 text-left text-sm hover:bg-accent min-h-9"
-            >
-              {opt}
-              {current === opt && <Check className="w-3.5 h-3.5 text-primary" />}
-            </button>
-          ))}
-          {sheetCategories.length > 0 && <div className="border-t my-1" />}
-          {!manual ? (
-            <button
-              type="button"
-              onClick={() => setManual(true)}
-              className="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-accent min-h-9"
-            >
-              + Enter manually...
-            </button>
-          ) : (
-            <div className="px-2 py-1.5 flex gap-1.5">
-              <input
-                autoFocus
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") commitManual(); }}
-                placeholder="Category name"
-                className="flex-1 min-w-0 rounded-md border bg-background px-2 py-1 text-sm min-h-9"
-              />
+          <div className="px-2 py-1.5 border-b">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); commitInput(); }
+                if (e.key === "Escape") setOpen(false);
+              }}
+              placeholder="Type to search or add new…"
+              className="w-full rounded-md border bg-background px-2 py-1 text-sm min-h-9"
+            />
+          </div>
+          <div className="overflow-y-auto flex-1">
+            {filtered.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { onChange(opt); setOpen(false); }}
+                className="flex items-center justify-between w-full px-3 py-2 text-left text-sm hover:bg-accent min-h-9"
+              >
+                <span className="truncate">{opt}</span>
+                {current === opt && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+              </button>
+            ))}
+            {filtered.length === 0 && input.trim() && (
               <button
                 type="button"
-                onClick={commitManual}
-                className="rounded-md bg-primary text-primary-foreground px-2 text-xs min-h-9"
+                onClick={commitInput}
+                className="w-full px-3 py-2 text-left text-sm text-primary hover:bg-accent min-h-9"
               >
-                Set
+                + Add “{input.trim()}”
               </button>
-            </div>
-          )}
+            )}
+            {filtered.length === 0 && !input.trim() && (
+              <div className="px-3 py-2 text-sm text-muted-foreground">No categories.</div>
+            )}
+          </div>
         </div>,
         document.body
       )}

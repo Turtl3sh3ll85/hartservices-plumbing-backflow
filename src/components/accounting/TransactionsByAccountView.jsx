@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { Ban } from "lucide-react";
+import { Ban, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import AccountGroup from "./AccountGroup";
 import MergeAccountsDialog from "./MergeAccountsDialog";
 import TransactionRow from "./TransactionRow";
+
+const matches = (t, q) => {
+  const hay = [t.payee, t.merchant, t.account_name, t.custom_category, t.category, String(t.amount ?? "")].join(" ").toLowerCase();
+  return hay.includes(q);
+};
 
 export default function TransactionsByAccountView({
   txs,
@@ -16,12 +22,14 @@ export default function TransactionsByAccountView({
   onIgnore,
   onCategoryChange,
   onCategoryBlur,
+  onPinReceipt,
 }) {
   const { toast } = useToast();
   const [labels, setLabels] = useState([]);
   const [collapsed, setCollapsed] = useState({});
   const [merging, setMerging] = useState(null);
   const [hideIgnored, setHideIgnored] = useState(false);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     base44.entities.AccountLabel.list()
@@ -47,15 +55,17 @@ export default function TransactionsByAccountView({
   };
 
   const groups = useMemo(() => {
+    const q = query.trim().toLowerCase();
     const map = {};
     for (const t of txs) {
       if (hideIgnored && t.matched === "ignored") continue;
+      if (q && !matches(t, q)) continue;
       const name = resolveName(t.account_name) || "Unknown";
       (map[name] ||= []).push(t);
     }
     return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txs, labels, hideIgnored]);
+  }, [txs, labels, hideIgnored, query]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
@@ -135,6 +145,7 @@ export default function TransactionsByAccountView({
               onIgnore={onIgnore}
               onCategoryChange={onCategoryChange}
               onCategoryBlur={onCategoryBlur}
+              onPinReceipt={onPinReceipt}
               showAccount={false}
             />
           ))}
@@ -145,7 +156,16 @@ export default function TransactionsByAccountView({
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name, amount, category, account, merchant"
+            className="pl-9"
+          />
+        </div>
         <Button
           variant={hideIgnored ? "default" : "outline"}
           size="sm"

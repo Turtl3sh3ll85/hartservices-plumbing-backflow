@@ -9,7 +9,7 @@ const matches = (t, q) => {
   return hay.includes(q);
 };
 
-export default function MatchTransactionsView({ txs, invoices, loading, onLink, onUnlink }) {
+export default function MatchTransactionsView({ txs, invoices, loading, onLink, onUnlink, onPinReceipt }) {
   const [query, setQuery] = useState("");
 
   const eligible = useMemo(() => {
@@ -55,6 +55,7 @@ export default function MatchTransactionsView({ txs, invoices, loading, onLink, 
               invoice={invoiceFor(t.matched_invoice_id)}
               onLink={onLink}
               onUnlink={onUnlink}
+              onPinReceipt={onPinReceipt}
               editableCategory={false}
               showIgnore={false}
             />

@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import TransactionRow from "./TransactionRow";
 
+const matches = (t, q) => {
+  const hay = [t.payee, t.merchant, t.account_name, t.custom_category, t.category, String(t.amount ?? "")].join(" ").toLowerCase();
+  return hay.includes(q);
+};
+
 export default function CategorizeTransactionsView({
   txs,
   invoices,
@@ -14,6 +19,7 @@ export default function CategorizeTransactionsView({
   onIgnore,
   onCategoryChange,
   onCategoryBlur,
+  onPinReceipt,
 }) {
   const [query, setQuery] = useState("");
   const [hideIgnored, setHideIgnored] = useState(false);
@@ -22,14 +28,14 @@ export default function CategorizeTransactionsView({
 
   const invoiceFor = (id) => invoices.find((i) => i.id === id);
 
+  const q = query.trim().toLowerCase();
   const list = txs
     .filter((t) => {
-      const q = query.toLowerCase();
-      if (q && !`${t.payee} ${t.category} ${t.custom_category}`.toLowerCase().includes(q)) return false;
+      if (q && !matches(t, q)) return false;
       if (hideIgnored && t.matched === "ignored") return false;
       return true;
     })
-    .slice(0, 10);
+    .slice(0, 50);
 
   return (
     <div className="space-y-3">
@@ -39,7 +45,7 @@ export default function CategorizeTransactionsView({
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search payee or category"
+            placeholder="Search name, amount, category, account, merchant"
             className="pl-9"
           />
         </div>
@@ -57,7 +63,7 @@ export default function CategorizeTransactionsView({
       {list.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-sm text-muted-foreground">
-            No transactions.
+            {q ? "No transactions match your search." : "No transactions."}
           </CardContent>
         </Card>
       ) : (
@@ -72,6 +78,7 @@ export default function CategorizeTransactionsView({
               onIgnore={onIgnore}
               onCategoryChange={onCategoryChange}
               onCategoryBlur={onCategoryBlur}
+              onPinReceipt={onPinReceipt}
             />
           ))}
         </div>

@@ -1,7 +1,9 @@
-import { Link2, Unlink, Ban, Paperclip } from "lucide-react";
+import { useRef, useState } from "react";
+import { Link2, Unlink, Ban, Paperclip, Download, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import TransactionCategoryPicker from "@/components/TransactionCategoryPicker";
+import { base44 } from "@/api/base44Client";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 export default function TransactionRow({
@@ -12,20 +14,42 @@ export default function TransactionRow({
   onIgnore,
   onCategoryChange,
   onCategoryBlur,
+  onPinReceipt,
   editableCategory = true,
   showIgnore = true,
   showAccount = true,
 }) {
+  const fileRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+
   const handleCategory = (val) => {
     onCategoryChange?.(t.id, val);
     onCategoryBlur?.(t.id, val);
   };
+
+  const downloadReceipt = async () => {
+    if (!t.receipt_file_uri) return;
+    setDownloading(true);
+    try {
+      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: t.receipt_file_uri });
+      window.open(signed_url, "_blank");
+    } catch {
+      setDownloading(false);
+    }
+  };
+
+  const pickFile = (e) => {
+    const f = e.target.files?.[0];
+    if (f) onPinReceipt?.(t, f);
+    e.target.value = "";
+  };
+
   return (
     <div className="px-4 py-3 flex items-center gap-3">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="font-medium truncate">{t.payee || "Unknown"}</span>
-          {(t.receipt_email_id || t.receipt_file_uri) && (
+          {t.receipt_file_uri && (
             <Paperclip className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
           )}
         </div>
@@ -61,6 +85,18 @@ export default function TransactionRow({
         )}
       </div>
       <div className="flex gap-1 shrink-0">
+        {t.receipt_file_uri ? (
+          <Button variant="ghost" size="icon" onClick={downloadReceipt} disabled={downloading} aria-label="Download receipt">
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          </Button>
+        ) : (
+          <>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickFile} />
+            <Button variant="ghost" size="icon" onClick={() => fileRef.current?.click()} aria-label="Pin receipt">
+              <Plus className="w-4 h-4" />
+            </Button>
+          </>
+        )}
         {t.matched === "matched" && (
           <Button variant="ghost" size="icon" onClick={() => onUnlink?.(t)} aria-label="Unlink">
             <Unlink className="w-4 h-4" />

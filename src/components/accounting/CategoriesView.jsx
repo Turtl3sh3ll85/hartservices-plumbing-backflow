@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, RefreshCw, Tag } from "lucide-react";
+import { ChevronDown, RefreshCw, Search, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import TransactionRow from "./TransactionRow";
+
+const matches = (t, q) => {
+  const hay = [t.payee, t.merchant, t.account_name, t.custom_category, t.category, String(t.amount ?? "")].join(" ").toLowerCase();
+  return hay.includes(q);
+};
 
 export default function CategoriesView({
   txs,
@@ -15,6 +21,7 @@ export default function CategoriesView({
   onIgnore,
   onCategoryChange,
   onCategoryBlur,
+  onPinReceipt,
 }) {
   const { toast } = useToast();
   const [collapsed, setCollapsed] = useState({});
@@ -22,6 +29,7 @@ export default function CategoriesView({
   const [hideNotAJob, setHideNotAJob] = useState(false);
   const [pinnableMap, setPinnableMap] = useState({});
   const [catLoading, setCatLoading] = useState(true);
+  const [query, setQuery] = useState("");
 
   const loadCategories = useCallback(async () => {
     setCatLoading(true);
@@ -44,10 +52,12 @@ export default function CategoriesView({
   const invoiceFor = (id) => invoices.find((i) => i.id === id);
 
   const groups = useMemo(() => {
+    const q = query.trim().toLowerCase();
     const map = {};
     for (const t of txs) {
       if (hideIgnored && t.matched === "ignored") continue;
       if (hideNotAJob && t.matched === "not_a_job") continue;
+      if (q && !matches(t, q)) continue;
       const cat = t.custom_category || t.category || "Uncategorized";
       (map[cat] ||= []).push(t);
     }
@@ -56,23 +66,33 @@ export default function CategoriesView({
       if (b[0] === "Uncategorized") return -1;
       return a[0].localeCompare(b[0]);
     });
-  }, [txs, hideIgnored, hideNotAJob]);
+  }, [txs, hideIgnored, hideNotAJob, query]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end gap-2 flex-wrap">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={loadCategories}
-          disabled={catLoading}
-          className="min-h-11 sm:min-h-9"
-        >
-          <RefreshCw className={cn("w-4 h-4", catLoading && "animate-spin")} />
-          Refresh
-        </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name, amount, category, account, merchant"
+            className="pl-9"
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadCategories}
+            disabled={catLoading}
+            className="min-h-11 sm:min-h-9"
+          >
+            <RefreshCw className={cn("w-4 h-4", catLoading && "animate-spin")} />
+            Refresh
+          </Button>
         <Button
           variant={hideNotAJob ? "default" : "outline"}
           size="sm"
@@ -89,6 +109,7 @@ export default function CategoriesView({
         >
           {hideIgnored ? "Show Ignored" : "Hide Ignored"}
         </Button>
+        </div>
       </div>
       {groups.length === 0 && (
         <div className="text-sm text-muted-foreground">No categories.</div>
@@ -138,6 +159,7 @@ export default function CategoriesView({
                     onIgnore={onIgnore}
                     onCategoryChange={onCategoryChange}
                     onCategoryBlur={onCategoryBlur}
+                    onPinReceipt={onPinReceipt}
                   />
                 ))}
               </div>

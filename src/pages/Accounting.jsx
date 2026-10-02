@@ -131,6 +131,21 @@ export default function Accounting() {
     setInvoiceQuery("");
   };
 
+  const pinReceipt = async (tx, file) => {
+    try {
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+      await base44.functions.invoke("snapReceipt", {
+        file_uri,
+        file_name: file.name,
+        transaction_id: tx.id,
+      });
+      updateTx(tx.id, { receipt_file_uri: file_uri });
+      toast({ title: "Receipt pinned to transaction" });
+    } catch (e) {
+      toast({ title: "Failed to pin receipt", description: e.message, variant: "destructive" });
+    }
+  };
+
   const invoiceOptions = invoices.filter((i) => {
     const q = invoiceQuery.toLowerCase();
     return !q || (i.name || "").toLowerCase().includes(q) || (i.number || "").toLowerCase().includes(q);
@@ -198,6 +213,7 @@ export default function Accounting() {
             loading={loading}
             onLink={onRequestLink}
             onUnlink={unlink}
+            onPinReceipt={pinReceipt}
           />
         </TabsContent>
         <TabsContent value="categorize" className="mt-4">
@@ -210,6 +226,7 @@ export default function Accounting() {
             onIgnore={ignore}
             onCategoryChange={onCategoryChange}
             onCategoryBlur={onCategoryBlur}
+            onPinReceipt={pinReceipt}
           />
         </TabsContent>
         <TabsContent value="accounts" className="mt-4">
@@ -222,6 +239,7 @@ export default function Accounting() {
             onIgnore={ignore}
             onCategoryChange={onCategoryChange}
             onCategoryBlur={onCategoryBlur}
+            onPinReceipt={pinReceipt}
           />
         </TabsContent>
         <TabsContent value="categories" className="mt-4">
@@ -234,6 +252,7 @@ export default function Accounting() {
             onIgnore={ignore}
             onCategoryChange={onCategoryChange}
             onCategoryBlur={onCategoryBlur}
+            onPinReceipt={pinReceipt}
           />
         </TabsContent>
       </Tabs>
