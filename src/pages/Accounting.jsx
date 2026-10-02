@@ -187,7 +187,7 @@ export default function Accounting() {
         <TabsList className="w-full justify-start overflow-x-auto scrollbar-hide">
           <TabsTrigger value="match">Match Transactions to Invoices</TabsTrigger>
           <TabsTrigger value="categorize">Categorize Transactions</TabsTrigger>
-          <TabsTrigger value="accounts">Transactions by Account</TabsTrigger>
+          <TabsTrigger value="accounts">Accounts</TabsTrigger>
         </TabsList>
         <TabsContent value="match" className="mt-4">
           <MatchTransactionsView

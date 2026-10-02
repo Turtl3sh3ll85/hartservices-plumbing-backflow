@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { Ban } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 import AccountGroup from "./AccountGroup";
 import MergeAccountsDialog from "./MergeAccountsDialog";
 import TransactionRow from "./TransactionRow";
@@ -19,6 +21,7 @@ export default function TransactionsByAccountView({
   const [labels, setLabels] = useState([]);
   const [collapsed, setCollapsed] = useState({});
   const [merging, setMerging] = useState(null);
+  const [hideIgnored, setHideIgnored] = useState(false);
 
   useEffect(() => {
     base44.entities.AccountLabel.list()
@@ -46,12 +49,13 @@ export default function TransactionsByAccountView({
   const groups = useMemo(() => {
     const map = {};
     for (const t of txs) {
+      if (hideIgnored && t.matched === "ignored") continue;
       const name = resolveName(t.account_name) || "Unknown";
       (map[name] ||= []).push(t);
     }
     return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txs, labels]);
+  }, [txs, labels, hideIgnored]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
@@ -141,6 +145,17 @@ export default function TransactionsByAccountView({
 
   return (
     <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button
+          variant={hideIgnored ? "default" : "outline"}
+          size="sm"
+          onClick={() => setHideIgnored((v) => !v)}
+          className="min-h-11 sm:min-h-9"
+        >
+          <Ban className="w-4 h-4" />
+          {hideIgnored ? "Show Ignored" : "Hide Ignored"}
+        </Button>
+      </div>
       {groups.length === 0 && (
         <div className="text-sm text-muted-foreground">No accounts.</div>
       )}
