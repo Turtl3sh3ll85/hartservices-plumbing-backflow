@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, FileText, ClipboardList, ExternalLink, Mail, Phone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import PortalDocumentList from "@/components/portal/PortalDocumentList";
 import { useSettings } from "@/hooks/useSettings";
@@ -15,7 +16,22 @@ export default function CustomerPortalPreviewDialog({ customer, onClose }) {
   const [preview, setPreview] = useState(null);
   const [previewKind, setPreviewKind] = useState("invoice");
   const { settings } = useSettings();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const email = (customer?.email || "").trim().toLowerCase();
+
+  const setStatus = async (inv, status, index) => {
+    try {
+      const response = await base44.functions.invoke("setCustomerPortalInvoiceStatus", {
+        invoice_id: inv.id, status, schedule_index: index,
+      });
+      if (response.data?.error || !response.data?.invoice) throw new Error(response.data?.error || "Could not save status");
+      await queryClient.invalidateQueries({ queryKey: ["customerPortal", email] });
+      setPreview((current) => current?.id === inv.id ? response.data.invoice : current);
+    } catch (error) {
+      toast({ title: "Could not update status", description: error.message, variant: "destructive" });
+    }
+  };
 
   const { data: portal = {}, isLoading } = useQuery({
     queryKey: ["customerPortal", email],
@@ -74,6 +90,8 @@ export default function CustomerPortalPreviewDialog({ customer, onClose }) {
                     setPreview(doc);
                     setPreviewKind(view === "invoices" ? "invoice" : "estimate");
                   }}
+                  onStatusChange={view === "invoices" ? setStatus : undefined}
+                  onPayNow={view === "invoices" ? (inv, idx) => window.open(`/pay/${inv.id}?milestone=${idx}`, "_blank") : undefined}
                 />
 
                 <div className="flex justify-end pt-1">
