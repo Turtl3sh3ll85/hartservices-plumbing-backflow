@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/format";
 
 const UNIT_OPTIONS = ["ea.", "/lf", "/hr"];
 const MARKUP_OPTIONS = [10, 15, 25];
-const UNIT_SELECT_OPTIONS = [{ value: "", label: "—" }, ...UNIT_OPTIONS.map((u) => ({ value: u, label: u }))];
+const UNIT_SELECT_OPTIONS = [{ value: "none", label: "—" }, ...UNIT_OPTIONS.map((u) => ({ value: u, label: u }))];
 const MARKUP_SELECT_OPTIONS = [{ value: "0", label: "0%" }, ...MARKUP_OPTIONS.map((m) => ({ value: String(m), label: `${m}%` }))];
 import SheetItemPicker from "@/components/SheetItemPicker";
 import ManualLineItemDialog from "@/components/ManualLineItemDialog";
@@ -129,7 +129,7 @@ export default function LineItemsEditor({ items, onChange }) {
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs text-muted-foreground mb-1">Unit</span>
-                        <MobileSelect value={li.unit || ""} onValueChange={(v) => update(i, { unit: v })} placeholder="Pick…" ariaLabel="Unit" options={UNIT_SELECT_OPTIONS} triggerClassName="w-28" />
+                        <MobileSelect value={li.unit && li.unit !== "none" ? li.unit : ""} onValueChange={(v) => update(i, { unit: v === "none" ? "" : v })} placeholder="Pick…" ariaLabel="Unit" options={UNIT_SELECT_OPTIONS} triggerClassName="w-28" />
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs text-muted-foreground mb-1">Unit Price</span>
