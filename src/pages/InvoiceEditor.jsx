@@ -179,21 +179,19 @@ export default function InvoiceEditor() {
         <InvoiceProfitability invoiceId={id} invoiceTotal={totals.total} />
       )}
 
-      <div className="flex items-center justify-between sticky bottom-0 bg-background/80 backdrop-blur border-t pt-3">
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input type="checkbox" checked={!!inv.cc_fee_enabled} onChange={(e) => set("cc_fee_enabled", e.target.checked)} className="w-4 h-4" />
+      <div className="flex items-center justify-between sticky bottom-0 bg-background/95 backdrop-blur border-t px-4 py-3 gap-4">
+        <label className="flex items-center gap-2 text-sm cursor-pointer shrink-0">
+          <input type="checkbox" checked={!!inv.cc_fee_enabled} onChange={(e) => set("cc_fee_enabled", e.target.checked)} className="w-4 h-4 rounded" />
           Add 3% credit-card fee
         </label>
-        <div className="flex items-center gap-4">
-          <span className="text-sm">
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-sm whitespace-nowrap">
             <span className="text-muted-foreground">Balance: </span>
-            <span className="font-semibold text-lg">{formatCurrency(balance)}</span>
+            <span className="font-semibold">{formatCurrency(balance)}</span>
             <span className="text-muted-foreground"> / {formatCurrency(totals.total)}</span>
           </span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={() => save(false)} disabled={saving} aria-label="Save draft"><Save className="w-4 h-4" /></Button>
-            <Button size="icon" onClick={() => save(true)} disabled={saving || !scheduleValid || !inv.customer_id || !(inv.line_items || []).length} aria-label="Save & send"><Send className="w-4 h-4" /></Button>
-          </div>
+          <Button variant="outline" size="icon" onClick={() => save(false)} disabled={saving} aria-label="Save draft" className="shrink-0"><Save className="w-4 h-4" /></Button>
+          <Button size="icon" onClick={() => save(true)} disabled={saving || !scheduleValid || !inv.customer_id || !(inv.line_items || []).length} aria-label="Save & send" className="shrink-0"><Send className="w-4 h-4" /></Button>
         </div>
       </div>
     </div>
