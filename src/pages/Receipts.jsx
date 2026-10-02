@@ -111,7 +111,7 @@ export default function Receipts() {
             <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl py-12 cursor-pointer hover:bg-accent/50 transition-colors min-h-44">
               <Camera className="w-8 h-8 text-muted-foreground" />
               <span className="text-sm font-medium">Take photo or upload receipt</span>
-              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onPickFile} />
+              <input type="file" accept="image/*" className="hidden" onChange={onPickFile} />
             </label>
           ) : (
             <div className="space-y-4">
