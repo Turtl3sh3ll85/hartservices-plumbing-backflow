@@ -72,6 +72,11 @@ export default function PaymentMilestoneList({
                   )
                 ) : (
                   <>
+                    <MilestoneStatusDropdown
+                      status={status} statuses={statuses} labels={STATUS_LABEL} icons={STATUS_ICON} styles={STATUS_STYLE}
+                      label={p.label || `Payment ${i + 1}`} readOnly={readOnly}
+                      onChange={onStatusChange ? (value) => onStatusChange(value, i) : undefined}
+                    />
                     {onPayNow && status === "due" ? (
                       <button
                         type="button"
@@ -84,11 +89,6 @@ export default function PaymentMilestoneList({
                     ) : canMarkPaidByCheck && onMarkPaidByCheck ? (
                       <MarkPaidButton onClick={() => onMarkPaidByCheck(i)} className={STATUS_STYLE.ready} label={p.label || `Payment ${i + 1}`} />
                     ) : null}
-                    <MilestoneStatusDropdown
-                      status={status} statuses={statuses} labels={STATUS_LABEL} icons={STATUS_ICON} styles={STATUS_STYLE}
-                      label={p.label || `Payment ${i + 1}`} readOnly={readOnly}
-                      onChange={onStatusChange ? (value) => onStatusChange(value, i) : undefined}
-                    />
                   </>
                 )}
               </div>
