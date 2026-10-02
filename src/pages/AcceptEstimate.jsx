@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Check, CheckCircle2 } from "lucide-react";
+import { Check, CheckCircle2, FileText } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +14,6 @@ export default function AcceptEstimate() {
   const [accepting, setAccepting] = useState(false);
   const [selectedOption, setSelectedOption] = useState("");
   const [selectedItems, setSelectedItems] = useState({}); // index -> qty
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -38,21 +37,13 @@ export default function AcceptEstimate() {
     .filter((li) => li.quantity > 0);
   const aLaCarteTotals = computeTotals(aLaCarteChosen, estimate?.tax_rate, estimate?.cc_fee_enabled);
 
-  const accept = async () => {
-    setAccepting(true);
-    try {
-      const payload = { estimate_id: estimateId, customer_ready: ready };
-      if (mode === "side_by_side") payload.selected_option_label = selectedOption;
-      if (mode === "a_la_carte") {
-        payload.selected_line_items = aLaCarteChosen.map((li) => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price }));
-      }
-      const res = await base44.functions.invoke("acceptEstimate", payload);
-      if (res.data?.invoice_id) {
-        navigate(`/pay/${res.data.invoice_id}`);
-      }
-    } catch (e) {
-      alert(e.message || "Failed to accept");
-    } finally { setAccepting(false); }
+  const reviewContract = () => {
+    navigate(`/contract/${estimateId}`, {
+      state: {
+        selectedOption: mode === "side_by_side" ? selectedOption : undefined,
+        selectedItems: mode === "a_la_carte" ? selectedItems : undefined,
+      },
+    });
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
@@ -132,14 +123,14 @@ export default function AcceptEstimate() {
           </Card>
         )}
 
-        <label className="flex items-center gap-2 justify-center text-sm">
-          <input type="checkbox" checked={ready} onChange={(e) => setReady(e.target.checked)} className="w-4 h-4" />
-          I'm ready to begin work once approved
-        </label>
-
-        <Button onClick={accept} disabled={accepting || (mode === "a_la_carte" && aLaCarteChosen.length === 0)} className="w-full" size="lg">
+        <Button
+          onClick={reviewContract}
+          disabled={mode === "a_la_carte" && aLaCarteChosen.length === 0}
+          className="w-full"
+          size="lg"
+        >
           <CheckCircle2 className="w-5 h-5" />
-          {accepting ? "Accepting…" : "Accept & continue to invoice"}
+          Review & Accept
         </Button>
       </div>
     </div>

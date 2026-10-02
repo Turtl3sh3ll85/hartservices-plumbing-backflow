@@ -33,6 +33,7 @@ const UserDetail = lazy(() => import('@/pages/UserDetail'));
 
 const PayInvoice = lazy(() => import('@/pages/PayInvoice'));
 const AcceptEstimate = lazy(() => import('@/pages/AcceptEstimate'));
+const ReviewContract = lazy(() => import('@/pages/ReviewContract'));
 const MyDocuments = lazy(() => import('@/pages/MyDocuments'));
 
 const LoadingSpinner = () => (
@@ -88,6 +89,7 @@ const AuthenticatedApp = () => {
         <Routes location={location}>
           <Route path="/pay/:invoiceId" element={<PayInvoice />} />
           <Route path="/accept/:estimateId" element={<AcceptEstimate />} />
+          <Route path="/contract/:estimateId" element={<ReviewContract />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
