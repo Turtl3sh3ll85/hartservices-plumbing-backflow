@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { useSettings } from "@/hooks/useSettings";
+import { useToast } from "@/components/ui/use-toast";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import PortalDocumentList from "@/components/portal/PortalDocumentList";
 import ScheduledMaintenanceTeaser from "@/components/portal/ScheduledMaintenanceTeaser";
@@ -19,10 +20,12 @@ export default function MyDocuments() {
   const email = (searchParams.get("email") || "").trim().toLowerCase();
   const navigate = useNavigate();
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [view, setView] = useState("invoices");
   const [preview, setPreview] = useState(null);
   const [previewKind, setPreviewKind] = useState("invoice");
   const [flagging, setFlagging] = useState(false);
+  const [payingMilestone, setPayingMilestone] = useState(null);
   const queryClient = useQueryClient();
   const setPortalStatus = usePortalMilestoneStatus(email);
 
@@ -141,7 +144,21 @@ export default function MyDocuments() {
                   settings={settings}
                   attachments={allAttachments}
                   onPreview={(i) => { setPreview(i); setPreviewKind("invoice"); }}
-                  onPayNow={(inv, idx) => navigate(`/pay/${inv.id}?milestone=${idx}`)}
+                  onPayNow={async (inv, idx) => {
+                    setPayingMilestone(`${inv.id}:${idx}`);
+                    try {
+                      const res = await base44.functions.invoke("createPaypalOrder", { invoice_id: inv.id, schedule_index: idx });
+                      if (res.data?.approval_url) {
+                        window.location.href = res.data.approval_url;
+                      } else {
+                        toast({ title: "Failed to start payment", variant: "destructive" });
+                      }
+                    } catch (e) {
+                      toast({ title: "Payment failed", description: e.message, variant: "destructive" });
+                    } finally {
+                      setPayingMilestone(null);
+                    }
+                  }}
                   onStatusChange={async (inv, status, index) => {
                     const saved = await setPortalStatus(inv, status, index);
                     if (saved) setPreview((current) => current?.id === saved.id ? saved : current);
