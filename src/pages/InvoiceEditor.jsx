@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Send, Clock, PauseCircle, Contact, UserPlus } from "lucide-react";
+import { ArrowLeft, Send, Clock, PauseCircle, UserPlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import LineItemsEditor from "@/components/LineItemsEditor";
-import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 import CustomerFormDialog from "@/components/CustomerFormDialog";
 import CustomerPicker from "@/components/CustomerPicker";
 import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
@@ -28,7 +27,6 @@ export default function InvoiceEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState([]);
-  const [contactsOpen, setContactsOpen] = useState(false);
   const [newCustOpen, setNewCustOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
   const [inv, setInv] = useState({
@@ -112,7 +110,6 @@ export default function InvoiceEditor() {
             <Label>Customer *</Label>
             <div className="flex gap-2">
               <CustomerPicker customers={customers} value={inv.customer_id} onChange={(cid) => set("customer_id", cid)} />
-              <Button type="button" variant="outline" size="icon" onClick={() => setContactsOpen(true)} aria-label="Choose from Google Contacts" title="Google Contacts"><Contact className="w-4 h-4" /></Button>
               <Button type="button" variant="outline" size="icon" onClick={() => setNewCustOpen(true)} aria-label="Add new customer" title="New customer"><UserPlus className="w-4 h-4" /></Button>
             </div>
           </div>
@@ -123,14 +120,6 @@ export default function InvoiceEditor() {
         </CardContent>
       </Card>
 
-      <GoogleContactsDialog open={contactsOpen} onOpenChange={setContactsOpen} onPick={async (c) => {
-        let match = customers.find((cu) => cu.email && c.email && cu.email.toLowerCase() === c.email.toLowerCase());
-        if (!match && c.email) {
-          try { match = await base44.entities.Customer.create({ name: c.name || c.email, company: c.company || "", email: c.email, phone: c.phone || "" }); setCustomers((s) => [...s, match]); }
-          catch (e) { /* ignore duplicate */ }
-        }
-        if (match) set("customer_id", match.id);
-      }} />
       <CustomerFormDialog open={newCustOpen} onOpenChange={setNewCustOpen} onPick={(c) => { setCustomers((s) => [...s, c]); set("customer_id", c.id); }} />
 
       <Card>
