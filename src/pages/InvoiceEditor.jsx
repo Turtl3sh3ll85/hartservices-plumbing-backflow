@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import LineItemsEditor from "@/components/LineItemsEditor";
 import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
+import InvoiceProfitability from "@/components/InvoiceProfitability";
+import { useAuth } from "@/lib/AuthContext";
 import { computeTotals, formatCurrency, amountPaidTotal, nextDuePayment } from "@/lib/format";
 
 export default function InvoiceEditor() {
@@ -17,6 +19,8 @@ export default function InvoiceEditor() {
   const isNew = !id;
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canSeeProfit = user?.role === "admin" || user?.role === "accountant";
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState([]);
@@ -152,6 +156,10 @@ export default function InvoiceEditor() {
         <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
         <CardContent><Textarea value={inv.notes || ""} onChange={(e) => set("notes", e.target.value)} rows={3} /></CardContent>
       </Card>
+
+      {!isNew && canSeeProfit && (
+        <InvoiceProfitability invoiceId={id} invoiceTotal={totals.total} />
+      )}
 
       <div className="flex items-center justify-between sticky bottom-0 bg-background/80 backdrop-blur border-t pt-3">
         <div className="text-sm">
