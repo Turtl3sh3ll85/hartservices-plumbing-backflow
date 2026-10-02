@@ -110,7 +110,7 @@ export default function Receipts() {
           {!preview ? (
             <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl py-12 cursor-pointer hover:bg-accent/50 transition-colors min-h-44">
               <Camera className="w-8 h-8 text-muted-foreground" />
-              <span className="text-sm font-medium">Take photo or upload receipt</span>
+              <span className="text-sm font-medium">Upload Receipt From Photos</span>
               <input type="file" accept="image/*" className="hidden" onChange={onPickFile} />
             </label>
           ) : (
