@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Send, Clock, PauseCircle } from "lucide-react";
+import { ArrowLeft, Send, Clock, PauseCircle, Contact, UserPlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import LineItemsEditor from "@/components/LineItemsEditor";
+import GoogleContactsDialog from "@/components/GoogleContactsDialog";
+import CustomerFormDialog from "@/components/CustomerFormDialog";
 import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
 import InvoiceProfitability from "@/components/InvoiceProfitability";
 import { useAuth } from "@/lib/AuthContext";
@@ -24,6 +26,8 @@ export default function InvoiceEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState([]);
+  const [contactsOpen, setContactsOpen] = useState(false);
+  const [newCustOpen, setNewCustOpen] = useState(false);
   const [inv, setInv] = useState({
     customer_id: "", name: "", line_items: [], tax_rate: 0, cc_fee_enabled: false,
     payment_schedule: [], status: "draft", due_date: "", notes: "",
@@ -87,17 +91,30 @@ export default function InvoiceEditor() {
       <Card>
         <CardHeader><CardTitle className="text-base">Details</CardTitle></CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3">
-          <div>
+          <div className="sm:col-span-2">
             <Label>Customer *</Label>
-            <select value={inv.customer_id} onChange={(e) => set("customer_id", e.target.value)} className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-              <option value="">Select customer…</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}{c.company ? ` — ${c.company}` : ""}</option>)}
-            </select>
+            <div className="flex gap-2">
+              <select value={inv.customer_id} onChange={(e) => set("customer_id", e.target.value)} className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+                <option value="">Select customer…</option>
+                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}{c.company ? ` — ${c.company}` : ""}</option>)}
+              </select>
+              <Button type="button" variant="outline" size="icon" onClick={() => setContactsOpen(true)} aria-label="Choose from Google Contacts" title="Google Contacts"><Contact className="w-4 h-4" /></Button>
+              <Button type="button" variant="outline" size="icon" onClick={() => setNewCustOpen(true)} aria-label="Add new customer" title="New customer"><UserPlus className="w-4 h-4" /></Button>
+            </div>
           </div>
-          <div><Label>Invoice name</Label><Input value={inv.name || ""} onChange={(e) => set("name", e.target.value)} /></div>
-          <div><Label>Due date</Label><Input type="date" value={inv.due_date || ""} onChange={(e) => set("due_date", e.target.value)} /></div>
+          <div><Label>Job name</Label><Input value={inv.name || ""} onChange={(e) => set("name", e.target.value)} /></div>
         </CardContent>
       </Card>
+
+      <GoogleContactsDialog open={contactsOpen} onOpenChange={setContactsOpen} onPick={async (c) => {
+        let match = customers.find((cu) => cu.email && c.email && cu.email.toLowerCase() === c.email.toLowerCase());
+        if (!match && c.email) {
+          try { match = await base44.entities.Customer.create({ name: c.name || c.email, company: c.company || "", email: c.email, phone: c.phone || "" }); setCustomers((s) => [...s, match]); }
+          catch (e) { /* ignore duplicate */ }
+        }
+        if (match) set("customer_id", match.id);
+      }} />
+      <CustomerFormDialog open={newCustOpen} onOpenChange={setNewCustOpen} onPick={(c) => { setCustomers((s) => [...s, c]); set("customer_id", c.id); }} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Line items</CardTitle></CardHeader>
