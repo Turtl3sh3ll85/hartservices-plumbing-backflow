@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import PortalDocumentList from "@/components/portal/PortalDocumentList";
+import ScheduledMaintenanceTeaser from "@/components/portal/ScheduledMaintenanceTeaser";
 import { useSettings } from "@/hooks/useSettings";
 
 export default function CustomerPortalPreviewDialog({ customer, onClose }) {
@@ -47,6 +48,8 @@ export default function CustomerPortalPreviewDialog({ customer, onClose }) {
   const invoices = portal.invoices || [];
   const estimates = portal.estimates || [];
   const customers = portal.customers || [];
+  const allAttachments = portal.attachments || [];
+  const previewAttachments = preview ? allAttachments.filter((a) => a.invoice_id === preview.id) : [];
   const customerFor = (doc) => customers.find((c) => c.id === doc.customer_id) || customer;
 
   if (!customer) return null;
@@ -94,6 +97,8 @@ export default function CustomerPortalPreviewDialog({ customer, onClose }) {
                   onPayNow={view === "invoices" ? (inv, idx) => window.open(`/pay/${inv.id}?milestone=${idx}`, "_blank") : undefined}
                 />
 
+                <ScheduledMaintenanceTeaser />
+
                 <div className="flex justify-end pt-1">
                   <Button asChild variant="outline" size="sm">
                     <Link to={`/portal?email=${encodeURIComponent(email)}`} target="_blank" rel="noopener noreferrer">
@@ -115,6 +120,7 @@ export default function CustomerPortalPreviewDialog({ customer, onClose }) {
         onClose={() => setPreview(null)}
         editLabel={previewKind === "invoice" ? (preview?.payment_status === "paid" ? "View" : "View & Pay") : (preview?.status === "converted" ? "View" : "Review and Accept")}
         onEdit={() => window.open(previewKind === "invoice" ? `/pay/${preview?.id}` : `/accept/${preview?.id}`, "_blank")}
+        attachments={previewKind === "invoice" ? previewAttachments : null}
       />
     </>
   );
