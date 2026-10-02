@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import OpenedIndicator from "@/components/OpenedIndicator";
 import CustomerGroupedList from "@/components/CustomerGroupedList";
-import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import EstimatePreviewDialog from "@/components/EstimatePreviewDialog";
 import { useSettings } from "@/hooks/useSettings";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -145,9 +145,8 @@ export default function Estimates() {
         />
       )}
 
-      <DocumentPreviewDialog
+      <EstimatePreviewDialog
         doc={previewEst}
-        kind="estimate"
         customer={customers.find((c) => c.id === previewEst?.customer_id)}
         settings={settings}
         onClose={() => setPreviewEst(null)}
