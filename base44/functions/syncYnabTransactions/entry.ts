@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { secrets } from 'base44:runtime';
+import { fetchRecategorizeRules, recategorize, applyRecategorizeToStored } from '../../shared/recategorizeRules.ts';
 
 const YNAB_BASE = 'https://api.ynab.com/v1';
 
@@ -16,6 +17,16 @@ export default async function(req) {
       if (user.role !== 'admin' && user.role !== 'accountant') {
         return Response.json({ error: 'Forbidden' }, { status: 403 });
       }
+    }
+
+    // Auto-recategorize transactions to Transfer / Rebate categories based on
+    // payee name rules pulled from the categories spreadsheet.
+    let recategorized = { transferCount: 0, rebateCount: 0 };
+    try {
+      const rules = await fetchRecategorizeRules(base44);
+      recategorized = await applyRecategorizeToStored(base44, 'YnabTransaction', rules);
+    } catch (e) {
+      // Non-fatal: connector may be temporarily unavailable.
     }
 
     // Auto-ignore Personal and Transfer categories across ALL stored dates, not just the YNAB sync window.
@@ -111,6 +122,9 @@ export default async function(req) {
     const allExisting = await base44.asServiceRole.entities.YnabTransaction.list('-date', 1000);
     const existingMap = Object.fromEntries(allExisting.map((t) => [t.ynab_id, t]));
 
+    let rules = null;
+    try { rules = await fetchRecategorizeRules(base44); } catch (e) { /* non-fatal */ }
+
     const now = new Date().toISOString();
     const toCreate = [];
     const toUpdate = [];
@@ -133,6 +147,15 @@ export default async function(req) {
       if (isPersonal) {
         record.custom_category = 'Personal';
         record.matched = 'ignored';
+      } else {
+        const ruleCat = recategorize(record.payee, rules);
+        if (ruleCat) {
+          record.custom_category = ruleCat;
+          if (ruleCat.toLowerCase() === 'transfer') {
+            record.matched = 'ignored';
+            record.matched_invoice_id = null;
+          }
+        }
       }
       const existing = existingMap[tx.id];
       if (existing) {
@@ -179,6 +202,7 @@ export default async function(req) {
       fetched: transactions.length,
       created,
       updated,
+      recategorized,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

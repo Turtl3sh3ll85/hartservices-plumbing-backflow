@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { secrets } from 'base44:runtime';
+import { fetchRecategorizeRules, recategorize, applyRecategorizeToStored } from '../../shared/recategorizeRules.ts';
 
 function plaidBaseUrl() {
   const env = (secrets.get('PLAID_ENV') || 'sandbox').toLowerCase();
@@ -32,6 +33,17 @@ export default async function(req) {
     let updated = 0;
     const resetCursor = body.reset_cursor === true;
 
+    // Auto-recategorize stored transactions to Transfer / Rebate categories
+    // based on payee name rules pulled from the categories spreadsheet.
+    let recategorized = { transferCount: 0, rebateCount: 0 };
+    let rules = null;
+    try {
+      rules = await fetchRecategorizeRules(base44);
+      recategorized = await applyRecategorizeToStored(base44, 'Transaction', rules);
+    } catch (e) {
+      // Non-fatal: connector may be temporarily unavailable.
+    }
+
     for (const item of items) {
       let cursor = resetCursor ? undefined : (item.cursor || undefined);
       let hasMore = true;
@@ -56,11 +68,11 @@ export default async function(req) {
 
         const data = await syncRes.json();
         for (const tx of (data.added || [])) {
-          await upsertTransaction(base44, item, tx);
+          await upsertTransaction(base44, item, tx, rules);
           added++;
         }
         for (const tx of (data.modified || [])) {
-          await upsertTransaction(base44, item, tx);
+          await upsertTransaction(base44, item, tx, rules);
           updated++;
         }
         cursor = data.next_cursor;
@@ -72,30 +84,50 @@ export default async function(req) {
       }
     }
 
-    return Response.json({ ok: true, items: items.length, added, updated });
+    return Response.json({ ok: true, items: items.length, added, updated, recategorized });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
 
-async function upsertTransaction(base44, item, tx) {
+async function upsertTransaction(base44, item, tx, rules) {
   const plaidId = tx.transaction_id;
   const account = (item.accounts || []).find((a) => a.account_id === tx.account_id);
   const existing = await base44.asServiceRole.entities.Transaction.filter({ plaid_transaction_id: plaidId }, '-created_date', 1);
+  const payee = tx.merchant_name || tx.name || '';
   const payload = {
     plaid_transaction_id: plaidId,
     account_name: account?.name || item.institution_name || '',
     account_mask: account?.mask || '',
     date: tx.date,
     amount: tx.amount || 0,
-    payee: tx.merchant_name || tx.name || '',
+    payee,
     category: (tx.category || []).join(' > '),
     memo: tx.merchant_name || '',
     last_synced_date: new Date().toISOString(),
   };
+  const ruleCat = recategorize(payee, rules);
   if (existing && existing.length) {
-    await base44.asServiceRole.entities.Transaction.update(existing[0].id, payload);
+    const update = { ...payload };
+    // Preserve manual categorizations; only auto-fill when blank.
+    const hasCat = existing[0].custom_category && String(existing[0].custom_category).trim();
+    if (!hasCat && ruleCat) {
+      update.custom_category = ruleCat;
+      if (ruleCat.toLowerCase() === 'transfer') {
+        update.matched = 'ignored';
+        update.matched_invoice_id = null;
+      }
+    }
+    await base44.asServiceRole.entities.Transaction.update(existing[0].id, update);
   } else {
-    await base44.asServiceRole.entities.Transaction.create({ ...payload, matched: 'unmatched' });
+    const create = { ...payload, matched: 'unmatched' };
+    if (ruleCat) {
+      create.custom_category = ruleCat;
+      if (ruleCat.toLowerCase() === 'transfer') {
+        create.matched = 'ignored';
+        create.matched_invoice_id = null;
+      }
+    }
+    await base44.asServiceRole.entities.Transaction.create(create);
   }
 }
