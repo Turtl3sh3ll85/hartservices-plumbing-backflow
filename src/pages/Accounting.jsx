@@ -62,6 +62,21 @@ export default function Accounting() {
     } catch (e) { toast({ title: "Scan failed", description: e.message, variant: "destructive" }); }
     finally { setBusy(null); }
   };
+  const runForceRefresh = async () => {
+    setBusy("refresh");
+    try {
+      const res = await base44.functions.invoke("refreshRecategorization", {});
+      toast({ title: `Recategorized ${res.data?.plaid ?? 0} Plaid · ${res.data?.ynab ?? 0} YNAB` });
+      load();
+    } catch (e) { toast({ title: "Refresh failed", description: e.message, variant: "destructive" }); }
+    finally { setBusy(null); }
+  };
+
+  // Auto-refresh recategorization every 30 minutes while the page is open.
+  useEffect(() => {
+    const id = setInterval(() => { runForceRefresh(); }, 30 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const updateTx = async (id, patch) => {
     try { await base44.entities.Transaction.update(id, patch); } catch (e) { toast({ title: "Update failed", variant: "destructive" }); }
@@ -107,6 +122,9 @@ export default function Accounting() {
           </Button>
           <Button variant="outline" size="sm" onClick={runFullResync} disabled={!!busy}>
             <RefreshCw className={`w-4 h-4 ${busy === "resync" ? "animate-spin" : ""}`} /> Re-sync all
+          </Button>
+          <Button variant="default" size="sm" onClick={runForceRefresh} disabled={!!busy}>
+            <RefreshCw className={`w-4 h-4 ${busy === "refresh" ? "animate-spin" : ""}`} /> Force refresh
           </Button>
           <Button variant="outline" size="sm" onClick={runReceipts} disabled={busy === "receipts"}>
             <MailSearch className={`w-4 h-4 ${busy === "receipts" ? "animate-spin" : ""}`} /> Find receipts

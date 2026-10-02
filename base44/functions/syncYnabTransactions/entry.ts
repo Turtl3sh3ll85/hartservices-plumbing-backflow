@@ -21,7 +21,7 @@ export default async function(req) {
 
     // Auto-recategorize transactions to Transfer / Rebate categories based on
     // payee name rules pulled from the categories spreadsheet.
-    let recategorized = { transferCount: 0, rebateCount: 0 };
+    let recategorized = { recategorized: 0 };
     try {
       const rules = await fetchRecategorizeRules(base44);
       recategorized = await applyRecategorizeToStored(base44, 'YnabTransaction', rules);

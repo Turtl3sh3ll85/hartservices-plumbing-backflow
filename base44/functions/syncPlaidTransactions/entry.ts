@@ -35,7 +35,7 @@ export default async function(req) {
 
     // Auto-recategorize stored transactions to Transfer / Rebate categories
     // based on payee name rules pulled from the categories spreadsheet.
-    let recategorized = { transferCount: 0, rebateCount: 0 };
+    let recategorized = { recategorized: 0 };
     let rules = null;
     try {
       rules = await fetchRecategorizeRules(base44);
