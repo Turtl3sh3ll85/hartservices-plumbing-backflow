@@ -178,14 +178,20 @@ export default function InvoiceEditor() {
       )}
 
       <div className="flex items-center justify-between sticky bottom-0 bg-background/80 backdrop-blur border-t pt-3">
-        <div className="text-sm">
-          <span className="text-muted-foreground">Balance: </span>
-          <span className="font-semibold text-lg">{formatCurrency(balance)}</span>
-          <span className="text-muted-foreground"> / {formatCurrency(totals.total)}</span>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => save(false)} disabled={saving}>{saving ? "Saving…" : "Save draft"}</Button>
-          <Button onClick={() => save(true)} disabled={saving}><Send className="w-4 h-4" /> Save & send</Button>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={!!inv.cc_fee_enabled} onChange={(e) => set("cc_fee_enabled", e.target.checked)} className="w-4 h-4" />
+          Add 3% credit-card fee
+        </label>
+        <div className="flex items-center gap-4">
+          <span className="text-sm">
+            <span className="text-muted-foreground">Balance: </span>
+            <span className="font-semibold text-lg">{formatCurrency(balance)}</span>
+            <span className="text-muted-foreground"> / {formatCurrency(totals.total)}</span>
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => save(false)} disabled={saving}>{saving ? "Saving…" : "Save draft"}</Button>
+            <Button onClick={() => save(true)} disabled={saving}><Send className="w-4 h-4" /> Save & send</Button>
+          </div>
         </div>
       </div>
     </div>

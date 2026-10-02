@@ -174,16 +174,6 @@ export default function EstimateEditor() {
       )}
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Tax & fees</CardTitle></CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
-          <div><Label>Tax rate (%)</Label><Input type="number" step="0.01" value={est.tax_rate ?? 0} onChange={(e) => set("tax_rate", parseFloat(e.target.value) || 0)} /></div>
-          <div className="flex items-end gap-2 pb-1">
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!est.cc_fee_enabled} onChange={(e) => set("cc_fee_enabled", e.target.checked)} className="w-4 h-4" /> 3% credit-card fee</label>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader><CardTitle className="text-base">Payment schedule</CardTitle></CardHeader>
         <CardContent>
           <PaymentScheduleEditor schedule={est.payment_schedule} onChange={(s) => set("payment_schedule", s)} total={totals.total} />
@@ -196,13 +186,19 @@ export default function EstimateEditor() {
       </Card>
 
       <div className="flex items-center justify-between sticky bottom-0 bg-background/80 backdrop-blur border-t pt-3">
-        <div className="text-sm">
-          <span className="text-muted-foreground">Total: </span>
-          <span className="font-semibold text-lg">{formatCurrency(totals.total)}</span>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => save(false)} disabled={saving}>{saving ? "Saving…" : "Save draft"}</Button>
-          <Button onClick={() => save(true)} disabled={saving}><Send className="w-4 h-4" /> Save & send</Button>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={!!est.cc_fee_enabled} onChange={(e) => set("cc_fee_enabled", e.target.checked)} className="w-4 h-4" />
+          Add 3% credit-card fee
+        </label>
+        <div className="flex items-center gap-4">
+          <span className="text-sm">
+            <span className="text-muted-foreground">Total: </span>
+            <span className="font-semibold text-lg">{formatCurrency(totals.total)}</span>
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => save(false)} disabled={saving}>{saving ? "Saving…" : "Save draft"}</Button>
+            <Button onClick={() => save(true)} disabled={saving}><Send className="w-4 h-4" /> Save & send</Button>
+          </div>
         </div>
       </div>
     </div>
