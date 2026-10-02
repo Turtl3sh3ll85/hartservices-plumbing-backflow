@@ -30,6 +30,8 @@ export default function CategoriesView({
   const [pinnableMap, setPinnableMap] = useState({});
   const [catLoading, setCatLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [hidePersonal, setHidePersonal] = useState(false);
+  const [personalAccounts, setPersonalAccounts] = useState(() => new Set());
 
   const loadCategories = useCallback(async () => {
     setCatLoading(true);
@@ -49,6 +51,14 @@ export default function CategoriesView({
     loadCategories();
   }, [loadCategories]);
 
+  useEffect(() => {
+    base44.entities.AccountLabel.list()
+      .then((labels) => {
+        setPersonalAccounts(new Set(labels.filter((l) => l.type === "personal").map((l) => l.account_name)));
+      })
+      .catch(() => {});
+  }, []);
+
   const invoiceFor = (id) => invoices.find((i) => i.id === id);
 
   const groups = useMemo(() => {
@@ -57,6 +67,7 @@ export default function CategoriesView({
     for (const t of txs) {
       if (hideIgnored && t.matched === "ignored") continue;
       if (hideNotAJob && t.matched === "not_a_job") continue;
+      if (hidePersonal && personalAccounts.has(t.account_name)) continue;
       if (q && !matches(t, q)) continue;
       const cat = t.custom_category || t.category || "Uncategorized";
       (map[cat] ||= []).push(t);
@@ -66,7 +77,7 @@ export default function CategoriesView({
       if (b[0] === "Uncategorized") return -1;
       return a[0].localeCompare(b[0]);
     });
-  }, [txs, hideIgnored, hideNotAJob, query]);
+  }, [txs, hideIgnored, hideNotAJob, hidePersonal, personalAccounts, query]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
@@ -108,6 +119,14 @@ export default function CategoriesView({
           className="min-h-11 sm:min-h-9"
         >
           {hideIgnored ? "Show Ignored" : "Hide Ignored"}
+        </Button>
+        <Button
+          variant={hidePersonal ? "default" : "outline"}
+          size="sm"
+          onClick={() => setHidePersonal((v) => !v)}
+          className="min-h-11 sm:min-h-9"
+        >
+          {hidePersonal ? "Show Personal" : "Hide Personal"}
         </Button>
         </div>
       </div>
