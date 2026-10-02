@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "next-themes";
-import { FileDown, Pencil, Loader2, FileInput, Trash2, Link2, Check, Sun, Moon } from "lucide-react";
+import { FileDown, Pencil, Loader2, FileInput, Trash2, Link2, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import PhaseIndicator from "@/components/PhaseIndicator";
@@ -18,13 +17,9 @@ import { useAuth } from "@/lib/AuthContext";
 export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onSavePhase, phaseSaving, onConvert, onDelete, attachments }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
   const [downloading, setDownloading] = useState(false);
   const [converting, setConverting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const isDark = mounted && (resolvedTheme === "dark" || (!resolvedTheme && typeof document !== "undefined" && document.documentElement.classList.contains("dark")));
   if (!doc) return null;
   const isInvoice = kind === "invoice";
   const canSeeProfit = isInvoice && (user?.role === "admin" || user?.role === "accountant");
@@ -107,17 +102,6 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
             {onDelete && (
               <Button size="icon" variant="ghost" onClick={handleDelete} aria-label={`Delete ${title.toLowerCase()}`}>
                 <Trash2 className="w-4 h-4 text-destructive" />
-              </Button>
-            )}
-            {mounted && (
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setTheme(isDark ? "light" : "dark")}
-                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-                title={isDark ? "Light mode" : "Dark mode"}
-              >
-                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </Button>
             )}
           </div>
