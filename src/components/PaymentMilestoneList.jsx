@@ -50,7 +50,7 @@ export default function PaymentMilestoneList({
             ? (customerReady ? "ready" : standingBy !== false ? "standing" : "due")
             : "standing");
           return (
-            <div key={i} className="grid items-center gap-2 py-1.5" style={{ gridTemplateColumns: "minmax(0,1fr) 6rem 12rem" }}>
+            <div key={i} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5">
               <span className="min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
               <span className="text-sm tabular-nums text-[#9ca3af] text-left">{formatCurrency(amounts[i])}</span>
               <div className="flex items-center gap-1.5 justify-end">

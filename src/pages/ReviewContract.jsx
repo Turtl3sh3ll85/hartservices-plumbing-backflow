@@ -50,7 +50,7 @@ export default function ReviewContract() {
   if (!estimate) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Estimate not found.</div>;
 
   return (
-    <div className="min-h-screen bg-muted/30 py-8 px-4">
+    <div className="min-h-screen bg-muted/30 py-8 px-4 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
       <div className="max-w-2xl mx-auto space-y-4">
         <button
           onClick={() => navigate(-1)}

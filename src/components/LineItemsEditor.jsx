@@ -3,11 +3,13 @@ import { Plus, Trash2, SlidersHorizontal, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MobileSelect } from "@/components/ui/mobile-select";
 import { formatCurrency } from "@/lib/format";
 
 const UNIT_OPTIONS = ["ea.", "/lf", "/hr"];
 const MARKUP_OPTIONS = [10, 15, 25];
+const UNIT_SELECT_OPTIONS = [{ value: "", label: "—" }, ...UNIT_OPTIONS.map((u) => ({ value: u, label: u }))];
+const MARKUP_SELECT_OPTIONS = [{ value: "0", label: "0%" }, ...MARKUP_OPTIONS.map((m) => ({ value: String(m), label: `${m}%` }))];
 import SheetItemPicker from "@/components/SheetItemPicker";
 import ManualLineItemDialog from "@/components/ManualLineItemDialog";
 import ModifiersDialog from "@/components/ModifiersDialog";
@@ -127,12 +129,7 @@ export default function LineItemsEditor({ items, onChange }) {
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs text-muted-foreground mb-1">Unit</span>
-                        <Select value={li.unit || ""} onValueChange={(v) => update(i, { unit: v })}>
-                          <SelectTrigger className="w-28"><SelectValue placeholder="Pick…" /></SelectTrigger>
-                          <SelectContent>
-                            {UNIT_OPTIONS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect value={li.unit || ""} onValueChange={(v) => update(i, { unit: v })} placeholder="Pick…" ariaLabel="Unit" options={UNIT_SELECT_OPTIONS} triggerClassName="w-28" />
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs text-muted-foreground mb-1">Unit Price</span>
@@ -140,13 +137,7 @@ export default function LineItemsEditor({ items, onChange }) {
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs text-muted-foreground mb-1">Markup %</span>
-                        <Select value={li.markup ? String(li.markup) : "0"} onValueChange={(v) => update(i, { markup: parseInt(v, 10) })}>
-                          <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">0%</SelectItem>
-                            {MARKUP_OPTIONS.map((m) => <SelectItem key={m} value={String(m)}>{m}%</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <MobileSelect value={li.markup ? String(li.markup) : "0"} onValueChange={(v) => update(i, { markup: parseInt(v, 10) })} placeholder="Markup %" ariaLabel="Markup" options={MARKUP_SELECT_OPTIONS} triggerClassName="w-24" />
                       </div>
                       <div className="ml-auto text-right">
                         <span className="text-xs text-muted-foreground block mb-1">Line Total</span>

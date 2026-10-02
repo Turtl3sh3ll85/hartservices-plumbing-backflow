@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { Search, ChevronsUpDown, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 function CustomerLine({ c, selected }) {
@@ -22,6 +24,7 @@ function CustomerLine({ c, selected }) {
 }
 
 export default function CustomerPicker({ customers, value, onChange }) {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const selected = customers.find((c) => c.id === value);
@@ -34,51 +37,76 @@ export default function CustomerPicker({ customers, value, onChange }) {
     );
   }, [customers, query]);
 
+  const trigger = (
+    <button
+      type="button"
+      className="flex-1 min-h-9 h-auto flex items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-1.5 text-left text-sm hover:bg-accent"
+    >
+      {selected ? (
+        <div className="min-w-0 flex-1 py-1">
+          <CustomerLine c={selected} selected={false} />
+        </div>
+      ) : (
+        <span className="text-muted-foreground">Select customer…</span>
+      )}
+      <ChevronsUpDown className="w-4 h-4 shrink-0 opacity-50" />
+    </button>
+  );
+
+  const searchInput = (
+    <div className="flex items-center border-b px-3">
+      <Search className="w-4 h-4 mr-2 shrink-0 opacity-50" />
+      <Input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search customers…"
+        className="h-9 border-0 focus-visible:ring-0 px-0"
+      />
+    </div>
+  );
+
+  const resultsList = (onPick) => (
+    <div className="max-h-72 overflow-y-auto p-1">
+      {filtered.length === 0 && (
+        <div className="py-6 text-center text-sm text-muted-foreground">No customers found.</div>
+      )}
+      {filtered.map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          onClick={() => { onPick(c.id); setOpen(false); setQuery(""); }}
+          className={cn(
+            "w-full text-left rounded-md px-2 py-2 hover:bg-accent transition-colors",
+            c.id === value && "bg-accent/60"
+          )}
+        >
+          <CustomerLine c={c} selected={c.id === value} />
+        </button>
+      ))}
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+        <DrawerContent className="max-h-[80vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Select customer</DrawerTitle>
+          </DrawerHeader>
+          {searchInput}
+          {resultsList(onChange)}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="flex-1 min-h-9 h-auto flex items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-1.5 text-left text-sm hover:bg-accent"
-        >
-          {selected ? (
-            <div className="min-w-0 flex-1 py-1">
-              <CustomerLine c={selected} selected={false} />
-            </div>
-          ) : (
-            <span className="text-muted-foreground">Select customer…</span>
-          )}
-          <ChevronsUpDown className="w-4 h-4 shrink-0 opacity-50" />
-        </button>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] min-w-72 p-0" align="start">
-        <div className="flex items-center border-b px-3">
-          <Search className="w-4 h-4 mr-2 shrink-0 opacity-50" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search customers…"
-            className="h-9 border-0 focus-visible:ring-0 px-0"
-          />
-        </div>
-        <div className="max-h-72 overflow-y-auto p-1">
-          {filtered.length === 0 && (
-            <div className="py-6 text-center text-sm text-muted-foreground">No customers found.</div>
-          )}
-          {filtered.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => { onChange(c.id); setOpen(false); setQuery(""); }}
-              className={cn(
-                "w-full text-left rounded-md px-2 py-2 hover:bg-accent transition-colors",
-                c.id === value && "bg-accent/60"
-              )}
-            >
-              <CustomerLine c={c} selected={c.id === value} />
-            </button>
-          ))}
-        </div>
+        {searchInput}
+        {resultsList(onChange)}
       </PopoverContent>
     </Popover>
   );

@@ -61,7 +61,7 @@ export default function PayInvoice() {
   if (!invoice) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Invoice not found.</div>;
 
   return (
-    <div className="min-h-screen bg-muted/30 py-8 px-4">
+    <div className="min-h-screen bg-muted/30 py-8 px-4 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="text-center">
           <h1 className="text-2xl font-heading font-semibold">{settings?.business_name || "Invoice"}</h1>
