@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Ban } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { base44 } from "@/api/base44Client";
 import TransactionRow from "./TransactionRow";
 
 const matches = (t, q) => {
@@ -23,6 +24,16 @@ export default function CategorizeTransactionsView({
 }) {
   const [query, setQuery] = useState("");
   const [hideIgnored, setHideIgnored] = useState(false);
+  const [hidePersonal, setHidePersonal] = useState(false);
+  const [personalAccounts, setPersonalAccounts] = useState(() => new Set());
+
+  useEffect(() => {
+    base44.entities.AccountLabel.list()
+      .then((labels) => {
+        setPersonalAccounts(new Set(labels.filter((l) => l.type === "personal").map((l) => l.account_name)));
+      })
+      .catch(() => {});
+  }, []);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
@@ -33,6 +44,7 @@ export default function CategorizeTransactionsView({
     .filter((t) => {
       if (q && !matches(t, q)) return false;
       if (hideIgnored && t.matched === "ignored") return false;
+      if (hidePersonal && personalAccounts.has(t.account_name)) return false;
       return true;
     })
     .slice(0, 50);
@@ -57,6 +69,14 @@ export default function CategorizeTransactionsView({
         >
           <Ban className="w-4 h-4" />
           {hideIgnored ? "Show Ignored" : "Hide Ignored"}
+        </Button>
+        <Button
+          variant={hidePersonal ? "default" : "outline"}
+          size="sm"
+          onClick={() => setHidePersonal((v) => !v)}
+          className="min-h-11 sm:min-h-9"
+        >
+          {hidePersonal ? "Show Personal" : "Hide Personal"}
         </Button>
       </div>
 
