@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Plus, Trash2, Send, UserPlus } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Send, UserPlus, Link2, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ export default function EstimateEditor() {
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [newCustOpen, setNewCustOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [est, setEst] = useState({
     customer_id: "",
     name: "",
@@ -71,6 +72,17 @@ export default function EstimateEditor() {
   } else {
     totals = computeTotals(est.line_items, est.tax_rate, est.cc_fee_enabled);
   }
+
+  const copyPortalLink = async () => {
+    const customer = customers.find((c) => c.id === est.customer_id);
+    if (!customer?.email) return;
+    const params = new URLSearchParams({ email: customer.email, tab: "estimates" });
+    try {
+      await navigator.clipboard.writeText(window.location.origin + `/portal?${params.toString()}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
 
   const save = async (send) => {
     if (!est.customer_id) { toast({ title: "Pick a customer first", variant: "destructive" }); return; }
@@ -238,6 +250,9 @@ export default function EstimateEditor() {
               <span className="font-semibold">{formatCurrency(totals.total)}</span>
             </span>
           )}
+          <Button variant="ghost" size="icon" onClick={copyPortalLink} disabled={!est.id} aria-label="Copy portal link" title="Copy portal link" className="shrink-0">
+            {copied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+          </Button>
           <Button variant="outline" size="icon" onClick={() => save(false)} disabled={saving} aria-label="Save draft" className="shrink-0"><Save className="w-4 h-4" /></Button>
           <Button size="icon" onClick={() => save(true)} disabled={saving || !scheduleValid || !est.customer_id || !hasLineItems} aria-label="Save & send" className="shrink-0"><Send className="w-4 h-4" /></Button>
         </div>

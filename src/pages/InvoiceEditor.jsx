@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Send, Clock, PauseCircle, UserPlus, Save } from "lucide-react";
+import { ArrowLeft, Send, Clock, PauseCircle, UserPlus, Save, Link2, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ export default function InvoiceEditor() {
   const [customers, setCustomers] = useState([]);
   const [newCustOpen, setNewCustOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
+  const [copied, setCopied] = useState(false);
   const [inv, setInv] = useState({
     customer_id: "", name: "", line_items: [], tax_rate: 0, cc_fee_enabled: false,
     payment_schedule: [], status: "draft", due_date: "", notes: "",
@@ -51,6 +52,17 @@ export default function InvoiceEditor() {
   }, [id]);
 
   const set = (k, v) => setInv((s) => ({ ...s, [k]: v }));
+
+  const copyPortalLink = async () => {
+    const customer = customers.find((c) => c.id === inv.customer_id);
+    if (!customer?.email) return;
+    const params = new URLSearchParams({ email: customer.email, tab: "invoices" });
+    try {
+      await navigator.clipboard.writeText(window.location.origin + `/portal?${params.toString()}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
   const totals = computeTotals(inv.line_items, inv.tax_rate, inv.cc_fee_enabled);
   const paid = amountPaidTotal(inv.payment_schedule, totals.total);
   const balance = Math.max(0, totals.total - paid);
@@ -190,6 +202,9 @@ export default function InvoiceEditor() {
             <span className="font-semibold">{formatCurrency(balance)}</span>
             <span className="text-muted-foreground"> / {formatCurrency(totals.total)}</span>
           </span>
+          <Button variant="ghost" size="icon" onClick={copyPortalLink} disabled={!inv.id} aria-label="Copy portal link" title="Copy portal link" className="shrink-0">
+            {copied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+          </Button>
           <Button variant="outline" size="icon" onClick={() => save(false)} disabled={saving} aria-label="Save draft" className="shrink-0"><Save className="w-4 h-4" /></Button>
           <Button size="icon" onClick={() => save(true)} disabled={saving || !scheduleValid || !inv.customer_id || !(inv.line_items || []).length} aria-label="Save & send" className="shrink-0"><Send className="w-4 h-4" /></Button>
         </div>
