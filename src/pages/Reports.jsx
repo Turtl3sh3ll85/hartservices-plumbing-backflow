@@ -20,28 +20,8 @@ export default function Reports() {
     queryFn: () => base44.entities.YnabTransaction.list("-date", 500),
   });
 
-  // Category tax classification from the categories spreadsheet (column B).
-  // Categories marked "personal" are excluded from this business expense graph.
-  const { data: categoryItems = [] } = useQuery({
-    queryKey: ["sheetCategories", "items"],
-    queryFn: async () => {
-      const res = await base44.functions.invoke("getSheetCategories", {});
-      return res.data?.items || [];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-  const personalCategories = useMemo(
-    () => new Set(categoryItems.filter((c) => (c.tax_type || "").toLowerCase() === "personal").map((c) => c.name.toLowerCase())),
-    [categoryItems],
-  );
-
   const HIDDEN_CATEGORIES = ["transfer", "income", "inflows", "ready to assign"];
-  const isHidden = (cat) => {
-    const key = cat.trim().toLowerCase();
-    if (HIDDEN_CATEGORIES.includes(key)) return true;
-    if (personalCategories.has(key)) return true;
-    return false;
-  };
+  const isHidden = (cat) => HIDDEN_CATEGORIES.includes(cat.trim().toLowerCase());
 
   const byCategory = useMemo(() => {
     const map = new Map();
@@ -54,7 +34,7 @@ export default function Reports() {
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [transactions, personalCategories]);
+  }, [transactions]);
 
   const total = useMemo(() => byCategory.reduce((s, e) => s + e.value, 0), [byCategory]);
 

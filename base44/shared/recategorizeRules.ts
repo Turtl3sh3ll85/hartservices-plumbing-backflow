@@ -62,19 +62,21 @@ export function recategorize(payee, rules) {
 }
 
 // Applies the rules across all stored transactions for the given entity.
-// Only transactions without an existing custom_category are recategorized
-// (manual categorizations are preserved). Transfer recategorizations also mark
-// the record ignored. Uses client-side bidirectional matching.
+// Recategorization overrides a blank custom_category OR an auto-applied
+// "Personal" tag (the personal-account default bucket), because Transfer/Rebate
+// rules are authoritative reclassifications. Deliberate business categories are
+// preserved. Transfer recategorizations also mark the record ignored.
 export async function applyRecategorizeToStored(base44, entityName, rules) {
   const entity = base44.asServiceRole.entities[entityName];
   const all = await entity.list("-date", 1000);
-  const blank = all.filter(
-    (t) => !t.custom_category || !String(t.custom_category).trim(),
-  );
+  const candidates = all.filter((t) => {
+    const c = (t.custom_category || "").trim().toLowerCase();
+    return !c || c === "personal";
+  });
 
   const transferUpdates = [];
   const rebateUpdates = [];
-  for (const t of blank) {
+  for (const t of candidates) {
     let matched = false;
     for (const name of rules.transferNames) {
       if (matches(t.payee, name)) {
