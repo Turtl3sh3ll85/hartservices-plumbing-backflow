@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, SlidersHorizontal, FolderPlus, Pencil } from "lucide-react";
+import { Plus, Trash2, SlidersHorizontal, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -169,9 +169,6 @@ export default function LineItemsEditor({ items, onChange }) {
       <div className="flex gap-2 flex-wrap">
         <Button variant="outline" size="sm" onClick={addSection}>
           <FolderPlus className="w-4 h-4 mr-1" /> Add section
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setManualOpen(true)}>
-          <Pencil className="w-4 h-4 mr-1" /> Manual entry
         </Button>
       </div>
 
