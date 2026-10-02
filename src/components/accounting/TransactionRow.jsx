@@ -1,6 +1,7 @@
 import { Link2, Unlink, Ban, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
+import TransactionCategoryPicker from "@/components/TransactionCategoryPicker";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 export default function TransactionRow({
@@ -13,7 +14,12 @@ export default function TransactionRow({
   onCategoryBlur,
   editableCategory = true,
   showIgnore = true,
+  showAccount = true,
 }) {
+  const handleCategory = (val) => {
+    onCategoryChange?.(t.id, val);
+    onCategoryBlur?.(t.id, val);
+  };
   return (
     <div className="px-4 py-3 flex items-center gap-3">
       <div className="min-w-0 flex-1">
@@ -24,18 +30,23 @@ export default function TransactionRow({
           )}
         </div>
         <div className="text-xs text-muted-foreground">
-          {formatDate(t.date)} · {t.account_name}
-          {t.account_mask ? ` ···${t.account_mask}` : ""}
+          {formatDate(t.date)}
+          {showAccount && (
+            <>
+              {" · "}{t.account_name}
+              {t.account_mask ? ` ···${t.account_mask}` : ""}
+            </>
+          )}
         </div>
-        {editableCategory ? (
-          <input
-            value={t.custom_category || t.category || ""}
-            onChange={(e) => onCategoryChange?.(t.id, e.target.value)}
-            onBlur={(e) => onCategoryBlur?.(t.id, e.target.value)}
-            placeholder="Category"
-            className="mt-1 text-xs text-muted-foreground bg-transparent border-none p-0 w-full focus:outline-none focus:ring-0"
-          />
-        ) : (t.custom_category || t.category) ? (
+        {editableCategory && (
+          <div className="mt-1">
+            <TransactionCategoryPicker
+              value={t.custom_category || t.category || ""}
+              onChange={handleCategory}
+            />
+          </div>
+        )}
+        {!editableCategory && (t.custom_category || t.category) ? (
           <div className="mt-1 text-xs text-muted-foreground truncate">
             {t.custom_category || t.category}
           </div>

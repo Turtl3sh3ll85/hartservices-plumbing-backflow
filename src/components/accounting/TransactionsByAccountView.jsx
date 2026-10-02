@@ -131,6 +131,7 @@ export default function TransactionsByAccountView({
               onIgnore={onIgnore}
               onCategoryChange={onCategoryChange}
               onCategoryBlur={onCategoryBlur}
+              showAccount={false}
             />
           ))}
         </div>
