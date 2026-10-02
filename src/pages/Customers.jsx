@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,17 +98,11 @@ export default function Customers() {
           {filtered.map((c) => (
             <Card key={c.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setPreviewCustomer(c)}>
               <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{c.name}</div>
-                    {c.company && <div className="text-sm text-muted-foreground truncate">{c.company}</div>}
-                    {c.email && <div className="text-sm text-muted-foreground truncate">{c.email}</div>}
-                    {c.phone && <div className="text-sm text-muted-foreground">{c.phone}</div>}
-                  </div>
-                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(c)} aria-label="Edit"><Pencil className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(c)} aria-label="Delete"><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                  </div>
+                <div className="min-w-0">
+                  {c.company && <div className="font-medium truncate">{c.company}</div>}
+                  <div className="text-sm text-muted-foreground truncate">{c.name}</div>
+                  {c.email && <div className="text-sm text-muted-foreground truncate">{c.email}</div>}
+                  {c.phone && <div className="text-sm text-muted-foreground">{c.phone}</div>}
                 </div>
               </CardContent>
             </Card>
