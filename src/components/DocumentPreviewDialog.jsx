@@ -10,13 +10,17 @@ import StatusBadge from "@/components/StatusBadge";
 import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection, installmentAmount } from "@/lib/invoice";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
 import PaymentScheduleDisplay from "@/components/PaymentScheduleDisplay";
+import InvoiceProfitability from "@/components/InvoiceProfitability";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onSavePhase, phaseSaving, onConvert, onDelete }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [downloading, setDownloading] = useState(false);
   const [converting, setConverting] = useState(false);
   if (!doc) return null;
   const isInvoice = kind === "invoice";
+  const canSeeProfit = isInvoice && (user?.role === "admin" || user?.role === "accountant");
   const title = isInvoice ? "Invoice" : "Estimate";
   const editPath = isInvoice ? `/invoices/${doc.id}` : `/estimates/${doc.id}`;
 
@@ -184,6 +188,12 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
           {isInvoice && Array.isArray(phases) && phases.length > 0 && onSavePhase && (
             <div className="border-t pt-4">
               <PhaseIndicator invoice={doc} phases={phases} onSave={onSavePhase} busy={phaseSaving} />
+            </div>
+          )}
+
+          {canSeeProfit && (
+            <div className="border-t pt-4">
+              <InvoiceProfitability invoiceId={doc.id} invoiceTotal={doc.total} />
             </div>
           )}
         </div>
