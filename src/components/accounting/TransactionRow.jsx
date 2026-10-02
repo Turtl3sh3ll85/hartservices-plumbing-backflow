@@ -88,10 +88,6 @@ export default function TransactionRow({
         </div>
         {editableCategory && (
           <div className="mt-1 flex items-center gap-1">
-            <TransactionCategoryPicker
-              value={t.custom_category || t.category || ""}
-              onChange={handleCategory}
-            />
             <Button
               type="button"
               variant="ghost"
@@ -104,6 +100,10 @@ export default function TransactionRow({
             >
               {thinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>🧠</span>}
             </Button>
+            <TransactionCategoryPicker
+              value={t.custom_category || t.category || ""}
+              onChange={handleCategory}
+            />
           </div>
         )}
         {!editableCategory && (t.custom_category || t.category) ? (
