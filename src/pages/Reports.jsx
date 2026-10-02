@@ -76,7 +76,9 @@ export default function Reports() {
                   </Pie>
                   <Tooltip
                     formatter={(value) => formatMoney(value)}
-                    contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }}
+                    contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", color: "hsl(var(--foreground))" }}
+                    itemStyle={{ color: "hsl(var(--foreground))" }}
+                    labelStyle={{ color: "hsl(var(--muted-foreground))" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
