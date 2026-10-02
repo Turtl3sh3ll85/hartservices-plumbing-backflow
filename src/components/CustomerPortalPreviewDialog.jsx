@@ -89,6 +89,7 @@ export default function CustomerPortalPreviewDialog({ customer, onClose }) {
                   items={view === "invoices" ? invoices : estimates}
                   customers={customers}
                   settings={settings}
+                  attachments={view === "invoices" ? allAttachments : []}
                   onPreview={(doc) => {
                     setPreview(doc);
                     setPreviewKind(view === "invoices" ? "invoice" : "estimate");

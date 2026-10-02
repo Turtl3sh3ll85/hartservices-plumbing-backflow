@@ -10,6 +10,7 @@ import PaymentMilestoneList from "@/components/PaymentMilestoneList";
 import { formatMoney } from "@/lib/invoice";
 import { amountPaidTotal } from "@/lib/format";
 import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
+import InvoiceAttachmentsDropdown from "@/components/portal/InvoiceAttachmentsDropdown";
 
 /**
  * Shared portal document list — renders invoices or estimates exactly like
@@ -23,7 +24,7 @@ import { downloadInvoicePdf, downloadEstimatePdf } from "@/lib/invoicePdf";
  *  - settings: business settings (for PDF rendering)
  *  - onPreview(doc): called when a row's name/number is clicked
  */
-export default function PortalDocumentList({ kind, items, customers, settings, onPreview, onPayNow, onStatusChange }) {
+export default function PortalDocumentList({ kind, items, customers, settings, onPreview, onPayNow, onStatusChange, attachments = [] }) {
   const [hidePaid, setHidePaid] = useState(false);
   const [downloading, setDownloading] = useState(null);
 
@@ -69,6 +70,7 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
                     </div>
                   </button>
                   <div className="flex items-center gap-3 shrink-0">
+                    <InvoiceAttachmentsDropdown attachments={attachments.filter((a) => a.invoice_id === i.id)} />
                     <Button size="sm" variant="outline" onClick={() => downloadPdf(i)} disabled={downloading === `invoice:${i.id}`} aria-label="Download invoice PDF">
                       {downloading === `invoice:${i.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
                     </Button>

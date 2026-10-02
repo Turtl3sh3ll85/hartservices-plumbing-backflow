@@ -139,6 +139,7 @@ export default function MyDocuments() {
                   items={invoices}
                   customers={customers}
                   settings={settings}
+                  attachments={allAttachments}
                   onPreview={(i) => { setPreview(i); setPreviewKind("invoice"); }}
                   onPayNow={(inv, idx) => navigate(`/pay/${inv.id}?milestone=${idx}`)}
                   onStatusChange={async (inv, status, index) => {
