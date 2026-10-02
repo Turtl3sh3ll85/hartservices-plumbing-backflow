@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Send, Clock, PauseCircle, UserPlus } from "lucide-react";
+import { ArrowLeft, Send, Clock, PauseCircle, UserPlus, Save } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,8 +59,9 @@ export default function InvoiceEditor() {
 
   const save = async (send) => {
     if (!inv.customer_id) { toast({ title: "Pick a customer first", variant: "destructive" }); return; }
+    if (send && !(inv.line_items || []).length) { toast({ title: "Add at least one line item before sending", variant: "destructive" }); return; }
     const customer = customers.find((c) => c.id === inv.customer_id);
-    const payload = { ...inv, customer_email: customer?.email || "", ...totals, status: send ? "sent" : inv.status };
+    const payload = { ...inv, customer_email: customer?.email || "no.email@hartservices.us", ...totals, status: send ? "sent" : inv.status };
     setSaving(true);
     try {
       if (isNew) {
@@ -190,8 +191,8 @@ export default function InvoiceEditor() {
             <span className="text-muted-foreground"> / {formatCurrency(totals.total)}</span>
           </span>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => save(false)} disabled={saving}>{saving ? "Saving…" : "Save draft"}</Button>
-            <Button onClick={() => save(true)} disabled={saving || !scheduleValid}><Send className="w-4 h-4" /> Save & send</Button>
+            <Button variant="outline" size="icon" onClick={() => save(false)} disabled={saving} aria-label="Save draft"><Save className="w-4 h-4" /></Button>
+            <Button size="icon" onClick={() => save(true)} disabled={saving || !scheduleValid || !inv.customer_id || !(inv.line_items || []).length} aria-label="Save & send"><Send className="w-4 h-4" /></Button>
           </div>
         </div>
       </div>

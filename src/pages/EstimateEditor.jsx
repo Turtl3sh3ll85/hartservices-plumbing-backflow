@@ -74,10 +74,16 @@ export default function EstimateEditor() {
 
   const save = async (send) => {
     if (!est.customer_id) { toast({ title: "Pick a customer first", variant: "destructive" }); return; }
+    if (send) {
+      const hasItems = est.selection_mode === "side_by_side"
+        ? (est.options || []).some((o) => (o.line_items || []).length > 0)
+        : (est.line_items || []).length > 0;
+      if (!hasItems) { toast({ title: "Add at least one line item before sending", variant: "destructive" }); return; }
+    }
     const customer = customers.find((c) => c.id === est.customer_id);
     const payload = {
       ...est,
-      customer_email: customer?.email || "",
+      customer_email: customer?.email || "no.email@hartservices.us",
       ...totals,
       options: est.selection_mode === "side_by_side"
         ? (est.options || []).map((o, i) => ({ ...o, ...optionTotals[i] }))
@@ -102,6 +108,9 @@ export default function EstimateEditor() {
   };
 
   const scheduleValid = scheduleIsValid(est.payment_schedule, totals.total);
+  const hasLineItems = est.selection_mode === "side_by_side"
+    ? (est.options || []).some((o) => (o.line_items || []).length > 0)
+    : (est.line_items || []).length > 0;
 
   // option helpers
   const addOption = () => set("options", [...(est.options || []), { label: `Option ${(est.options || []).length + 1}`, line_items: [], subtotal: 0, tax: 0, total: 0 }]);
@@ -206,8 +215,8 @@ export default function EstimateEditor() {
             <span className="font-semibold text-lg">{formatCurrency(totals.total)}</span>
           </span>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => save(false)} disabled={saving}>{saving ? "Saving…" : "Save draft"}</Button>
-            <Button onClick={() => save(true)} disabled={saving || !scheduleValid}><Send className="w-4 h-4" /> Save & send</Button>
+            <Button variant="outline" size="icon" onClick={() => save(false)} disabled={saving} aria-label="Save draft"><Save className="w-4 h-4" /></Button>
+            <Button size="icon" onClick={() => save(true)} disabled={saving || !scheduleValid || !est.customer_id || !hasLineItems} aria-label="Save & send"><Send className="w-4 h-4" /></Button>
           </div>
         </div>
       </div>
