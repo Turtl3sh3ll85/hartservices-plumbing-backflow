@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Save, Link2, Loader2, X, Clock, Image as ImageIcon } from "lucide-react";
+import { Camera, Save, Link2, FileText, Loader2, X, Clock, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatDate } from "@/lib/format";
 import SnapTransactionPicker from "@/components/accounting/SnapTransactionPicker";
+import SnapInvoicePicker from "@/components/accounting/SnapInvoicePicker";
 
 function ReceiptThumb({ uri }) {
   const [url, setUrl] = useState(null);
@@ -32,15 +33,25 @@ export default function Receipts() {
   const queryClient = useQueryClient();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [busy, setBusy] = useState(null); // "save" | transaction id | "upload"
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [busy, setBusy] = useState(null); // "save" | transaction id | invoice id
+  const [txPickerOpen, setTxPickerOpen] = useState(false);
+  const [invPickerOpen, setInvPickerOpen] = useState(false);
 
   const { data: pending = [] } = useQuery({
     queryKey: ["pendingReceipts"],
     queryFn: () => base44.entities.Receipt.filter({ matched: false }, "-created_date", 50),
   });
+  const { data: invoices = [] } = useQuery({
+    queryKey: ["snapInvoices"],
+    queryFn: () => base44.entities.Invoice.list("-created_date", 200),
+  });
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  const invoiceLabel = (id) => {
+    const inv = invoices.find((i) => i.id === id);
+    return inv ? (inv.name || inv.number || "Invoice") : "Invoice";
+  };
 
   const onPickFile = (e) => {
     const f = e.target.files?.[0];
@@ -55,17 +66,23 @@ export default function Receipts() {
     setPreview(null);
   };
 
-  const submit = async (transactionId) => {
+  const submit = async ({ transaction_id, invoice_id }) => {
     if (!file) return;
     try {
       const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
       const res = await base44.functions.invoke("snapReceipt", {
         file_uri,
         file_name: file.name,
-        transaction_id: transactionId || null,
+        transaction_id: transaction_id || null,
+        invoice_id: invoice_id || null,
       });
+      const title = transaction_id
+        ? "Receipt attached to transaction"
+        : invoice_id
+          ? "Receipt pinned to invoice"
+          : "Receipt saved for later";
       toast({
-        title: transactionId ? "Receipt attached to transaction" : "Receipt saved for later",
+        title,
         description: res.data?.extracted?.merchant ? `Merchant: ${res.data.extracted.merchant}` : undefined,
       });
       queryClient.invalidateQueries({ queryKey: ["pendingReceipts"] });
@@ -75,15 +92,16 @@ export default function Receipts() {
     }
   };
 
-  const saveForLater = async () => { setBusy("save"); await submit(null); setBusy(null); };
-  const attachTo = async (tx) => { setBusy(tx.id); await submit(tx.id); setPickerOpen(false); setBusy(null); };
+  const saveForLater = async () => { setBusy("save"); await submit({}); setBusy(null); };
+  const attachToTx = async (tx) => { setBusy(tx.id); await submit({ transaction_id: tx.id }); setTxPickerOpen(false); setBusy(null); };
+  const attachToInvoice = async (inv) => { setBusy(inv.id); await submit({ invoice_id: inv.id }); setInvPickerOpen(false); setBusy(null); };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Snap Receipt</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Take a photo of a receipt and attach it to a transaction, or save it for the scanner to match automatically once the transaction posts.
+          Take a photo of a receipt and attach it to a transaction or invoice, or save it for the scanner to match automatically once the transaction posts.
         </p>
       </div>
 
@@ -108,10 +126,14 @@ export default function Receipts() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex gap-2">
-                <Button onClick={() => setPickerOpen(true)} disabled={!!busy} className="flex-1">
-                  {busy && busy !== "save" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={() => setTxPickerOpen(true)} disabled={!!busy} className="flex-1">
+                  {busy && busy !== "save" && busy !== "invoice" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
                   Attach to Transaction
+                </Button>
+                <Button onClick={() => setInvPickerOpen(true)} disabled={!!busy} className="flex-1">
+                  {busy === "invoice" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                  Attach to Invoice
                 </Button>
                 <Button variant="outline" onClick={saveForLater} disabled={!!busy} className="flex-1">
                   {busy === "save" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -145,11 +167,16 @@ export default function Receipts() {
                     </div>
                   )}
                 </div>
-                <div className="p-2">
+                <div className="p-2 space-y-0.5">
                   <div className="text-xs font-medium truncate">{r.merchant || r.file_name || "Receipt"}</div>
                   <div className="text-xs text-muted-foreground">
                     {r.amount != null ? formatCurrency(r.amount) : "—"} · {formatDate(r.created_date)}
                   </div>
+                  {r.invoice_id && (
+                    <div className="text-xs text-primary inline-flex items-center gap-1 truncate">
+                      <FileText className="w-3 h-3 shrink-0" /> {invoiceLabel(r.invoice_id)}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -158,9 +185,15 @@ export default function Receipts() {
       </div>
 
       <SnapTransactionPicker
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        onPick={attachTo}
+        open={txPickerOpen}
+        onClose={() => setTxPickerOpen(false)}
+        onPick={attachToTx}
+        busyId={busy}
+      />
+      <SnapInvoicePicker
+        open={invPickerOpen}
+        onClose={() => setInvPickerOpen(false)}
+        onPick={attachToInvoice}
         busyId={busy}
       />
     </div>

@@ -205,6 +205,8 @@ export async function matchSavedPhotoReceipts(base44) {
       if (match.confidence < 0.7) continue;
       const tx = targets.find((t) => t.id === match.transaction_id && t.entity === match.entity);
       if (!tx) continue;
+      const photo = photos.find((p) => p.receipt.id === match.receipt_id);
+      const invoiceId = photo?.receipt?.invoice_id || null;
 
       await base44.asServiceRole.entities.Receipt.update(match.receipt_id, {
         matched: true,
@@ -213,9 +215,16 @@ export async function matchSavedPhotoReceipts(base44) {
         amount: match.amount,
       });
 
+      // When the receipt was pinned to an invoice, link the matched transaction
+      // to that same invoice so profitability ties the expense to the invoice.
       if (tx.entity === 'Transaction') {
-        await base44.asServiceRole.entities.Transaction.update(tx.id, {
-          receipt_file_uri: match.receipt_id,
+        const patch = { receipt_file_uri: match.receipt_id };
+        if (invoiceId) { patch.matched_invoice_id = invoiceId; patch.matched = 'matched'; }
+        await base44.asServiceRole.entities.Transaction.update(tx.id, patch);
+      } else if (tx.entity === 'YnabTransaction' && invoiceId) {
+        await base44.asServiceRole.entities.YnabTransaction.update(tx.id, {
+          matched_invoice_id: invoiceId,
+          matched: 'matched',
         });
       }
       linked++;

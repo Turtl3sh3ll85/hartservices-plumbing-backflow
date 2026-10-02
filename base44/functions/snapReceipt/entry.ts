@@ -14,7 +14,7 @@ export default async function(req) {
     }
 
     const body = await req.json().catch(() => ({})) || {};
-    const { file_uri, file_name, transaction_id } = body;
+    const { file_uri, file_name, transaction_id, invoice_id } = body;
     if (!file_uri) return Response.json({ error: 'file_uri is required' }, { status: 400 });
 
     // Read the receipt photo with AI vision to pull out structured data used
@@ -48,6 +48,7 @@ export default async function(req) {
     const matched = !!transaction_id;
     const receipt = await base44.asServiceRole.entities.Receipt.create({
       transaction_id: transaction_id || null,
+      invoice_id: invoice_id || null,
       file_uri,
       file_name: file_name || 'snap',
       from_email: null,
@@ -73,6 +74,7 @@ export default async function(req) {
       receipt_id: receipt.id,
       extracted,
       save_for_later: !transaction_id,
+      pinned_to_invoice: !!invoice_id,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

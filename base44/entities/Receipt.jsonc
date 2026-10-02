@@ -6,6 +6,10 @@
       "type": "string",
       "title": "Linked Transaction"
     },
+    "invoice_id": {
+      "type": "string",
+      "title": "Pinned to Invoice"
+    },
     "gmail_message_id": {
       "type": "string",
       "title": "Gmail Message ID"
