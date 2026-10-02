@@ -37,7 +37,7 @@ export default function TransactionsByAccountView({
   const [collapsed, setCollapsed] = useState({});
   const [merging, setMerging] = useState(null);
   const [hideIgnored, setHideIgnored] = useState(true);
-  const [hidePersonal, setHidePersonal] = useState(true);
+  const [businessOnly, setBusinessOnly] = useState(true);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -69,13 +69,13 @@ export default function TransactionsByAccountView({
     for (const t of txs) {
       if (hideIgnored && t.matched === "ignored") continue;
       const name = resolveName(t.account_name) || "Unknown";
-      if (hidePersonal && labelType[name] === "personal") continue;
+      if (businessOnly && (labelType[name] === "personal" || labelType[name] === "routing")) continue;
       if (q && !matches(t, q)) continue;
       (map[name] ||= []).push(t);
     }
     return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txs, labels, hideIgnored, hidePersonal, query]);
+  }, [txs, labels, hideIgnored, businessOnly, query]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
@@ -186,12 +186,12 @@ export default function TransactionsByAccountView({
           {hideIgnored ? "Show Ignored" : "Hide Ignored"}
         </Button>
         <Button
-          variant={hidePersonal ? "default" : "outline"}
+          variant={businessOnly ? "default" : "outline"}
           size="sm"
-          onClick={() => setHidePersonal((v) => !v)}
+          onClick={() => setBusinessOnly((v) => !v)}
           className="min-h-11 sm:min-h-9"
         >
-          {hidePersonal ? "Show Personal" : "Hide Personal"}
+          {businessOnly ? "Show All Accounts" : "Business Only"}
         </Button>
       </div>
       {groups.length === 0 && (
