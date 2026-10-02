@@ -23,8 +23,8 @@ export default function CategorizeTransactionsView({
   onPinReceipt,
 }) {
   const [query, setQuery] = useState("");
-  const [hideIgnored, setHideIgnored] = useState(false);
-  const [hidePersonal, setHidePersonal] = useState(false);
+  const [hideIgnored, setHideIgnored] = useState(true);
+  const [hidePersonal, setHidePersonal] = useState(true);
   const [personalAccounts, setPersonalAccounts] = useState(() => new Set());
 
   useEffect(() => {
