@@ -25,7 +25,11 @@ export async function fetchRecategorizeRules(base44) {
   const json = await res.json();
   const rules = (json.values || [])
     .slice(1) // skip header row
-    .map((r) => ({ text: String(r[0] || "").trim(), category: String(r[1] || "").trim() }))
+    .map((r) => ({
+      text: String(r[0] || "").trim(),
+      category: String(r[1] || "").trim(),
+      ignore: String(r[2] || "").trim().toLowerCase() === "true",
+    }))
     .filter((r) => r.text && r.category);
 
   return { rules };
@@ -38,12 +42,13 @@ function matches(payee, ruleText) {
   return p.includes(r) || r.includes(p);
 }
 
-// Returns the target category if a rule matches the payee/name text, else null.
-// Rules are applied in sheet order; the first match wins.
+// Returns { category, ignore } for the first rule matching the payee/name text,
+// else null. Rules are applied in sheet order; the first match wins.
+// `ignore` (column C of the recategorize sheet) marks the transaction ignored.
 export function recategorize(payee, rules) {
   if (!rules) return null;
   for (const r of rules.rules) {
-    if (matches(payee, r.text)) return r.category;
+    if (matches(payee, r.text)) return { category: r.category, ignore: r.ignore };
   }
   return null;
 }
@@ -112,23 +117,37 @@ export async function applyRecategorizeToStored(base44, entityName, rules, pinna
   for (const t of all) {
     // 1. Recategorize pass: only override blank or "Personal" custom categories.
     const c = (t.custom_category || "").trim().toLowerCase();
-    let newCategory = null;
+    let ruleMatch = null;
     if (!c || c === "personal") {
       for (const r of rules.rules) {
-        if (matches(t.payee, r.text)) { newCategory = r.category; break; }
+        if (matches(t.payee, r.text)) { ruleMatch = r; break; }
       }
     }
 
-    const effectiveCategory = (newCategory || t.custom_category || t.category || "").trim();
+    const effectiveCategory = (ruleMatch?.category || t.custom_category || t.category || "").trim();
     const patch = { id: t.id };
     let changed = false;
 
-    if (newCategory) {
-      patch.custom_category = newCategory;
+    if (ruleMatch) {
+      patch.custom_category = ruleMatch.category;
       changed = true;
-      if (newCategory.toLowerCase() === "transfer") {
+      if (ruleMatch.ignore) {
         patch.matched = "ignored";
         patch.matched_invoice_id = null;
+      }
+    } else {
+      // Re-apply the ignore flag for already-categorized transactions that
+      // match an ignore rule (restores records previously flipped to not_a_job
+      // by the pinnable pass). The category itself is left untouched.
+      for (const r of rules.rules) {
+        if (r.ignore && matches(t.payee, r.text)) {
+          if (t.matched !== "ignored") {
+            patch.matched = "ignored";
+            patch.matched_invoice_id = null;
+            changed = true;
+          }
+          break;
+        }
       }
     }
 
@@ -137,7 +156,7 @@ export async function applyRecategorizeToStored(base44, entityName, rules, pinna
       const key = effectiveCategory.toLowerCase();
       if (pinnableMap.has(key)) {
         const pinnable = pinnableMap.get(key);
-        if (!pinnable && t.matched !== "not_a_job") {
+        if (!pinnable && t.matched !== "not_a_job" && t.matched !== "ignored") {
           patch.matched = "not_a_job";
           patch.matched_invoice_id = null;
           changed = true;

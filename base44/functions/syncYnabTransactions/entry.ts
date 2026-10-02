@@ -151,10 +151,10 @@ export default async function(req) {
         record.custom_category = 'Personal';
         record.matched = 'ignored';
       } else {
-        const ruleCat = recategorize(record.payee, rules);
-        if (ruleCat) {
-          record.custom_category = ruleCat;
-          if (ruleCat.toLowerCase() === 'transfer') {
+        const ruleMatch = recategorize(record.payee, rules);
+        if (ruleMatch) {
+          record.custom_category = ruleMatch.category;
+          if (ruleMatch.ignore) {
             record.matched = 'ignored';
             record.matched_invoice_id = null;
           }

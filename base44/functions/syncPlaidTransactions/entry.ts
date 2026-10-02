@@ -113,14 +113,15 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap) {
     memo: tx.merchant_name || '',
     last_synced_date: new Date().toISOString(),
   };
-  const ruleCat = recategorize(payee, rules);
+  const ruleMatch = recategorize(payee, rules);
+  const ruleCat = ruleMatch?.category || null;
   if (existing && existing.length) {
     const update = { ...payload };
     // Preserve manual categorizations; only auto-fill when blank.
     const hasCat = existing[0].custom_category && String(existing[0].custom_category).trim();
-    if (!hasCat && ruleCat) {
+    if (!hasCat && ruleMatch) {
       update.custom_category = ruleCat;
-      if (ruleCat.toLowerCase() === 'transfer') {
+      if (ruleMatch.ignore) {
         update.matched = 'ignored';
         update.matched_invoice_id = null;
       }
@@ -128,9 +129,9 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap) {
     await base44.asServiceRole.entities.Transaction.update(existing[0].id, update);
   } else {
     const create = { ...payload, matched: 'unmatched' };
-    if (ruleCat) {
+    if (ruleMatch) {
       create.custom_category = ruleCat;
-      if (ruleCat.toLowerCase() === 'transfer') {
+      if (ruleMatch.ignore) {
         create.matched = 'ignored';
         create.matched_invoice_id = null;
       }
