@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, computeTotals } from "@/lib/format";
+import { formatMoney, lineTotal, groupLineItemsBySection } from "@/lib/invoice";
 
 export default function AcceptEstimate() {
   const { estimateId } = useParams();
@@ -66,19 +67,34 @@ export default function AcceptEstimate() {
         </Card>
 
         {mode === "single" && (
-          <Card>
-            <CardContent className="p-4 space-y-2">
-              {(estimate.line_items || []).map((li, i) => (
-                <div key={i} className="flex justify-between text-sm">
-                  <span className="min-w-0">{li.description}</span>
-                  <span className="tabular-nums">{formatCurrency((li.quantity || 0) * (li.unit_price || 0))}</span>
+          <>
+            <div className="border rounded-lg overflow-hidden">
+              {groupLineItemsBySection(estimate.line_items).map(({ section, items }, gi) => (
+                <div key={gi}>
+                  {section && <div className="bg-primary/10 text-primary font-medium text-sm px-3 py-2">{section}</div>}
+                  {items.map((li, i) => (
+                    <div key={i} className="flex items-start justify-between gap-3 px-3 py-2 border-t first:border-t-0">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{li.description || "—"}</div>
+                        <div className="text-xs text-muted-foreground">{li.quantity ?? 0} × {formatMoney(li.unit_price)}</div>
+                        {li.details && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{li.details}</div>}
+                      </div>
+                      <div className="text-sm font-medium tabular-nums shrink-0">{formatMoney(lineTotal(li))}</div>
+                    </div>
+                  ))}
                 </div>
               ))}
-              <div className="border-t pt-2 flex justify-between font-medium">
-                <span>Total</span><span className="tabular-nums">{formatCurrency(estimate.total)}</span>
+            </div>
+
+            <div className="flex justify-end">
+              <div className="w-full max-w-xs space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="tabular-nums">{formatMoney(estimate.subtotal)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span className="tabular-nums">{formatMoney(estimate.tax)}</span></div>
+                {estimate.cc_fee_enabled && <div className="flex justify-between"><span className="text-muted-foreground">Credit card fee</span><span className="tabular-nums">{formatMoney(estimate.cc_fee)}</span></div>}
+                <div className="flex justify-between font-semibold border-t pt-1.5"><span>Total</span><span className="tabular-nums">{formatMoney(estimate.total)}</span></div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </>
         )}
 
         {mode === "side_by_side" && (
