@@ -164,7 +164,20 @@ export default function Settings() {
           </div>
           <div>
             <Label>Transfer category name</Label>
+            <p className="text-xs text-muted-foreground mb-2">Used for transfers until internal/external detection runs.</p>
             <Input value={settings.transfer_category_name || "Transfer"} onChange={(e) => set("transfer_category_name", e.target.value)} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Internal transfer category</Label>
+              <p className="text-xs text-muted-foreground mb-2">Moves between your own connected accounts (e.g. RBFCU → Sequence).</p>
+              <Input value={settings.internal_transfer_category_name || "Internal Transfer"} onChange={(e) => set("internal_transfer_category_name", e.target.value)} />
+            </div>
+            <div>
+              <Label>External transfer category</Label>
+              <p className="text-xs text-muted-foreground mb-2">Transfers with no matching counterpart — income or payments.</p>
+              <Input value={settings.external_transfer_category_name || "External Transfer"} onChange={(e) => set("external_transfer_category_name", e.target.value)} />
+            </div>
           </div>
           <div>
             <Label>Additional auto-ignore categories</Label>

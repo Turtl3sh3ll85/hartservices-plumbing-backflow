@@ -97,7 +97,7 @@ export default async function(req) {
     let transferDetection = { internal: 0, external: 0, updated: 0 };
     if (transferSettings.detectInternal) {
       try {
-        transferDetection = await detectInternalTransfers(base44);
+        transferDetection = await detectInternalTransfers(base44, transferSettings);
       } catch (e) {
         // Non-fatal.
       }

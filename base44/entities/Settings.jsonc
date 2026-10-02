@@ -74,6 +74,16 @@
       "default": "Transfer",
       "title": "Transfer Category Name"
     },
+    "internal_transfer_category_name": {
+      "type": "string",
+      "default": "Internal Transfer",
+      "title": "Internal Transfer Category Name"
+    },
+    "external_transfer_category_name": {
+      "type": "string",
+      "default": "External Transfer",
+      "title": "External Transfer Category Name"
+    },
     "detect_internal_transfers": {
       "type": "boolean",
       "default": true,

@@ -20,6 +20,8 @@ export async function fetchTransferSettings(base44) {
     autoCategorize: s.auto_categorize_transfers !== false,
     ignore: s.ignore_transfers !== false,
     categoryName: (s.transfer_category_name || "Transfer").trim() || "Transfer",
+    internalCategoryName: (s.internal_transfer_category_name || "Internal Transfer").trim() || "Internal Transfer",
+    externalCategoryName: (s.external_transfer_category_name || "External Transfer").trim() || "External Transfer",
     detectInternal: s.detect_internal_transfers !== false,
     autoIgnoreCategories: Array.isArray(s.auto_ignore_categories) ? s.auto_ignore_categories : [],
   };
@@ -60,7 +62,8 @@ export function matchesAutoIgnoreCategory(tx, settings) {
 // amount (exact absolute-value match) and date (within ±3 days). Paired
 // records get transfer_type "internal"; unpaired transfers get "external".
 // Only runs on transactions already tagged as transfers (plaid_pfc_primary set).
-export async function detectInternalTransfers(base44) {
+export async function detectInternalTransfers(base44, settings) {
+  if (!settings) settings = await fetchTransferSettings(base44);
   const all = await base44.asServiceRole.entities.Transaction.list("-date", 1000);
   const transfers = all.filter((t) => t.plaid_pfc_primary && t.amount != null);
 
@@ -85,8 +88,9 @@ export async function detectInternalTransfers(base44) {
 
     const isInternal = candidates.length > 0;
     const newType = isInternal ? "internal" : "external";
-    if (t.transfer_type !== newType) {
-      updates.push({ id: t.id, transfer_type: newType });
+    const newCat = isInternal ? settings.internalCategoryName : settings.externalCategoryName;
+    if (t.transfer_type !== newType || t.custom_category !== newCat) {
+      updates.push({ id: t.id, transfer_type: newType, custom_category: newCat });
     }
   }
 
