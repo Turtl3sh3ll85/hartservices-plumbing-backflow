@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import { formatCurrency, formatDate, paymentAmounts } from "@/lib/format";
@@ -116,20 +117,42 @@ export default function Accounting() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-heading font-semibold tracking-tight">Transactions</h1>
+        <TooltipProvider delayDuration={300}>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={runSync} disabled={!!busy}>
-            <RefreshCw className={`w-4 h-4 ${busy === "sync" ? "animate-spin" : ""}`} /> Sync Plaid
-          </Button>
-          <Button variant="outline" size="sm" onClick={runFullResync} disabled={!!busy}>
-            <RefreshCw className={`w-4 h-4 ${busy === "resync" ? "animate-spin" : ""}`} /> Re-sync all
-          </Button>
-          <Button variant="default" size="sm" onClick={runForceRefresh} disabled={!!busy}>
-            <RefreshCw className={`w-4 h-4 ${busy === "refresh" ? "animate-spin" : ""}`} /> Force refresh
-          </Button>
-          <Button variant="outline" size="sm" onClick={runReceipts} disabled={busy === "receipts"}>
-            <MailSearch className={`w-4 h-4 ${busy === "receipts" ? "animate-spin" : ""}`} /> Find receipts
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" onClick={runSync} disabled={!!busy}>
+                <RefreshCw className={`w-4 h-4 ${busy === "sync" ? "animate-spin" : ""}`} /> Sync Plaid
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[220px] text-left">Pull only new transactions from connected Plaid bank accounts since the last sync.</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" onClick={runFullResync} disabled={!!busy}>
+                <RefreshCw className={`w-4 h-4 ${busy === "resync" ? "animate-spin" : ""}`} /> Re-sync all
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[220px] text-left">Re-download every Plaid transaction from scratch (resets the sync cursor). Use if data looks stale or incomplete.</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="default" size="sm" onClick={runForceRefresh} disabled={!!busy}>
+                <RefreshCw className={`w-4 h-4 ${busy === "refresh" ? "animate-spin" : ""}`} /> Force refresh
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[220px] text-left">Re-apply category rules from your Google Sheet to all transactions (Plaid + YNAB).</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" onClick={runReceipts} disabled={busy === "receipts"}>
+                <MailSearch className={`w-4 h-4 ${busy === "receipts" ? "animate-spin" : ""}`} /> Find receipts
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[220px] text-left">Scan recent Gmail for receipts and auto-match them to transactions by merchant, amount, and date.</TooltipContent>
+          </Tooltip>
         </div>
+        </TooltipProvider>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
