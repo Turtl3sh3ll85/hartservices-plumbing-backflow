@@ -21,7 +21,7 @@ export default function Estimates() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [previewEst, setPreviewEst] = useState(null);
-  const [hideConverted, setHideConverted] = useState(false);
+  const [hideConverted, setHideConverted] = useState(true);
   const [convertingId, setConvertingId] = useState(null);
   const { settings } = useSettings();
   const { toast } = useToast();
@@ -73,6 +73,10 @@ export default function Estimates() {
     if (hideConverted && e.status === "converted") return false;
     const q = query.toLowerCase();
     return !q || (e.name || '').toLowerCase().includes(q) || (e.number || '').toLowerCase().includes(q);
+  }).sort((a, b) => {
+    const ac = a.status === "converted" ? 1 : 0;
+    const bc = b.status === "converted" ? 1 : 0;
+    return ac - bc;
   });
 
   return (
