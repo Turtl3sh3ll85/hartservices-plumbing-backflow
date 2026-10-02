@@ -14,7 +14,7 @@ export default function PaymentScheduleEditor({ schedule, onChange, total }) {
     next[i] = { ...next[i], ...patch };
     onChange(next);
   };
-  const add = () => onChange([...list, { label: "", type: "percentage", value: 0, paid: false }]);
+  const add = () => onChange([...list, { label: "", type: list.length ? (list[0].type || "amount") : "amount", value: 0, paid: false }]);
   const remove = (i) => onChange(list.filter((_, idx) => idx !== i));
 
   return (
