@@ -29,6 +29,7 @@ export default function TransactionsByAccountView({
   const [collapsed, setCollapsed] = useState({});
   const [merging, setMerging] = useState(null);
   const [hideIgnored, setHideIgnored] = useState(false);
+  const [hidePersonal, setHidePersonal] = useState(false);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -59,13 +60,14 @@ export default function TransactionsByAccountView({
     const map = {};
     for (const t of txs) {
       if (hideIgnored && t.matched === "ignored") continue;
-      if (q && !matches(t, q)) continue;
       const name = resolveName(t.account_name) || "Unknown";
+      if (hidePersonal && labelType[name] === "personal") continue;
+      if (q && !matches(t, q)) continue;
       (map[name] ||= []).push(t);
     }
     return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [txs, labels, hideIgnored, query]);
+  }, [txs, labels, hideIgnored, hidePersonal, query]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
@@ -174,6 +176,14 @@ export default function TransactionsByAccountView({
         >
           <Ban className="w-4 h-4" />
           {hideIgnored ? "Show Ignored" : "Hide Ignored"}
+        </Button>
+        <Button
+          variant={hidePersonal ? "default" : "outline"}
+          size="sm"
+          onClick={() => setHidePersonal((v) => !v)}
+          className="min-h-11 sm:min-h-9"
+        >
+          {hidePersonal ? "Show Personal" : "Hide Personal"}
         </Button>
       </div>
       {groups.length === 0 && (
