@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
-import { secrets } from 'base44:runtime';
+import { secrets, waitUntil } from 'base44:runtime';
 import { fetchRecategorizeRules, recategorize, applyRecategorizeToStored } from '../../shared/recategorizeRules.ts';
+import { runReceiptMatch } from '../../shared/receiptMatching.ts';
 
 const YNAB_BASE = 'https://api.ynab.com/v1';
 
@@ -194,6 +195,10 @@ export default async function(req) {
       await base44.asServiceRole.entities.YnabTransaction.bulkUpdate(toUpdate);
       updated = toUpdate.length;
     }
+
+    // Every new transaction batch triggers an AI receipt scan (emails + PDFs)
+    // in the background so the sync stays fast.
+    if (created > 0) waitUntil(runReceiptMatch(base44));
 
     return Response.json({
       ok: true,
