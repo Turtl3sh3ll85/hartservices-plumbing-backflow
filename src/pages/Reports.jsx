@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/invoice";
+import CategoryTransactionsDialog from "@/components/reports/CategoryTransactionsDialog";
 
 const PALETTE = [
   "#2563eb", "#16a34a", "#ea580c", "#9333ea", "#0891b2",
@@ -13,6 +14,7 @@ const PALETTE = [
 ];
 
 export default function Reports() {
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["ynabTransactions"],
     queryFn: () => base44.entities.YnabTransaction.list("-date", 500),
@@ -39,7 +41,7 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Reports</h1>
+        <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Expense Graph</h1>
         <p className="text-muted-foreground text-sm mt-1">Spending insights across all transactions.</p>
       </div>
 
@@ -84,25 +86,36 @@ export default function Reports() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
+            <div className="grid sm:grid-cols-2 gap-2">
               {byCategory.map((entry, i) => {
                 const pct = total ? (entry.value / total) * 100 : 0;
                 return (
-                  <div key={entry.name} className="flex items-center gap-3 min-h-11">
+                  <button
+                    key={entry.name}
+                    type="button"
+                    onClick={() => setSelectedCategory(entry.name)}
+                    className="flex items-center gap-3 min-h-11 px-3 py-2 rounded-lg border bg-card hover:bg-accent/60 transition-colors text-left"
+                  >
                     <span
-                      className="w-3 h-3 rounded-full shrink-0"
+                      className="w-3.5 h-3.5 rounded-full shrink-0"
                       style={{ background: PALETTE[i % PALETTE.length] }}
                     />
                     <span className="flex-1 text-sm font-medium truncate">{entry.name}</span>
-                    <span className="text-sm text-muted-foreground tabular-nums">{pct.toFixed(1)}%</span>
-                    <span className="text-sm font-medium tabular-nums w-24 text-right">{formatMoney(entry.value)}</span>
-                  </div>
+                    <span className="text-xs text-muted-foreground tabular-nums shrink-0">{pct.toFixed(1)}%</span>
+                    <span className="text-sm font-semibold tabular-nums w-24 text-right shrink-0">{formatMoney(entry.value)}</span>
+                  </button>
                 );
               })}
             </div>
           </div>
         )}
       </Card>
+
+      <CategoryTransactionsDialog
+        category={selectedCategory}
+        transactions={transactions}
+        onClose={() => setSelectedCategory(null)}
+      />
     </div>
   );
 }

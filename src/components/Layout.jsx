@@ -15,7 +15,7 @@ const allNav = [
   { to: "/invoices", label: "Invoices", icon: FileText, roles: ["admin", "tech", "accountant"] },
   { to: "/customers", label: "Customers", icon: UserCog, roles: ["admin"] },
   { to: "/transactions", label: "Transactions", icon: ArrowLeftRight, roles: ["admin", "accountant"] },
-  { to: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "accountant"] },
+  { to: "/reports", label: "Expense Graph", icon: BarChart3, roles: ["admin", "accountant"] },
   { to: "/receipts", label: "Receipts", icon: Receipt, roles: ["admin", "accountant"] },
   { to: "/users", label: "Users", icon: UserCog, roles: ["admin"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
