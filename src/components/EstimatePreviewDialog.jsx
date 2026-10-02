@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileDown, Pencil, Loader2, FileInput, Trash2 } from "lucide-react";
+import { FileDown, Pencil, Loader2, FileInput, Trash2, Link2, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
@@ -16,6 +16,7 @@ export default function EstimatePreviewDialog({ doc, customer, settings, onClose
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [copied, setCopied] = useState(false);
   if (!doc) return null;
 
   const editPath = `/estimates/${doc.id}`;
@@ -42,6 +43,14 @@ export default function EstimatePreviewDialog({ doc, customer, settings, onClose
   const handleDelete = () => {
     if (!window.confirm(`Delete this estimate? This cannot be undone.`)) return;
     onDelete?.();
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin + `/accept/${doc.id}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
   };
 
   const renderLineItems = (lineItems) => (
@@ -137,6 +146,10 @@ export default function EstimatePreviewDialog({ doc, customer, settings, onClose
                 <span className="hidden sm:inline">View invoice</span>
               </Button>
             )}
+            <Button size="sm" variant="outline" onClick={copyLink}>
+              {copied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+              <span className="hidden sm:inline">{copied ? "Copied" : "Copy link"}</span>
+            </Button>
             <Button size="sm" variant="outline" onClick={downloadPdf} disabled={downloading}>
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
               <span className="hidden sm:inline">Download</span>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileDown, Pencil, Loader2, FileInput, Trash2 } from "lucide-react";
+import { FileDown, Pencil, Loader2, FileInput, Trash2, Link2, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import PhaseIndicator from "@/components/PhaseIndicator";
@@ -19,6 +19,7 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
   const { user } = useAuth();
   const [downloading, setDownloading] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [copied, setCopied] = useState(false);
   if (!doc) return null;
   const isInvoice = kind === "invoice";
   const canSeeProfit = isInvoice && (user?.role === "admin" || user?.role === "accountant");
@@ -51,6 +52,15 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
     onDelete?.();
   };
 
+  const copyLink = async () => {
+    const path = isInvoice ? `/pay/${doc.id}` : `/accept/${doc.id}`;
+    try {
+      await navigator.clipboard.writeText(window.location.origin + path);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
   return (
     <Dialog open={!!doc} onOpenChange={(o) => !o && onClose?.()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
@@ -74,6 +84,10 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
                 <span className="hidden sm:inline">View invoice</span>
               </Button>
             )}
+            <Button size="sm" variant="outline" onClick={copyLink}>
+              {copied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+              <span className="hidden sm:inline">{copied ? "Copied" : "Copy link"}</span>
+            </Button>
             <Button size="sm" variant="outline" onClick={downloadPdf} disabled={downloading}>
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
               <span className="hidden sm:inline">Download</span>
