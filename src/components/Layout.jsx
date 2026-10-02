@@ -10,6 +10,7 @@ import { Image } from "@/components/ui/image";
 import PullToRefresh from "@/components/PullToRefresh";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useState } from "react";
+import { useTheme } from "next-themes";
 
 const PRIMARY_MOBILE_TABS = new Set(["/estimates", "/invoices", "/receipts"]);
 
@@ -28,7 +29,9 @@ const allNav = [
 function BrandMark({ settings, size = "md" }) {
   const dim = size === "sm" ? "w-8 h-8" : "w-9 h-9";
   const icon = size === "sm" ? "w-4 h-4" : "w-5 h-5";
-  const logoUrl = settings?.logo_url || "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg";
+  const { theme } = useTheme();
+  const isDark = (theme === "dark" || (!theme && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches));
+  const logoUrl = (isDark && settings?.dark_logo_url) ? settings.dark_logo_url : (settings?.logo_url || "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg");
   return (
     <div className={`${dim} rounded-xl overflow-hidden bg-card border shrink-0`}>
       <Image src={logoUrl} alt="Logo" className="w-full h-full object-contain" />

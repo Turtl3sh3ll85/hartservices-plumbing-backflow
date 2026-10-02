@@ -11,6 +11,7 @@ import { useTheme } from "next-themes";
 import { RefreshCw, MailSearch, Trash2 } from "lucide-react";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import LogoUpload from "@/components/LogoUpload";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function Settings() {
@@ -101,7 +102,8 @@ export default function Settings() {
           <div><Label>Business name</Label><Input value={settings.business_name || ""} onChange={(e) => set("business_name", e.target.value)} /></div>
           <div><Label>Business email</Label><Input type="email" value={settings.business_email || ""} onChange={(e) => set("business_email", e.target.value)} /></div>
           <div><Label>Business phone</Label><Input value={settings.business_phone || ""} onChange={(e) => set("business_phone", e.target.value)} /></div>
-          <div><Label>Logo URL</Label><Input value={settings.logo_url || ""} onChange={(e) => set("logo_url", e.target.value)} /></div>
+          <div className="sm:col-span-2"><Label>Logo (light mode)</Label><LogoUpload value={settings.logo_url || ""} onChange={(v) => set("logo_url", v)} hint="Shown on light backgrounds. Paste a URL or upload an image." /></div>
+          <div className="sm:col-span-2"><Label>Logo (dark mode)</Label><LogoUpload value={settings.dark_logo_url || ""} onChange={(v) => set("dark_logo_url", v)} hint="Shown on dark backgrounds." /></div>
           <div className="sm:col-span-2"><Label>Street</Label><Input value={settings.business_street || ""} onChange={(e) => set("business_street", e.target.value)} /></div>
           <div><Label>City</Label><Input value={settings.business_city || ""} onChange={(e) => set("business_city", e.target.value)} /></div>
           <div><Label>State</Label><Input value={settings.business_state || ""} onChange={(e) => set("business_state", e.target.value)} /></div>

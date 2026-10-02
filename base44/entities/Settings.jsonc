@@ -34,6 +34,10 @@
       "type": "string",
       "title": "Logo URL"
     },
+    "dark_logo_url": {
+      "type": "string",
+      "title": "Dark Mode Logo URL"
+    },
     "default_tax_rate": {
       "type": "number",
       "title": "Default Tax Rate %"
