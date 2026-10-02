@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { secrets, waitUntil } from 'base44:runtime';
 import { fetchRecategorizeRules, recategorize, applyRecategorizeToStored, fetchPinnableCategories, isNotAJobCategory } from '../../shared/recategorizeRules.ts';
 import { runReceiptMatch } from '../../shared/receiptMatching.ts';
+import { fetchTransferSettings, evaluateTransfer, detectInternalTransfers } from '../../shared/transferRules.ts';
 
 function plaidBaseUrl() {
   const env = (secrets.get('PLAID_ENV') || 'sandbox').toLowerCase();
@@ -33,6 +34,10 @@ export default async function(req) {
     let added = 0;
     let updated = 0;
     const resetCursor = body.reset_cursor === true;
+
+    // Transfer settings from the app Settings entity (replaces spreadsheet
+    // transfer rules with Plaid's native personal_finance_category).
+    const transferSettings = await fetchTransferSettings(base44);
 
     // Auto-recategorize stored transactions to Transfer / Rebate categories
     // based on payee name rules pulled from the categories spreadsheet.
@@ -71,11 +76,11 @@ export default async function(req) {
 
         const data = await syncRes.json();
         for (const tx of (data.added || [])) {
-          await upsertTransaction(base44, item, tx, rules, pinnableMap);
+          await upsertTransaction(base44, item, tx, rules, pinnableMap, transferSettings);
           added++;
         }
         for (const tx of (data.modified || [])) {
-          await upsertTransaction(base44, item, tx, rules, pinnableMap);
+          await upsertTransaction(base44, item, tx, rules, pinnableMap, transferSettings);
           updated++;
         }
         cursor = data.next_cursor;
@@ -87,21 +92,36 @@ export default async function(req) {
       }
     }
 
+    // Detect internal vs external transfers via two-sided matching across
+    // connected accounts (e.g. GetSequence.io moves between own accounts).
+    let transferDetection = { internal: 0, external: 0, updated: 0 };
+    if (transferSettings.detectInternal) {
+      try {
+        transferDetection = await detectInternalTransfers(base44);
+      } catch (e) {
+        // Non-fatal.
+      }
+    }
+
     // Every new transaction batch triggers an AI receipt scan (emails + PDFs)
     // in the background so the sync stays fast.
     if (added > 0) waitUntil(runReceiptMatch(base44));
 
-    return Response.json({ ok: true, items: items.length, added, updated, recategorized });
+    return Response.json({ ok: true, items: items.length, added, updated, recategorized, transferDetection });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
 
-async function upsertTransaction(base44, item, tx, rules, pinnableMap) {
+async function upsertTransaction(base44, item, tx, rules, pinnableMap, transferSettings) {
   const plaidId = tx.transaction_id;
   const account = (item.accounts || []).find((a) => a.account_id === tx.account_id);
   const existing = await base44.asServiceRole.entities.Transaction.filter({ plaid_transaction_id: plaidId }, '-created_date', 1);
   const payee = tx.merchant_name || tx.name || '';
+
+  // Plaid native transfer detection (personal_finance_category.primary).
+  const transferMatch = evaluateTransfer(tx, transferSettings);
+
   const payload = {
     plaid_transaction_id: plaidId,
     account_name: account?.name || item.institution_name || '',
@@ -113,13 +133,24 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap) {
     memo: tx.merchant_name || '',
     last_synced_date: new Date().toISOString(),
   };
+  if (transferMatch) {
+    payload.plaid_pfc_primary = transferMatch.pfcPrimary;
+  }
+
   const ruleMatch = recategorize(payee, rules);
   const ruleCat = ruleMatch?.category || null;
+
   if (existing && existing.length) {
     const update = { ...payload };
-    // Preserve manual categorizations; only auto-fill when blank.
     const hasCat = existing[0].custom_category && String(existing[0].custom_category).trim();
-    if (!hasCat && ruleMatch) {
+    // Plaid PFC transfer takes priority over blank/recategorize rules.
+    if (transferMatch) {
+      update.custom_category = transferMatch.category;
+      if (transferMatch.ignore) {
+        update.matched = 'ignored';
+        update.matched_invoice_id = null;
+      }
+    } else if (!hasCat && ruleMatch) {
       update.custom_category = ruleCat;
       if (ruleMatch.ignore) {
         update.matched = 'ignored';
@@ -129,7 +160,13 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap) {
     await base44.asServiceRole.entities.Transaction.update(existing[0].id, update);
   } else {
     const create = { ...payload, matched: 'unmatched' };
-    if (ruleMatch) {
+    if (transferMatch) {
+      create.custom_category = transferMatch.category;
+      if (transferMatch.ignore) {
+        create.matched = 'ignored';
+        create.matched_invoice_id = null;
+      }
+    } else if (ruleMatch) {
       create.custom_category = ruleCat;
       if (ruleMatch.ignore) {
         create.matched = 'ignored';

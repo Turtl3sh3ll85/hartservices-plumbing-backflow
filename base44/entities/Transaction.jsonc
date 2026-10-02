@@ -68,6 +68,18 @@
       "type": "string",
       "format": "date-time",
       "title": "Last Synced Date"
+    },
+    "plaid_pfc_primary": {
+      "type": "string",
+      "title": "Plaid Personal Finance Category"
+    },
+    "transfer_type": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "external"
+      ],
+      "title": "Transfer Type"
     }
   },
   "required": [

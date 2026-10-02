@@ -139,6 +139,37 @@ export default function Settings() {
       </Card>
 
       <Card>
+        <CardHeader><CardTitle className="text-base">Transaction Rules</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Auto-categorize transfers</Label>
+              <p className="text-xs text-muted-foreground">Uses Plaid's native category data to tag TRANSFER_IN / TRANSFER_OUT automatically — no spreadsheet rules needed.</p>
+            </div>
+            <Switch checked={settings.auto_categorize_transfers !== false} onCheckedChange={(v) => set("auto_categorize_transfers", v)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Auto-ignore transfers</Label>
+              <p className="text-xs text-muted-foreground">Marks transfers as ignored so they don't appear in income/expense reports.</p>
+            </div>
+            <Switch checked={settings.ignore_transfers !== false} onCheckedChange={(v) => set("ignore_transfers", v)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Detect internal transfers</Label>
+              <p className="text-xs text-muted-foreground">Two-sided matching across connected accounts — pairs debits and credits on different accounts to flag internal moves (e.g. GetSequence.io) vs external.</p>
+            </div>
+            <Switch checked={settings.detect_internal_transfers !== false} onCheckedChange={(v) => set("detect_internal_transfers", v)} />
+          </div>
+          <div>
+            <Label>Transfer category name</Label>
+            <Input value={settings.transfer_category_name || "Transfer"} onChange={(e) => set("transfer_category_name", e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle className="text-base">Appearance</CardTitle></CardHeader>
         <CardContent className="flex items-center justify-between">
           <div>

@@ -58,6 +58,26 @@
       "type": "boolean",
       "default": false,
       "title": "Weekly Open Invoices Summary Enabled"
+    },
+    "auto_categorize_transfers": {
+      "type": "boolean",
+      "default": true,
+      "title": "Auto-Categorize Transfers (Plaid PFC)"
+    },
+    "ignore_transfers": {
+      "type": "boolean",
+      "default": true,
+      "title": "Auto-Ignore Transfers"
+    },
+    "transfer_category_name": {
+      "type": "string",
+      "default": "Transfer",
+      "title": "Transfer Category Name"
+    },
+    "detect_internal_transfers": {
+      "type": "boolean",
+      "default": true,
+      "title": "Detect Internal Transfers (Two-Sided Matching)"
     }
   },
   "required": []
