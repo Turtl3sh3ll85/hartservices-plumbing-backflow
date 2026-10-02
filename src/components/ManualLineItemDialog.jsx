@@ -8,14 +8,14 @@ import { MobileSelect } from "@/components/ui/mobile-select";
 
 const blank = { description: "", details: "", quantity: 1, unit: "", unit_price: 0, markup: 0 };
 
-export default function ManualLineItemDialog({ open, onOpenChange, onAdd, sections = [] }) {
+export default function ManualLineItemDialog({ open, onOpenChange, onAdd, sections = [], defaultSection }) {
   const [form, setForm] = useState(blank);
   const [section, setSection] = useState("");
 
   useEffect(() => {
     if (open) {
       setForm(blank);
-      setSection(sections[0] ?? "");
+      setSection(defaultSection ?? sections[0] ?? "");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);

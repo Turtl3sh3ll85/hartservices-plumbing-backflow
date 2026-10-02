@@ -28,6 +28,7 @@ export default function LineItemsEditor({ items, onChange }) {
   const list = items || [];
   const [modOpenFor, setModOpenFor] = useState(null);
   const [manualOpen, setManualOpen] = useState(false);
+  const [manualSection, setManualSection] = useState("");
 
   const update = (i, patch) => {
     const next = [...list];
@@ -69,8 +70,14 @@ export default function LineItemsEditor({ items, onChange }) {
     const n = sectionOrder.filter((s) => s).length + 1;
     onChange([...list, blankItem(`Section ${n}`)]);
   };
-  const setSectionName = (oldName, newName) =>
-    onChange(list.map((li) => (li.section || "") === oldName ? { ...li, section: newName } : li));
+  const setSectionName = (oldName, newName) => {
+    const hasItems = list.some((li) => (li.section || "") === oldName);
+    if (!hasItems && newName.trim()) {
+      onChange([...list, blankItem(newName)]);
+    } else {
+      onChange(list.map((li) => (li.section || "") === oldName ? { ...li, section: newName } : li));
+    }
+  };
   const removeSection = (name) => {
     const idx = sectionOrder.indexOf(name);
     const prev = idx > 0 ? sectionOrder[idx - 1] : "";
@@ -150,7 +157,10 @@ export default function LineItemsEditor({ items, onChange }) {
                   </div>
                 );
               })}
-              <SheetItemPicker onPick={(item) => addSheetItem(item, sectionName)} />
+              <SheetItemPicker
+                onPick={(item) => addSheetItem(item, sectionName)}
+                onManualEntry={() => { setManualSection(sectionName); setManualOpen(true); }}
+              />
             </div>
           </div>
         );
@@ -177,6 +187,7 @@ export default function LineItemsEditor({ items, onChange }) {
         onOpenChange={setManualOpen}
         onAdd={addManualItem}
         sections={sectionOrder}
+        defaultSection={manualSection}
       />
     </div>
   );

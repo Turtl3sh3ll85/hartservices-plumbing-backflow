@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/format";
 const ITEMS_SHEET_ID = "13lEp40pEclIWP2haTyDsCBsEJ75HWim4CNLWElmLhSg";
 const ITEMS_SHEET_NAME = "Items";
 
-export default function SheetItemPicker({ onPick, sheetId = ITEMS_SHEET_ID, sheetName = ITEMS_SHEET_NAME }) {
+export default function SheetItemPicker({ onPick, onManualEntry, sheetId = ITEMS_SHEET_ID, sheetName = ITEMS_SHEET_NAME }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -53,6 +53,17 @@ export default function SheetItemPicker({ onPick, sheetId = ITEMS_SHEET_ID, shee
       <PopoverContent className="p-0 w-80" align="start">
         <Command>
           <CommandInput placeholder="Search sheet items…" />
+          {onManualEntry && (
+            <div className="border-b">
+              <button
+                type="button"
+                onClick={() => { onManualEntry(); setOpen(false); }}
+                className="flex items-center w-full px-2 py-2 text-sm hover:bg-accent"
+              >
+                <Pencil className="w-4 h-4 mr-2" /> Manual entry…
+              </button>
+            </div>
+          )}
           <CommandList>
             {loading && (
               <div className="flex items-center justify-center py-6">
