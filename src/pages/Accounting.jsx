@@ -160,7 +160,7 @@ export default function Accounting() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium truncate">{t.payee || "Unknown"}</span>
-                    {t.receipt_email_id && <Paperclip className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                    {(t.receipt_email_id || t.receipt_file_uri) && <Paperclip className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {formatDate(t.date)} · {t.account_name}{t.account_mask ? ` ···${t.account_mask}` : ""}

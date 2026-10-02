@@ -10,6 +10,7 @@
 const LOOKBACK_DAYS = 45;
 const MAX_EMAILS = 20;
 const MAX_PDF_UPLOADS = 6;
+const MAX_SAVED_PHOTOS = 6;
 
 export async function runReceiptMatch(base44) {
   try {
@@ -144,6 +145,88 @@ export async function runReceiptMatch(base44) {
   }
 }
 
+// Match saved (unlinked) receipt photos to transactions. These are receipts
+// snapped in the Snap Receipt page and saved for later — they have a file_uri
+// but no transaction yet. The hourly scanner reads each photo with AI vision
+// and pins it to a matching transaction once one posts.
+export async function matchSavedPhotoReceipts(base44) {
+  try {
+    const saved = await base44.asServiceRole.entities.Receipt.filter({ matched: false }, '-created_date', MAX_SAVED_PHOTOS);
+    const pending = (saved || []).filter((r) => r.file_uri && !r.transaction_id);
+    if (!pending.length) return { scanned: 0, matched: 0 };
+
+    const targets = await loadTargets(base44);
+    if (!targets.length) return { scanned: pending.length, matched: 0 };
+
+    const photos = [];
+    for (const r of pending) {
+      try {
+        const signed = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({ file_uri: r.file_uri });
+        photos.push({ receipt: r, url: signed.signed_url });
+      } catch (e) {
+        // Skip unreadable photos.
+      }
+    }
+    if (!photos.length) return { scanned: pending.length, matched: 0 };
+
+    const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt:
+        'Match receipt photos to business transactions. ' +
+        'Transactions: ' + JSON.stringify(targets.map((t) => ({ id: t.id, entity: t.entity, name: t.payee, date: t.date, amount: t.amount }))) + '. ' +
+        'Receipt photos (file_urls) are provided in this exact order: ' + JSON.stringify(photos.map((p) => p.receipt.id)) + '. ' +
+        'Read each receipt photo to find the merchant name, total amount, and date. ' +
+        'Match a receipt to a transaction ONLY when ALL hold: the merchant name is similar to the transaction payee/name, the receipt total equals the transaction amount within $2.00, AND the dates are within 3 days. ' +
+        'Return one match per receipt, with confidence 0-1.',
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          matches: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                receipt_id: { type: 'string' },
+                transaction_id: { type: 'string' },
+                entity: { type: 'string' },
+                amount: { type: 'number' },
+                merchant: { type: 'string' },
+                confidence: { type: 'number' },
+              },
+            },
+          },
+        },
+      },
+      file_urls: photos.map((p) => p.url),
+    });
+    const matches = llmRes.matches || [];
+
+    let linked = 0;
+    for (const match of matches) {
+      if (match.confidence < 0.7) continue;
+      const tx = targets.find((t) => t.id === match.transaction_id && t.entity === match.entity);
+      if (!tx) continue;
+
+      await base44.asServiceRole.entities.Receipt.update(match.receipt_id, {
+        matched: true,
+        transaction_id: tx.id,
+        merchant: match.merchant || '',
+        amount: match.amount,
+      });
+
+      if (tx.entity === 'Transaction') {
+        await base44.asServiceRole.entities.Transaction.update(tx.id, {
+          receipt_file_uri: match.receipt_id,
+        });
+      }
+      linked++;
+    }
+
+    return { scanned: photos.length, matched: linked };
+  } catch (e) {
+    return { scanned: 0, matched: 0, error: e.message };
+  }
+}
+
 async function loadTargets(base44) {
   const since = new Date(Date.now() - LOOKBACK_DAYS * 86400000).toISOString().slice(0, 10);
   const targets = [];
@@ -154,7 +237,7 @@ async function loadTargets(base44) {
       100,
     );
     for (const t of plaid) {
-      if (t.receipt_email_id) continue; // already pinned
+      if (t.receipt_email_id || t.receipt_file_uri) continue; // already pinned
       targets.push({ id: t.id, entity: 'Transaction', payee: t.payee || '', date: t.date, amount: Math.abs(Number(t.amount) || 0) });
     }
   } catch (e) {}

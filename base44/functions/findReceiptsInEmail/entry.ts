@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
-import { runReceiptMatch } from '../../shared/receiptMatching.ts';
+import { runReceiptMatch, matchSavedPhotoReceipts } from '../../shared/receiptMatching.ts';
 
 export default async function(req) {
   try {
@@ -15,8 +15,15 @@ export default async function(req) {
       }
     }
 
-    const result = await runReceiptMatch(base44);
-    return Response.json({ ok: true, ...result });
+    const emails = await runReceiptMatch(base44);
+    const photos = await matchSavedPhotoReceipts(base44);
+    return Response.json({
+      ok: true,
+      scanned: (emails.scanned || 0) + (photos.scanned || 0),
+      matched: (emails.matched || 0) + (photos.matched || 0),
+      emails,
+      photos,
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

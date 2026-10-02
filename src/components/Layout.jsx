@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Outlet, NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, UserCog, ArrowLeft, LogOut, ArrowLeftRight, Receipt, BarChart3 } from "lucide-react";
+import { LayoutDashboard, FileText, ClipboardList, Settings, Droplet, UserCog, ArrowLeft, LogOut, ArrowLeftRight, Camera, BarChart3 } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ const allNav = [
   { to: "/customers", label: "Customers", icon: UserCog, roles: ["admin"] },
   { to: "/transactions", label: "Transactions", icon: ArrowLeftRight, roles: ["admin", "accountant"] },
   { to: "/reports", label: "Expense Graph", icon: BarChart3, roles: ["admin", "accountant"] },
-  { to: "/receipts", label: "Receipts", icon: Receipt, roles: ["admin", "accountant"] },
+  { to: "/receipts", label: "Snap Receipt", icon: Camera, roles: ["admin", "accountant"] },
   { to: "/users", label: "Users", icon: UserCog, roles: ["admin"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
 ];

@@ -1,0 +1,47 @@
+{
+  "description": "Scans Gmail for receipt emails and matches saved receipt photos to transactions every hour at the top of the hour",
+  "name": "Hourly Receipt Scan",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "hourly_receipt_scan",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "scan": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "findReceiptsInEmail",
+            "args": {
+              "from_workflow": true
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Scan receipts",
+            "description": "Match email + saved photo receipts to transactions"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 * * * *",
+      "one_time_date": null,
+      "timezone": "America/Chicago",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}
