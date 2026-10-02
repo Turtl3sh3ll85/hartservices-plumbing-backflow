@@ -5,9 +5,9 @@ import { formatCurrency, paymentAmounts } from "@/lib/format";
 
 const STATUS_LABEL = { standing: "Standing By", due: "Due", ready: "Customer ready" };
 const STATUS_STYLE = {
-  standing: "text-slate-300 border-slate-500/60 bg-slate-700/40",
-  due: "text-[#d97706] border-[#d97706]/60 bg-[#fef3c7]",
-  ready: "text-[#10b981] border-[#10b981]/60 bg-[#d1fae5]",
+  standing: "text-slate-300 border-slate-500/60 bg-slate-700/40 hover:bg-slate-700/70",
+  due: "text-[#d97706] border-[#d97706]/60 bg-[#fef3c7] hover:bg-[#fde68a]",
+  ready: "text-[#10b981] border-[#10b981]/60 bg-[#d1fae5] hover:bg-[#bbf7d0]",
 };
 const STATUS_ICON = { standing: Hourglass, due: AlarmClock, ready: UserCheck };
 
@@ -50,10 +50,10 @@ export default function PaymentMilestoneList({
             ? (customerReady ? "ready" : standingBy !== false ? "standing" : "due")
             : "standing");
           return (
-            <div key={i} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5">
+            <div key={i} className="flex items-center gap-x-2 py-1.5">
               <span className="min-w-0 text-sm font-medium text-white truncate">{p.label || `Payment ${i + 1}`}</span>
-              <span className="text-sm tabular-nums text-[#9ca3af] text-left">{formatCurrency(amounts[i])}</span>
-              <div className="flex items-center gap-1.5 justify-end">
+              <span className="ml-auto text-sm tabular-nums text-[#9ca3af] text-right">{formatCurrency(amounts[i])}</span>
+              <div className="flex items-center gap-1.5 shrink-0">
                 {p.paid ? (
                   canUnmarkPaid && onUnmarkPaid ? (
                     <button
@@ -70,31 +70,29 @@ export default function PaymentMilestoneList({
                       <Check className="w-3 h-3" /> Paid
                     </span>
                   )
-                ) : onPayNow && status === "due" ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onPayNow(i); }}
-                    onPointerDown={stop}
-                    className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#d97706] border border-[#d97706]/60 bg-[#fef3c7] hover:bg-[#fde68a] rounded-full px-2 py-0.5 h-7 shrink-0 transition-colors cursor-pointer"
-                  >
-                    <CreditCard className="w-3 h-3" /> Pay Now
-                  </button>
-                ) : canMarkPaidByCheck && onMarkPaidByCheck ? (
-                  <MarkPaidButton onClick={() => onMarkPaidByCheck(i)} className={STATUS_STYLE.ready} label={p.label || `Payment ${i + 1}`} />
-                ) : onStatusChange && !readOnly ? (
-                  <MilestoneStatusDropdown
-                    status={status} statuses={statuses} labels={STATUS_LABEL} icons={STATUS_ICON} styles={STATUS_STYLE}
-                    label={p.label || `Payment ${i + 1}`} readOnly={readOnly}
-                    onChange={(value) => onStatusChange(value, i)}
-                  />
                 ) : (
-                  <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 h-7 shrink-0 border ${STATUS_STYLE[status]}`}>
-                    {(() => { const Icon = STATUS_ICON[status]; return <Icon className="w-3 h-3" />; })()}
-                    {STATUS_LABEL[status]}
-                  </span>
+                  <>
+                    <MilestoneStatusDropdown
+                      status={status} statuses={statuses} labels={STATUS_LABEL} icons={STATUS_ICON} styles={STATUS_STYLE}
+                      label={p.label || `Payment ${i + 1}`} readOnly={readOnly}
+                      onChange={onStatusChange ? (value) => onStatusChange(value, i) : undefined}
+                    />
+                    {onPayNow && status === "due" ? (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onPayNow(i); }}
+                        onPointerDown={stop}
+                        className="pointer-events-auto inline-flex items-center gap-1 text-xs font-medium text-[#d97706] border border-[#d97706]/60 bg-[#fef3c7] hover:bg-[#fde68a] rounded-full px-2 py-0.5 h-7 shrink-0 transition-colors cursor-pointer"
+                      >
+                        <CreditCard className="w-3 h-3" /> Pay Now
+                      </button>
+                    ) : canMarkPaidByCheck && onMarkPaidByCheck ? (
+                      <MarkPaidButton onClick={() => onMarkPaidByCheck(i)} className={STATUS_STYLE.ready} label={p.label || `Payment ${i + 1}`} />
+                    ) : null}
+                  </>
                 )}
               </div>
-                </div>
+            </div>
                 );
         })}
       </div>
