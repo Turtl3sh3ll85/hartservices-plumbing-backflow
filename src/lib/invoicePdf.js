@@ -161,18 +161,29 @@ async function buildDocumentPdf({ doc, customer, settings, kind }) {
       docPdf.setFont("helvetica", "normal");
       docPdf.setFontSize(8);
       docPdf.setTextColor(120);
-      docPdf.text(`${li.quantity ?? ""} × ${formatMoney(li.unit_price)}`, M + textIndent, y + 11);
+      const qtyStr = `${li.quantity ?? ""}${li.unit ? ` ${li.unit}` : ""} × ${formatMoney(li.unit_price)}${li.markup ? ` (+${li.markup}% markup)` : ""}`;
+      docPdf.text(qtyStr, M + textIndent, y + 11);
+      let extraLines = 0;
+      if (li.details) {
+        docPdf.setFontSize(7);
+        const detailLines = docPdf.splitTextToSize(String(li.details), W - M * 2 - textIndent);
+        detailLines.slice(0, 2).forEach((l, di) => { docPdf.text(l, M + textIndent, y + 19 + di * 9); });
+        docPdf.setFontSize(8);
+        extraLines = detailLines.slice(0, 2).length;
+      }
       if (li.modifiers && li.modifiers.length > 0) {
         const modText = li.modifiers.map(m => `${m.name}${m.price_adjustment ? ` (${m.price_adjustment >= 0 ? "+" : ""}${formatMoney(m.price_adjustment)})` : ""}`).join("  ·  ");
+        const modOffset = extraLines * 9;
         docPdf.setFontSize(7);
-        docPdf.text(modText, M + textIndent, y + 19);
+        docPdf.text(modText, M + textIndent, y + 19 + modOffset);
         docPdf.setFontSize(8);
+        extraLines += 1;
       }
       docPdf.setTextColor(0);
       docPdf.setFont("helvetica", "normal");
       docPdf.setFontSize(10);
       docPdf.text(formatMoney(lineTotal(li)), totalX, y, { align: "right" });
-      y += 24;
+      y += 24 + extraLines * 9;
     }
     if (section) y += 4;
   }
