@@ -88,7 +88,7 @@ export default function MyDocuments() {
             <button onClick={() => navigate("/")} className="flex items-center gap-1.5 -ml-1 px-1 min-h-11 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors" aria-label="Back to home">
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-7 h-7 rounded-lg overflow-hidden bg-card border shrink-0">
+            <div className="w-7 h-7 rounded-lg overflow-hidden bg-white border shrink-0">
               <Image src={settings?.logo_url || LOGO_URL} alt="Logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-heading font-semibold text-sm truncate">{settings?.business_name || "HartServices"}</span>

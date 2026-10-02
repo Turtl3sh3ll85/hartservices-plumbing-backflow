@@ -111,7 +111,7 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
               {settings?.logo_url && (
-                <div className="w-14 h-14 rounded-lg overflow-hidden bg-card border shrink-0">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-white border shrink-0">
                   <Image src={settings.logo_url} alt="Logo" className="w-full h-full object-contain" />
                 </div>
               )}
