@@ -14,7 +14,7 @@ import InvoiceProfitability from "@/components/InvoiceProfitability";
 import InvoiceAttachments from "@/components/InvoiceAttachments";
 import { useAuth } from "@/lib/AuthContext";
 
-export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onSavePhase, phaseSaving, onConvert, onDelete }) {
+export default function DocumentPreviewDialog({ doc, kind, customer, settings, onClose, editLabel, onEdit, phases, onSavePhase, phaseSaving, onConvert, onDelete, attachments }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [downloading, setDownloading] = useState(false);
@@ -198,9 +198,13 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
             </div>
           )}
 
-          {isInvoice && (user?.role === "admin" || user?.role === "tech" || user?.role === "accountant") && (
+          {isInvoice && (
             <div className="border-t pt-4">
-              <InvoiceAttachments invoiceId={doc.id} />
+              <InvoiceAttachments
+                invoiceId={doc.id}
+                readOnly={!(user?.role === "admin" || user?.role === "tech" || user?.role === "accountant")}
+                preloaded={attachments}
+              />
             </div>
           )}
         </div>

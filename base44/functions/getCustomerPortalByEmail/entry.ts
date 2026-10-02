@@ -9,21 +9,24 @@ export default async function(req) {
 
     const match = (val) => typeof val === 'string' && val.trim().toLowerCase() === email;
 
-    const [invoices, estimates, customers, backflowReports] = await Promise.all([
+    const [invoices, estimates, customers, backflowReports, attachments] = await Promise.all([
       base44.asServiceRole.entities.Invoice.list("-created_date", 200),
       base44.asServiceRole.entities.Estimate.list("-created_date", 200),
       base44.asServiceRole.entities.Customer.list("-updated_date", 500),
       base44.asServiceRole.entities.BackflowTestReport.list("-test_date", 200),
+      base44.asServiceRole.entities.InvoiceAttachment.list("-created_date", 500),
     ]);
 
     const myCustomers = customers.filter((c) => match(c.email));
     const customerIds = new Set(myCustomers.map((c) => c.id));
+    const myInvoiceIds = new Set(invoices.filter((i) => match(i.customer_email)).map((i) => i.id));
 
     return Response.json({
       invoices: invoices.filter((i) => match(i.customer_email)),
       estimates: estimates.filter((e) => match(e.customer_email) && e.status !== "converted"),
       customers: myCustomers,
       backflow_reports: backflowReports.filter((r) => customerIds.has(r.customer_id)),
+      attachments: attachments.filter((a) => myInvoiceIds.has(a.invoice_id) && !a.internal),
       resolved_email: email,
     });
   } catch (error) {

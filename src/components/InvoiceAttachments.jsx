@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Image } from "@/components/ui/image";
 import { useAuth } from "@/lib/AuthContext";
 
-export default function InvoiceAttachments({ invoiceId, pending = [], onAddPending, onRemovePending, docLabel = "document" }) {
+export default function InvoiceAttachments({ invoiceId, pending = [], onAddPending, onRemovePending, docLabel = "document", readOnly = false, preloaded = null }) {
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -17,13 +17,14 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
   const canViewInternal = user?.role === "admin" || user?.role === "accountant";
 
   const load = async () => {
+    if (preloaded) { setAttachments(preloaded); return; }
     try {
       const list = await base44.entities.InvoiceAttachment.filter({ invoice_id: invoiceId }, "-created_date", 100);
       setAttachments(list);
     } catch (e) {}
   };
 
-  useEffect(() => { if (invoiceId) load(); }, [invoiceId]);
+  useEffect(() => { if (invoiceId) load(); }, [invoiceId, preloaded]);
 
   const handleFiles = async (fileList) => {
     const files = Array.from(fileList || []);
@@ -70,32 +71,38 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label className="flex items-center gap-1.5"><Paperclip className="w-4 h-4" /> Attachments</Label>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="application/pdf,image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }}
-        />
-        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
-          {uploading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Upload className="w-4 h-4 mr-1.5" />}
-          {uploading ? "Uploading…" : "Add files"}
-        </Button>
+        {!readOnly && (
+          <>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="application/pdf,image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }}
+            />
+            <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading}>
+              {uploading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Upload className="w-4 h-4 mr-1.5" />}
+              {uploading ? "Uploading…" : "Add files"}
+            </Button>
+          </>
+        )}
       </div>
 
-      <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
-        onClick={() => inputRef.current?.click()}
-        aria-label="Drag and drop files here or click to browse"
-        className={`rounded-lg border-2 border-dashed p-4 text-center cursor-pointer transition-colors ${dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-      >
-        <p className="text-xs text-muted-foreground">
-          {invoiceId ? "Drag & drop PDFs or images here, or click to browse" : `Drag & drop files here — they'll upload to Drive when you save the ${docLabel}`}
-        </p>
-      </div>
+      {!readOnly && (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+          onClick={() => inputRef.current?.click()}
+          aria-label="Drag and drop files here or click to browse"
+          className={`rounded-lg border-2 border-dashed p-4 text-center cursor-pointer transition-colors ${dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+        >
+          <p className="text-xs text-muted-foreground">
+            {invoiceId ? "Drag & drop PDFs or images here, or click to browse" : `Drag & drop files here — they'll upload to Drive when you save the ${docLabel}`}
+          </p>
+        </div>
+      )}
 
       {(customerAttachments.length > 0 || pending.length > 0) && (
         <div className="grid sm:grid-cols-2 gap-2">
@@ -116,9 +123,11 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
                   Open in Drive <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
-              <Button type="button" variant="ghost" size="icon" className="shrink-0 h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(att)} aria-label="Delete attachment">
-                <Trash2 className="w-4 h-4 text-muted-foreground" />
-              </Button>
+              {!readOnly && (
+                <Button type="button" variant="ghost" size="icon" className="shrink-0 h-11 w-11 sm:h-8 sm:w-8 select-none" onClick={() => remove(att)} aria-label="Delete attachment">
+                  <Trash2 className="w-4 h-4 text-muted-foreground" />
+                </Button>
+              )}
             </div>
           ))}
           {pending.map((p) => (
@@ -144,7 +153,7 @@ export default function InvoiceAttachments({ invoiceId, pending = [], onAddPendi
         </div>
       )}
 
-      {canViewInternal && internalAttachments.length > 0 && (
+      {!readOnly && canViewInternal && internalAttachments.length > 0 && (
         <div className="space-y-2 pt-3 border-t">
           <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
             <Lock className="w-4 h-4" /> Internal files <span className="text-xs font-normal">(not shared with customer)</span>

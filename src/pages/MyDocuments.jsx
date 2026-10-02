@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -58,6 +58,11 @@ export default function MyDocuments() {
   const invoices = portal.invoices || [];
   const estimates = portal.estimates || [];
   const customers = portal.customers || [];
+  const allAttachments = portal.attachments || [];
+  const previewAttachments = useMemo(
+    () => (preview ? allAttachments.filter((a) => a.invoice_id === preview.id) : []),
+    [allAttachments, preview]
+  );
 
   const customerFor = (doc) => customers.find((c) => c.id === doc.customer_id) || customers[0];
 
@@ -168,6 +173,7 @@ export default function MyDocuments() {
           phases={previewKind === "invoice" ? phases : null}
           onSavePhase={previewKind === "invoice" ? handleFlagPhase : null}
           phaseSaving={flagging}
+          attachments={previewKind === "invoice" ? previewAttachments : null}
         />
       </main>
     </div>
