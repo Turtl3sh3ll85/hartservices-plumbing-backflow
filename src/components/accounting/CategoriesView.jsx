@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Tag } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronDown, RefreshCw, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import TransactionRow from "./TransactionRow";
 
@@ -15,23 +16,30 @@ export default function CategoriesView({
   onCategoryChange,
   onCategoryBlur,
 }) {
+  const { toast } = useToast();
   const [collapsed, setCollapsed] = useState({});
   const [hideIgnored, setHideIgnored] = useState(false);
   const [hideNotAJob, setHideNotAJob] = useState(false);
   const [pinnableMap, setPinnableMap] = useState({});
+  const [catLoading, setCatLoading] = useState(true);
+
+  const loadCategories = useCallback(async () => {
+    setCatLoading(true);
+    try {
+      const res = await base44.functions.invoke("getSheetCategories", {});
+      const map = {};
+      for (const it of res.data?.items || []) map[it.name.toLowerCase()] = it.pinnable;
+      setPinnableMap(map);
+    } catch (e) {
+      toast({ title: "Failed to load categories", description: e.message, variant: "destructive" });
+    } finally {
+      setCatLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    let live = true;
-    base44.functions
-      .invoke("getSheetCategories", {})
-      .then((res) => {
-        const map = {};
-        for (const it of res.data?.items || []) map[it.name.toLowerCase()] = it.pinnable;
-        if (live) setPinnableMap(map);
-      })
-      .catch(() => {});
-    return () => { live = false; };
-  }, []);
+    loadCategories();
+  }, [loadCategories]);
 
   const invoiceFor = (id) => invoices.find((i) => i.id === id);
 
@@ -55,6 +63,16 @@ export default function CategoriesView({
   return (
     <div className="space-y-3">
       <div className="flex justify-end gap-2 flex-wrap">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={loadCategories}
+          disabled={catLoading}
+          className="min-h-11 sm:min-h-9"
+        >
+          <RefreshCw className={cn("w-4 h-4", catLoading && "animate-spin")} />
+          Refresh
+        </Button>
         <Button
           variant={hideNotAJob ? "default" : "outline"}
           size="sm"
