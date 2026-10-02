@@ -5,6 +5,7 @@ const HEADER_MAP = {
   quantity: ["quantity", "qty", "q", "count"],
   unit_price: ["unit price", "unitprice", "price", "rate", "cost", "amount"],
   category: ["category", "type", "group", "section"],
+  unit: ["unit", "units", "uom", "measure", "unit of measure"],
   image_url: ["thumbnail", "thumbnail url", "image", "image url", "photo", "photo url", "picture", "img"],
   details: ["description", "details", "long description", "long desc", "note", "notes"],
   markup: ["markup", "margin", "upcharge", "overhead"],
@@ -81,11 +82,12 @@ export default async function(req) {
       const quantity = fieldIndex.quantity !== undefined ? parseFloat(row[fieldIndex.quantity]) || 1 : 1;
       const unit_price = fieldIndex.unit_price !== undefined ? parseFloat(row[fieldIndex.unit_price]) || 0 : 0;
       const category = fieldIndex.category !== undefined ? String(row[fieldIndex.category] || "").trim() : "";
+      const unit = fieldIndex.unit !== undefined ? String(row[fieldIndex.unit] || "").trim() : "";
       const image_url = fieldIndex.image_url !== undefined ? String(row[fieldIndex.image_url] || "").trim() : "";
       const details = fieldIndex.details !== undefined ? String(row[fieldIndex.details] || "").trim() : "";
       const markup = fieldIndex.markup !== undefined ? parseFloat(row[fieldIndex.markup]) || 0 : 0;
       const markup_mode = [0, 15, 25].includes(markup) ? "preset" : markup > 0 ? "custom" : "preset";
-      line_items.push({ description, quantity, unit_price, category, image_url, details, markup, markup_mode });
+      line_items.push({ description, quantity, unit_price, category, unit, image_url, details, markup, markup_mode });
     }
 
     return Response.json({ line_items });

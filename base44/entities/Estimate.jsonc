@@ -55,6 +55,14 @@
             "type": "string",
             "title": "Section"
           },
+          "unit": {
+            "type": "string",
+            "title": "Unit of Measure"
+          },
+          "markup": {
+            "type": "number",
+            "title": "Markup %"
+          },
           "modifiers": {
             "type": "array",
             "title": "Modifiers",
@@ -253,6 +261,14 @@
                 "section": {
                   "type": "string",
                   "title": "Section"
+                },
+                "unit": {
+                  "type": "string",
+                  "title": "Unit of Measure"
+                },
+                "markup": {
+                  "type": "number",
+                  "title": "Markup %"
                 },
                 "modifiers": {
                   "type": "array",
