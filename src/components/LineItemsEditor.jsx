@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Plus, Trash2, SlidersHorizontal, FileSpreadsheet } from "lucide-react";
+import { Plus, Trash2, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
-import SheetItemsDialog from "@/components/SheetItemsDialog";
+import SheetItemsDropdown from "@/components/SheetItemsDropdown";
 import ModifiersDialog from "@/components/ModifiersDialog";
 
 const ITEMS_SHEET_ID = "13lEp40pEclIWP2haTyDsCBsEJ75HWim4CNLWElmLhSg";
@@ -17,7 +17,6 @@ const lineTotal = (li) =>
 
 export default function LineItemsEditor({ items, onChange }) {
   const list = items || [];
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [modOpenFor, setModOpenFor] = useState(null);
 
   const update = (i, patch) => {
@@ -120,18 +119,9 @@ export default function LineItemsEditor({ items, onChange }) {
         <Button variant="outline" size="sm" onClick={add} className="flex-1 border-dashed">
           <Plus className="w-4 h-4" /> Add line item
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setSheetOpen(true)}>
-          <FileSpreadsheet className="w-4 h-4" /> Pull from sheet
-        </Button>
+        <SheetItemsDropdown onPick={addSheetItems} />
       </div>
 
-      <SheetItemsDialog
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        onPick={addSheetItems}
-        defaultSheetId={ITEMS_SHEET_ID}
-        sheetName={ITEMS_SHEET_NAME}
-      />
       <ModifiersDialog
         open={modOpenFor !== null}
         onOpenChange={(o) => !o && setModOpenFor(null)}
