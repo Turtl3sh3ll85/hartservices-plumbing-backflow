@@ -32,7 +32,7 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
   useLayoutEffect(() => {
     if (!open || !btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    const popW = 208;
+    const popW = 300;
     let left = r.right - popW;
     if (left < 8) left = 8;
     setCoords({ top: r.bottom + 4, left });
@@ -90,7 +90,7 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
       {open && createPortal(
         <div
           ref={popRef}
-          style={{ position: "fixed", top: coords.top, left: coords.left, width: 208 }}
+          style={{ position: "fixed", top: coords.top, left: coords.left, width: 300 }}
           className="z-[100] rounded-md border bg-popover shadow-lg py-1 max-h-80 overflow-hidden flex flex-col"
         >
           <div className="px-2 py-1.5 border-b">
@@ -112,9 +112,9 @@ export default function TransactionCategoryPicker({ value, onChange, disabled })
                 key={opt}
                 type="button"
                 onClick={() => { onChange(opt); setOpen(false); }}
-                className="flex items-center justify-between w-full px-3 py-2 text-left text-sm hover:bg-accent min-h-9"
+                className="flex items-center justify-between gap-2 w-full px-3 py-2 text-left text-sm hover:bg-accent min-h-9"
               >
-                <span className="truncate">{opt}</span>
+                <span className="whitespace-normal break-words leading-snug">{opt}</span>
                 {current === opt && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
               </button>
             ))}

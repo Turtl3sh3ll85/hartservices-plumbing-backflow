@@ -84,9 +84,13 @@ export default async function(req) {
 For each transaction payee below, use web search to determine what kind of company it actually is,
 then assign the best matching accounting category.
 
-Prefer reusing an existing category when it clearly fits. Otherwise propose a concise, generic
-business-expense category name (e.g. "Auto Parts", "Software Subscriptions", "Hardware Supplies").
-Also classify:
+Category name rules — STRICT:
+- Short and concise: 1-3 words max (e.g. "Auto Parts", "Software", "Hardware", "Fuel", "Insurance").
+- Flat, never tiered: no "Parent > Child", no "Category - Subcategory", no slashes, no colons.
+- Plain nouns/short phrases only, title case.
+- Reuse an existing category whenever it clearly fits; only propose a new one when nothing fits.
+
+Also classify each payee:
 - tax_type: "business" if it's a business expense, "personal" if it's a personal/non-deductible charge.
 - pinnable: true if this category could represent a billable job (materials/labor for a customer project),
   false if it's an overhead/operating expense.
