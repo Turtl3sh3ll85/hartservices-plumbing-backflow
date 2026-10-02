@@ -4,17 +4,18 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 
 export default function MilestoneStatusDropdown({ status, statuses, labels, icons, styles, onChange, readOnly, label }) {
   const [saving, setSaving] = useState(false);
+  const disabled = readOnly || typeof onChange !== "function" || saving;
   const StatusIcon = icons[status];
   const changeStatus = async (value) => {
-    if (saving || value === status) return;
+    if (disabled || value === status) return;
     setSaving(true);
     try { await onChange(value); } finally { setSaving(false); }
   };
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild disabled={disabled}>
         <button type="button" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => event.stopPropagation()}
-          disabled={readOnly || !onChange || saving} aria-label={`${label || "Payment"} status: ${labels[status]}`}
+          disabled={disabled} aria-label={`${label || "Payment"} status: ${labels[status]}`}
           className={`pointer-events-auto inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 h-7 shrink-0 border transition-colors ${styles[status]} disabled:opacity-100 disabled:cursor-default`}>
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <StatusIcon className="w-3 h-3" />}
           {labels[status]}<ChevronDown className="w-3 h-3 opacity-60" />
@@ -24,7 +25,7 @@ export default function MilestoneStatusDropdown({ status, statuses, labels, icon
         {statuses.map((value) => {
           const ItemIcon = icons[value];
           return (
-            <DropdownMenuItem key={value} onSelect={() => changeStatus(value)} className={`gap-2 ${value === status ? "font-semibold" : ""}`}>
+            <DropdownMenuItem key={value} disabled={disabled} onSelect={() => changeStatus(value)} className={`gap-2 ${value === status ? "font-semibold" : ""}`}>
               <ItemIcon className="w-4 h-4" />{labels[value]}
               {value === status && <Check className="w-3.5 h-3.5 ml-auto text-primary" />}
             </DropdownMenuItem>
