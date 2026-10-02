@@ -32,11 +32,11 @@ function BrandMark({ settings, size = "md" }) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const isDark = mounted && (resolvedTheme === "dark" || (!resolvedTheme && typeof document !== "undefined" && document.documentElement.classList.contains("dark")));
+  const isDark = !mounted ? false : (resolvedTheme === "dark" || (!resolvedTheme && typeof document !== "undefined" && document.documentElement.classList.contains("dark")));
   const logoUrl = (isDark && settings?.dark_logo_url) ? settings.dark_logo_url : (settings?.logo_url || "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/public/6ab936d39a6c956d5b685842/7ae293c6a_Logo.jpg");
   return (
     <div className={`${dim} rounded-xl overflow-hidden bg-card border shrink-0`}>
-      <Image src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+      {mounted ? <Image src={logoUrl} alt="Logo" className="w-full h-full object-contain" /> : null}
     </div>
   );
 }
