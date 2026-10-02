@@ -4,6 +4,7 @@ import { Check, CheckCircle2, FileText } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Image } from "@/components/ui/image";
 import { formatCurrency, computeTotals } from "@/lib/format";
 import { formatMoney, lineTotal, groupLineItemsBySection } from "@/lib/invoice";
 
@@ -73,11 +74,39 @@ export default function AcceptEstimate() {
                 <div key={gi}>
                   {section && <div className="bg-primary/10 text-primary font-medium text-sm px-3 py-2">{section}</div>}
                   {items.map((li, i) => (
-                    <div key={i} className="flex items-start justify-between gap-3 px-3 py-2 border-t first:border-t-0">
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{li.description || "—"}</div>
-                        <div className="text-xs text-muted-foreground">{li.quantity ?? 0} × {formatMoney(li.unit_price)}</div>
-                        {li.details && <div className="text-xs text-muted-foreground whitespace-pre-wrap">{li.details}</div>}
+                    <div key={i} className="flex items-start justify-between gap-3 px-3 py-3 border-t first:border-t-0">
+                      <div className="min-w-0 flex items-start gap-3">
+                        {li.image_url && (
+                          <div className="w-14 h-14 rounded-md overflow-hidden border bg-muted shrink-0">
+                            <Image src={li.image_url} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium">{li.description || "—"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {li.quantity ?? 0}{li.unit ? ` ${li.unit}` : ""} × {formatMoney(li.unit_price)}
+                            {li.markup ? ` (+${li.markup}% markup)` : ""}
+                          </div>
+                          {li.details && <div className="text-xs text-muted-foreground whitespace-pre-wrap mt-1">{li.details}</div>}
+                          {li.modifiers && li.modifiers.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                              {li.modifiers.map((m, mi) => (
+                                <span key={mi} className="inline-flex items-center rounded-full bg-secondary text-secondary-foreground px-2 py-0.5 text-xs">
+                                  {m.name}{m.price_adjustment ? ` (${m.price_adjustment >= 0 ? "+" : ""}${formatMoney(m.price_adjustment)})` : ""}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {li.photos && li.photos.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                              {li.photos.map((url, pi) => (
+                                <div key={pi} className="w-12 h-12 rounded-md overflow-hidden border bg-muted shrink-0">
+                                  <Image src={url} alt="" className="w-full h-full object-cover" />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="text-sm font-medium tabular-nums shrink-0">{formatMoney(lineTotal(li))}</div>
                     </div>
