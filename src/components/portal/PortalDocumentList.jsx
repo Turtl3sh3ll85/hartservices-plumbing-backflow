@@ -64,9 +64,8 @@ export default function PortalDocumentList({ kind, items, customers, settings, o
               <div key={i.id} className="p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 min-h-11">
                   <button type="button" onClick={() => onPreview(i)} className="min-w-0 text-left min-h-11 -m-1 p-1">
-                    <div className="font-medium truncate">{i.name || "Invoice"}</div>
-                    <div className="text-sm text-muted-foreground truncate">
-                      {i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}
+                    <div className="font-medium truncate">
+                      {i.name || "Invoice"} <span className="text-sm text-muted-foreground font-normal">{i.number}{i.due_date ? ` · Due ${new Date(i.due_date).toLocaleDateString()}` : ""}</span>
                     </div>
                   </button>
                   <div className="flex items-center gap-3 shrink-0">
