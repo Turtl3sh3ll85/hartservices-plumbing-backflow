@@ -39,6 +39,16 @@
       "type": "string",
       "title": "Notes"
     },
+    "invoice_reminder_frequency": {
+      "type": "string",
+      "enum": [
+        "off",
+        "weekly",
+        "biweekly"
+      ],
+      "default": "biweekly",
+      "title": "Invoice Reminder Frequency"
+    },
     "salt_reminders": {
       "type": "boolean",
       "default": false,

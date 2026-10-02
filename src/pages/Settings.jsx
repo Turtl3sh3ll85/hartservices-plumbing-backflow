@@ -139,17 +139,6 @@ export default function Settings() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Notifications</CardTitle></CardHeader>
-        <CardContent className="flex items-center justify-between">
-          <div>
-            <Label>Weekly open-invoices summary</Label>
-            <p className="text-xs text-muted-foreground">Email a summary of open invoices every week.</p>
-          </div>
-          <Switch checked={!!settings.weekly_summary_enabled} onCheckedChange={(v) => set("weekly_summary_enabled", v)} />
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader><CardTitle className="text-base">Appearance</CardTitle></CardHeader>
         <CardContent className="flex items-center justify-between">
           <div>

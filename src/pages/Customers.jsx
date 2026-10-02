@@ -66,6 +66,15 @@ export default function Customers() {
     }
   };
 
+  const updateReminderFreq = async (c, freq) => {
+    try {
+      await base44.entities.Customer.update(c.id, { invoice_reminder_frequency: freq });
+      setCustomers((prev) => prev.map((x) => x.id === c.id ? { ...x, invoice_reminder_frequency: freq } : x));
+    } catch (e) {
+      toast({ title: "Update failed", variant: "destructive" });
+    }
+  };
+
   const remove = async (c) => {
     if (!confirm(`Delete ${c.name}?`)) return;
     try {
