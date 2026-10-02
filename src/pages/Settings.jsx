@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { useTheme } from "next-themes";
-import { RefreshCw, MailSearch, Trash2 } from "lucide-react";
+import { RefreshCw, MailSearch, Trash2, X, Plus } from "lucide-react";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import LogoUpload from "@/components/LogoUpload";
@@ -165,6 +165,53 @@ export default function Settings() {
           <div>
             <Label>Transfer category name</Label>
             <Input value={settings.transfer_category_name || "Transfer"} onChange={(e) => set("transfer_category_name", e.target.value)} />
+          </div>
+          <div>
+            <Label>Additional auto-ignore categories</Label>
+            <p className="text-xs text-muted-foreground mb-2">Plaid personal finance categories to auto-ignore beyond transfers. These are ignored on every sync.</p>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {(settings.auto_ignore_categories || []).map((cat, i) => (
+                <span key={i} className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs">
+                  {cat}
+                  <button type="button" onClick={() => set("auto_ignore_categories", (settings.auto_ignore_categories || []).filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                id="new-ignore-cat"
+                placeholder="e.g. LOAN_PAYMENTS, BANK_FEES"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const val = e.target.value.trim().toUpperCase();
+                    if (val && !(settings.auto_ignore_categories || []).includes(val)) {
+                      set("auto_ignore_categories", [...(settings.auto_ignore_categories || []), val]);
+                    }
+                    e.target.value = "";
+                  }
+                }}
+              />
+              <Button type="button" variant="outline" size="sm" onClick={() => {
+                const input = document.getElementById("new-ignore-cat");
+                const val = (input?.value || "").trim().toUpperCase();
+                if (val && !(settings.auto_ignore_categories || []).includes(val)) {
+                  set("auto_ignore_categories", [...(settings.auto_ignore_categories || []), val]);
+                }
+                if (input) input.value = "";
+              }}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {["LOAN_PAYMENTS", "BANK_FEES", "REFUNDS_AND_REIMBURSEMENTS"].filter((c) => !(settings.auto_ignore_categories || []).includes(c)).map((c) => (
+                <button key={c} type="button" onClick={() => set("auto_ignore_categories", [...(settings.auto_ignore_categories || []), c])} className="text-xs text-primary hover:underline">
+                  + {c}
+                </button>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { secrets, waitUntil } from 'base44:runtime';
 import { fetchRecategorizeRules, recategorize, applyRecategorizeToStored, fetchPinnableCategories, isNotAJobCategory } from '../../shared/recategorizeRules.ts';
 import { runReceiptMatch } from '../../shared/receiptMatching.ts';
-import { fetchTransferSettings, evaluateTransfer, detectInternalTransfers } from '../../shared/transferRules.ts';
+import { fetchTransferSettings, evaluateTransfer, matchesAutoIgnoreCategory, detectInternalTransfers } from '../../shared/transferRules.ts';
 
 function plaidBaseUrl() {
   const env = (secrets.get('PLAID_ENV') || 'sandbox').toLowerCase();
@@ -121,6 +121,8 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap, transferS
 
   // Plaid native transfer detection (personal_finance_category.primary).
   const transferMatch = evaluateTransfer(tx, transferSettings);
+  // Additional auto-ignore categories from Settings.
+  const ignoreCatMatch = matchesAutoIgnoreCategory(tx, transferSettings);
 
   const payload = {
     plaid_transaction_id: plaidId,
@@ -135,6 +137,8 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap, transferS
   };
   if (transferMatch) {
     payload.plaid_pfc_primary = transferMatch.pfcPrimary;
+  } else if (ignoreCatMatch) {
+    payload.plaid_pfc_primary = ignoreCatMatch;
   }
 
   const ruleMatch = recategorize(payee, rules);
@@ -150,6 +154,9 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap, transferS
         update.matched = 'ignored';
         update.matched_invoice_id = null;
       }
+    } else if (ignoreCatMatch) {
+      update.matched = 'ignored';
+      update.matched_invoice_id = null;
     } else if (!hasCat && ruleMatch) {
       update.custom_category = ruleCat;
       if (ruleMatch.ignore) {
@@ -166,6 +173,9 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap, transferS
         create.matched = 'ignored';
         create.matched_invoice_id = null;
       }
+    } else if (ignoreCatMatch) {
+      create.matched = 'ignored';
+      create.matched_invoice_id = null;
     } else if (ruleMatch) {
       create.custom_category = ruleCat;
       if (ruleMatch.ignore) {

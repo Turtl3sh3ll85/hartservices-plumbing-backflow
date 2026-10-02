@@ -21,6 +21,7 @@ export async function fetchTransferSettings(base44) {
     ignore: s.ignore_transfers !== false,
     categoryName: (s.transfer_category_name || "Transfer").trim() || "Transfer",
     detectInternal: s.detect_internal_transfers !== false,
+    autoIgnoreCategories: Array.isArray(s.auto_ignore_categories) ? s.auto_ignore_categories : [],
   };
 }
 
@@ -42,6 +43,17 @@ export function evaluateTransfer(tx, settings) {
     ignore: settings.ignore,
     pfcPrimary: pfc,
   };
+}
+
+// Returns true when the transaction's Plaid PFC primary matches one of the
+// additional auto-ignore categories configured in Settings (beyond transfers).
+export function matchesAutoIgnoreCategory(tx, settings) {
+  const cats = settings?.autoIgnoreCategories;
+  if (!cats || !cats.length) return null;
+  const pfc = (tx?.personal_finance_category?.primary || "").toUpperCase();
+  if (!pfc) return null;
+  const match = cats.find((c) => (c || "").trim().toUpperCase() === pfc);
+  return match ? pfc : null;
 }
 
 // Two-sided matching: pairs debits and credits across connected accounts by

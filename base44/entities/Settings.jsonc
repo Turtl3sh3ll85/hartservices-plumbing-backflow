@@ -78,6 +78,13 @@
       "type": "boolean",
       "default": true,
       "title": "Detect Internal Transfers (Two-Sided Matching)"
+    },
+    "auto_ignore_categories": {
+      "type": "array",
+      "title": "Additional Auto-Ignore Categories",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": []
