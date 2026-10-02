@@ -147,8 +147,9 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap, transferS
   if (existing && existing.length) {
     const update = { ...payload };
     const hasCat = existing[0].custom_category && String(existing[0].custom_category).trim();
-    // Plaid PFC transfer takes priority over blank/recategorize rules.
-    if (transferMatch) {
+    // Plaid PFC transfer: incoming → "Income", never ignored. Outgoing → no
+    // category, falls through to recategorize rules below.
+    if (transferMatch && transferMatch.category) {
       update.custom_category = transferMatch.category;
       if (transferMatch.ignore) {
         update.matched = 'ignored';
@@ -167,7 +168,7 @@ async function upsertTransaction(base44, item, tx, rules, pinnableMap, transferS
     await base44.asServiceRole.entities.Transaction.update(existing[0].id, update);
   } else {
     const create = { ...payload, matched: 'unmatched' };
-    if (transferMatch) {
+    if (transferMatch && transferMatch.category) {
       create.custom_category = transferMatch.category;
       if (transferMatch.ignore) {
         create.matched = 'ignored';

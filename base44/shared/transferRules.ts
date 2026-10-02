@@ -36,13 +36,22 @@ export function isPlaidTransfer(tx) {
 
 // Returns { category, ignore, pfcPrimary } for a Plaid transfer, or null when
 // transfers are not enabled / the transaction is not a transfer.
+//
+// External transfers are never ignored:
+//  - TRANSFER_IN (money in) → categorized as "Income"
+//  - TRANSFER_OUT (payment out) → no category set, falls through to the
+//    recategorize rules so it gets categorized like any other expense.
+// Internal vs external is resolved later by detectInternalTransfers, which
+// reclassifies matched pairs as internal transfers (and ignores them if the
+// setting is on).
 export function evaluateTransfer(tx, settings) {
   if (!settings?.autoCategorize) return null;
   const pfc = tx?.personal_finance_category?.primary || "";
   if (!isPlaidTransfer(tx)) return null;
+  const isIncoming = pfc.toUpperCase() === "TRANSFER_IN";
   return {
-    category: settings.categoryName,
-    ignore: settings.ignore,
+    category: isIncoming ? "Income" : null,
+    ignore: false,
     pfcPrimary: pfc,
   };
 }
@@ -87,10 +96,28 @@ export async function detectInternalTransfers(base44, settings) {
     );
 
     const isInternal = candidates.length > 0;
-    const newType = isInternal ? "internal" : "external";
-    const newCat = isInternal ? settings.internalCategoryName : settings.externalCategoryName;
-    if (t.transfer_type !== newType || t.custom_category !== newCat) {
-      updates.push({ id: t.id, transfer_type: newType, custom_category: newCat });
+
+    if (isInternal) {
+      // Internal transfers: categorize as internal, optionally ignore.
+      const newCat = settings.internalCategoryName;
+      const patch = { id: t.id, transfer_type: "internal", custom_category: newCat };
+      if (settings.ignore) {
+        patch.matched = "ignored";
+        patch.matched_invoice_id = null;
+      }
+      if (
+        t.transfer_type !== "internal" ||
+        t.custom_category !== newCat ||
+        (settings.ignore && t.matched !== "ignored")
+      ) {
+        updates.push(patch);
+      }
+    } else {
+      // External: only set transfer_type — leave category (Income for incoming,
+      // recategorized for outgoing) and matched status untouched.
+      if (t.transfer_type !== "external") {
+        updates.push({ id: t.id, transfer_type: "external" });
+      }
     }
   }
 
