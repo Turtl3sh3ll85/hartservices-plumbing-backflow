@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import LineItemsEditor from "@/components/LineItemsEditor";
 import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 import CustomerFormDialog from "@/components/CustomerFormDialog";
+import CustomerPicker from "@/components/CustomerPicker";
 import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
 import InvoiceAttachments from "@/components/InvoiceAttachments";
 import InvoiceProfitability from "@/components/InvoiceProfitability";
@@ -110,10 +111,7 @@ export default function InvoiceEditor() {
           <div>
             <Label>Customer *</Label>
             <div className="flex gap-2">
-              <select value={inv.customer_id} onChange={(e) => set("customer_id", e.target.value)} className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-                <option value="">Select customer…</option>
-                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}{c.company ? ` — ${c.company}` : ""}</option>)}
-              </select>
+              <CustomerPicker customers={customers} value={inv.customer_id} onChange={(cid) => set("customer_id", cid)} />
               <Button type="button" variant="outline" size="icon" onClick={() => setContactsOpen(true)} aria-label="Choose from Google Contacts" title="Google Contacts"><Contact className="w-4 h-4" /></Button>
               <Button type="button" variant="outline" size="icon" onClick={() => setNewCustOpen(true)} aria-label="Add new customer" title="New customer"><UserPlus className="w-4 h-4" /></Button>
             </div>
