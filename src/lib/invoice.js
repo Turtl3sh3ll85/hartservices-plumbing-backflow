@@ -10,6 +10,13 @@ export function lineTotal(li) {
   return marked + mods;
 }
 
+/** Unit price with markup baked in — for customer-facing views where markup is hidden. */
+export function displayUnitPrice(li) {
+  const unitPrice = Number(li?.unit_price) || 0;
+  const markup = Number(li?.markup) || 0;
+  return markup ? unitPrice * (1 + markup / 100) : unitPrice;
+}
+
 export function calcTotals(lineItems = [], taxRate = 0, ccFeeEnabled = false) {
   const subtotal = (lineItems || []).reduce((s, li) => s + lineTotal(li), 0);
   const tax = subtotal * ((Number(taxRate) || 0) / 100);

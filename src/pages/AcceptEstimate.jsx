@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Image } from "@/components/ui/image";
 import { formatCurrency, computeTotals } from "@/lib/format";
-import { formatMoney, lineTotal, groupLineItemsBySection } from "@/lib/invoice";
+import { formatMoney, lineTotal, displayUnitPrice, groupLineItemsBySection } from "@/lib/invoice";
 
 export default function AcceptEstimate() {
   const { estimateId } = useParams();
@@ -84,8 +84,7 @@ export default function AcceptEstimate() {
                         <div className="min-w-0">
                           <div className="text-sm font-medium">{li.description || "—"}</div>
                           <div className="text-xs text-muted-foreground">
-                            {li.quantity ?? 0}{li.unit ? ` ${li.unit}` : ""} × {formatMoney(li.unit_price)}
-                            {li.markup ? ` (+${li.markup}% markup)` : ""}
+                            {li.quantity ?? 0}{li.unit ? ` ${li.unit}` : ""} × {formatMoney(displayUnitPrice(li))}
                           </div>
                           {li.details && <div className="text-xs text-muted-foreground whitespace-pre-wrap mt-1">{li.details}</div>}
                           {li.modifiers && li.modifiers.length > 0 && (

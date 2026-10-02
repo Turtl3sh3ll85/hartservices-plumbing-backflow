@@ -1,4 +1,4 @@
-import { formatMoney, lineTotal, fullAddress, groupLineItemsBySection } from "@/lib/invoice";
+import { formatMoney, lineTotal, displayUnitPrice, fullAddress, groupLineItemsBySection } from "@/lib/invoice";
 import { TERMS, ACKNOWLEDGMENT } from "@/lib/serviceTerms";
 
 function installmentAmount(item, total) {
@@ -161,7 +161,7 @@ async function buildDocumentPdf({ doc, customer, settings, kind }) {
       docPdf.setFont("helvetica", "normal");
       docPdf.setFontSize(8);
       docPdf.setTextColor(120);
-      const qtyStr = `${li.quantity ?? ""}${li.unit ? ` ${li.unit}` : ""} × ${formatMoney(li.unit_price)}${li.markup ? ` (+${li.markup}% markup)` : ""}`;
+      const qtyStr = `${li.quantity ?? ""}${li.unit ? ` ${li.unit}` : ""} × ${formatMoney(displayUnitPrice(li))}`;
       docPdf.text(qtyStr, M + textIndent, y + 11);
       let extraLines = 0;
       if (li.details) {
