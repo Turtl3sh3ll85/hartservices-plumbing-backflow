@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
+import { fetchCategoryDefinitions, formatCategoryGuidelines, ensureCategoryDefinition } from '../../shared/categoryDefinitions.ts';
 
 const CATEGORIES_SHEET_ID = '13lEp40pEclIWP2haTyDsCBsEJ75HWim4CNLWElmLhSg';
 
@@ -21,6 +22,9 @@ export default async function(req) {
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('googleworkspace');
     const headers = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
+
+    // 0. Load category definitions (name + description) for the AI prompt.
+    const defMap = await fetchCategoryDefinitions(base44);
 
     // 1. Load existing category names (catalog tab).
     const metaRes = await fetch(
@@ -60,6 +64,9 @@ Also classify:
   false if it's an overhead/operating expense.
 
 Existing categories to prefer: ${Array.from(existingCategories).slice(0, 80).join(', ') || '(none yet)'}
+
+Category application guidelines (follow these when deciding which category fits):
+${formatCategoryGuidelines(defMap)}
 
 Payee to classify: ${payee}
 
@@ -104,6 +111,9 @@ Return ONLY the decision object.`;
           body: JSON.stringify({ values: [[category, tax_type, pinnable ? 'true' : 'false']] }),
         },
       );
+      // Also create a TransactionCategory record so it appears in the Settings
+      // category manager for the user to define a description.
+      await ensureCategoryDefinition(base44, category, tax_type, pinnable);
     }
 
     // 4. Write/update the payee -> category rule in the recategorize tab.

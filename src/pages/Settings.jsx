@@ -12,6 +12,7 @@ import { RefreshCw, MailSearch, Trash2, X, Plus } from "lucide-react";
 import { MobileSelect } from "@/components/ui/mobile-select";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import LogoUpload from "@/components/LogoUpload";
+import CategoryManager from "@/components/CategoryManager";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function Settings() {
@@ -231,6 +232,17 @@ export default function Settings() {
               ))}
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Category Definitions</CardTitle></CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground mb-4">
+            Define how each category should be applied. The AI auto-categorizer uses these descriptions
+            when classifying transactions, so clear guidance produces more accurate results.
+          </p>
+          <CategoryManager />
         </CardContent>
       </Card>
 

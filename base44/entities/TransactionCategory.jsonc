@@ -1,0 +1,62 @@
+{
+  "name": "TransactionCategory",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Category Name"
+    },
+    "description": {
+      "type": "string",
+      "title": "How to Apply This Category"
+    },
+    "tax_type": {
+      "type": "string",
+      "enum": [
+        "business",
+        "personal"
+      ],
+      "default": "business",
+      "title": "Tax Type"
+    },
+    "pinnable": {
+      "type": "boolean",
+      "default": false,
+      "title": "Billable Job (Pinnable)"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "accountant"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@ import {
   fetchPinnableCategories,
   applyRecategorizeToStored,
 } from '../../shared/recategorizeRules.ts';
+import { fetchCategoryDefinitions, formatCategoryGuidelines, ensureCategoryDefinition } from '../../shared/categoryDefinitions.ts';
 
 const CATEGORIES_SHEET_ID = '13lEp40pEclIWP2haTyDsCBsEJ75HWim4CNLWElmLhSg';
 const PAYEES_PER_CALL = 12;
@@ -27,6 +28,9 @@ export default async function(req) {
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('googleworkspace');
     const headers = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
+
+    // 0. Load category definitions (name + description) for the AI prompt.
+    const defMap = await fetchCategoryDefinitions(base44);
 
     // 1. Load existing category names (catalog tab).
     const metaRes = await fetch(
@@ -94,6 +98,9 @@ Also classify each payee:
 
 Existing categories to prefer: ${Array.from(existingCategories).slice(0, 80).join(', ') || '(none yet)'}
 
+Category application guidelines (follow these when deciding which category fits each payee):
+${formatCategoryGuidelines(defMap)}
+
 Payees to classify:
 ${batch.map((p, idx) => `${idx + 1}. ${p}`).join('\n')}
 
@@ -158,6 +165,11 @@ Return ONLY the decisions array.`;
           body: JSON.stringify({ values: newCategories }),
         },
       );
+      // Also create TransactionCategory records (with empty descriptions) so
+      // they appear in the Settings category manager for the user to define.
+      for (const nc of newCategories) {
+        await ensureCategoryDefinition(base44, nc[0], nc[1], nc[2] === 'true');
+      }
     }
 
     // 5. Write payee -> category rules. Update existing rows in place (so the
