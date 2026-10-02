@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RefreshCw, MailSearch, Menu, Search } from "lucide-react";
+import { RefreshCw, MailSearch, Menu, Search, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +96,21 @@ export default function Accounting() {
       setBusy(null);
     }
   };
+  const runAiCategorize = async () => {
+    setBusy("ai");
+    try {
+      const res = await base44.functions.invoke("aiCategorizeTransactions", {});
+      toast({
+        title: `AI categorized ${res.data?.categorized ?? 0} payees`,
+        description: res.data?.newCategories ? `${res.data.newCategories} new categories added to sheet` : undefined,
+      });
+      load();
+    } catch (e) {
+      toast({ title: "AI categorize failed", description: e.message, variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
+  };
 
   // Auto-refresh recategorization every 30 minutes while the page is open.
   useEffect(() => {
@@ -187,6 +202,13 @@ export default function Accounting() {
               <div className="flex flex-col">
                 <span>Auto Recategorize</span>
                 <span className="text-xs text-muted-foreground">Re-apply sheet category rules to all transactions</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={runAiCategorize} disabled={!!busy}>
+              <Sparkles className={`w-4 h-4 ${busy === "ai" ? "animate-spin" : ""}`} />
+              <div className="flex flex-col">
+                <span>Deep Think Categorize</span>
+                <span className="text-xs text-muted-foreground">AI searches payees online and writes new categories to the sheet</span>
               </div>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
