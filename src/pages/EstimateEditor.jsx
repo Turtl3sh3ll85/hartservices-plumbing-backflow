@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Plus, Trash2, Send } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Send, UserPlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import LineItemsEditor from "@/components/LineItemsEditor";
+import CustomerFormDialog from "@/components/CustomerFormDialog";
+import CustomerPicker from "@/components/CustomerPicker";
 import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
 import { computeTotals, formatCurrency } from "@/lib/format";
 
@@ -26,6 +28,7 @@ export default function EstimateEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState([]);
+  const [newCustOpen, setNewCustOpen] = useState(false);
   const [est, setEst] = useState({
     customer_id: "",
     name: "",
@@ -118,17 +121,22 @@ export default function EstimateEditor() {
 
       <Card>
         <CardHeader><CardTitle className="text-base">Details</CardTitle></CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
+        <CardContent className="space-y-3">
           <div>
             <Label>Customer *</Label>
-            <select value={est.customer_id} onChange={(e) => set("customer_id", e.target.value)} className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-              <option value="">Select customer…</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}{c.company ? ` — ${c.company}` : ""}</option>)}
-            </select>
+            <div className="flex gap-2">
+              <CustomerPicker customers={customers} value={est.customer_id} onChange={(cid) => set("customer_id", cid)} />
+              <Button type="button" variant="outline" size="icon" onClick={() => setNewCustOpen(true)} aria-label="Add new customer" title="New customer"><UserPlus className="w-4 h-4" /></Button>
+            </div>
           </div>
-          <div><Label>Estimate name</Label><Input value={est.name || ""} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Bathroom remodel" /></div>
+          <div>
+            <Label>Job name</Label>
+            <Input value={est.name || ""} onChange={(e) => set("name", e.target.value)} />
+          </div>
         </CardContent>
       </Card>
+
+      <CustomerFormDialog open={newCustOpen} onOpenChange={setNewCustOpen} onPick={(c) => { setCustomers((s) => [...s, c]); set("customer_id", c.id); }} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Selection mode</CardTitle></CardHeader>
