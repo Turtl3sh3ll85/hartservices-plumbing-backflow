@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, Upload, Paperclip, TrendingUp, Loader2 } from "lucide-react";
+import { Download, Upload, Paperclip, TrendingUp, Loader2, Unlink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,23 @@ export default function InvoiceProfitability({ invoiceId, invoiceTotal }) {
       window.open(signed_url, "_blank");
     } catch (e) {
       toast({ title: "Download failed", description: e.message, variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const unpin = async (tx) => {
+    setBusy(true);
+    try {
+      await base44.entities.Transaction.update(tx.id, {
+        matched_invoice_id: "",
+        matched: "unmatched",
+      });
+      setTxs((prev) => prev.filter((t) => t.id !== tx.id));
+      setActive(null);
+      toast({ title: "Transaction unpinned from invoice" });
+    } catch (e) {
+      toast({ title: "Failed to unpin", description: e.message, variant: "destructive" });
     } finally {
       setBusy(false);
     }
@@ -152,6 +169,10 @@ export default function InvoiceProfitability({ invoiceId, invoiceTotal }) {
                 <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={busy}>
                   {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                   {active.receipt_file_uri ? "Replace receipt" : "Upload receipt"}
+                </Button>
+                <Button variant="destructive" onClick={() => unpin(active)} disabled={busy}>
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlink className="w-4 h-4" />}
+                  Unpin from invoice
                 </Button>
               </div>
             </div>
