@@ -46,8 +46,11 @@ export default function EstimatePreviewDialog({ doc, customer, settings, onClose
   };
 
   const copyLink = async () => {
+    const params = new URLSearchParams();
+    if (customer?.email) params.set("email", customer.email);
+    params.set("tab", "estimates");
     try {
-      await navigator.clipboard.writeText(window.location.origin + `/accept/${doc.id}`);
+      await navigator.clipboard.writeText(window.location.origin + `/portal?${params.toString()}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {}

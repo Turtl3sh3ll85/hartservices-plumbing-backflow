@@ -53,9 +53,12 @@ export default function DocumentPreviewDialog({ doc, kind, customer, settings, o
   };
 
   const copyLink = async () => {
-    const path = isInvoice ? `/pay/${doc.id}` : `/accept/${doc.id}`;
+    const tab = isInvoice ? "invoices" : "estimates";
+    const params = new URLSearchParams();
+    if (customer?.email) params.set("email", customer.email);
+    params.set("tab", tab);
     try {
-      await navigator.clipboard.writeText(window.location.origin + path);
+      await navigator.clipboard.writeText(window.location.origin + `/portal?${params.toString()}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {}

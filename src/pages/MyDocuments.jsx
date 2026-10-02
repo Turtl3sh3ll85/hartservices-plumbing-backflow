@@ -18,10 +18,11 @@ const LOGO_URL = "https://base44.app/api/apps/6ab936d39a6c956d5b685842/files/mp/
 export default function MyDocuments() {
   const [searchParams] = useSearchParams();
   const email = (searchParams.get("email") || "").trim().toLowerCase();
+  const initialTab = searchParams.get("tab");
   const navigate = useNavigate();
   const { settings } = useSettings();
   const { toast } = useToast();
-  const [view, setView] = useState("invoices");
+  const [view, setView] = useState(initialTab === "estimates" ? "estimates" : "invoices");
   const [preview, setPreview] = useState(null);
   const [previewKind, setPreviewKind] = useState("invoice");
   const [flagging, setFlagging] = useState(false);
