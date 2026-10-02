@@ -5,6 +5,7 @@ import StatusBadge from "@/components/StatusBadge";
 import TransactionCategoryPicker from "@/components/TransactionCategoryPicker";
 import { base44 } from "@/api/base44Client";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function TransactionRow({
   t,
@@ -23,10 +24,31 @@ export default function TransactionRow({
 }) {
   const fileRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const [thinking, setThinking] = useState(false);
+  const { toast } = useToast();
 
   const handleCategory = (val) => {
     onCategoryChange?.(t.id, val);
     onCategoryBlur?.(t.id, val);
+  };
+
+  const aiCategorize = async () => {
+    if (!t.payee || thinking) return;
+    setThinking(true);
+    try {
+      const res = await base44.functions.invoke("aiCategorizeOneTransaction", { payee: t.payee });
+      const category = res.data?.category;
+      if (category) {
+        handleCategory(category);
+        toast({ title: `Categorized as “${category}”` });
+      } else {
+        toast({ title: "AI could not categorize this payee", variant: "destructive" });
+      }
+    } catch (e) {
+      toast({ title: "AI categorize failed", description: e.message, variant: "destructive" });
+    } finally {
+      setThinking(false);
+    }
   };
 
   const downloadReceipt = async () => {
@@ -65,11 +87,23 @@ export default function TransactionRow({
           )}
         </div>
         {editableCategory && (
-          <div className="mt-1">
+          <div className="mt-1 flex items-center gap-1">
             <TransactionCategoryPicker
               value={t.custom_category || t.category || ""}
               onChange={handleCategory}
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={aiCategorize}
+              disabled={thinking || !t.payee}
+              aria-label="AI categorize this transaction"
+              title="AI categorize this transaction"
+              className="h-9 px-1.5 text-base leading-none hover:bg-accent"
+            >
+              {thinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>🧠</span>}
+            </Button>
           </div>
         )}
         {!editableCategory && (t.custom_category || t.category) ? (
