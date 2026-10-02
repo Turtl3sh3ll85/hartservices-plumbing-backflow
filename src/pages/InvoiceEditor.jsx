@@ -12,6 +12,7 @@ import LineItemsEditor from "@/components/LineItemsEditor";
 import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 import CustomerFormDialog from "@/components/CustomerFormDialog";
 import PaymentScheduleEditor from "@/components/PaymentScheduleEditor";
+import InvoiceAttachments from "@/components/InvoiceAttachments";
 import InvoiceProfitability from "@/components/InvoiceProfitability";
 import { useAuth } from "@/lib/AuthContext";
 import { computeTotals, formatCurrency, amountPaidTotal, nextDuePayment } from "@/lib/format";
@@ -28,6 +29,7 @@ export default function InvoiceEditor() {
   const [customers, setCustomers] = useState([]);
   const [contactsOpen, setContactsOpen] = useState(false);
   const [newCustOpen, setNewCustOpen] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState([]);
   const [inv, setInv] = useState({
     customer_id: "", name: "", line_items: [], tax_rate: 0, cc_fee_enabled: false,
     payment_schedule: [], status: "draft", due_date: "", notes: "",
@@ -63,6 +65,20 @@ export default function InvoiceEditor() {
     try {
       if (isNew) {
         const created = await base44.entities.Invoice.create(payload);
+        for (const p of pendingFiles) {
+          try {
+            const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file: p.file });
+            const res = await base44.functions.invoke("uploadInvoiceAttachment", { file_uri, file_name: p.file_name, mime_type: p.file?.type || "application/octet-stream" });
+            const d = res.data || {};
+            await base44.entities.InvoiceAttachment.create({
+              invoice_id: created.id, file_name: p.file_name,
+              drive_file_id: d.drive_file_id, drive_link: d.drive_link,
+              thumbnail_url: d.thumbnail_url || "", mime_type: p.file?.type || "",
+              type: (p.file?.type || "").startsWith("image/") ? "photo" : "document",
+            });
+          } catch (e) { /* skip */ }
+        }
+        setPendingFiles([]);
         toast({ title: send ? "Invoice sent" : "Saved" });
         navigate(`/invoices/${created.id}`);
       } else {
@@ -90,8 +106,8 @@ export default function InvoiceEditor() {
 
       <Card>
         <CardHeader><CardTitle className="text-base">Details</CardTitle></CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
-          <div className="sm:col-span-2">
+        <CardContent className="space-y-3">
+          <div>
             <Label>Customer *</Label>
             <div className="flex gap-2">
               <select value={inv.customer_id} onChange={(e) => set("customer_id", e.target.value)} className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm">
@@ -102,7 +118,10 @@ export default function InvoiceEditor() {
               <Button type="button" variant="outline" size="icon" onClick={() => setNewCustOpen(true)} aria-label="Add new customer" title="New customer"><UserPlus className="w-4 h-4" /></Button>
             </div>
           </div>
-          <div><Label>Job name</Label><Input value={inv.name || ""} onChange={(e) => set("name", e.target.value)} /></div>
+          <div>
+            <Label>Job name</Label>
+            <Input value={inv.name || ""} onChange={(e) => set("name", e.target.value)} />
+          </div>
         </CardContent>
       </Card>
 
@@ -147,6 +166,24 @@ export default function InvoiceEditor() {
       <Card>
         <CardHeader><CardTitle className="text-base">Notes</CardTitle></CardHeader>
         <CardContent><Textarea value={inv.notes || ""} onChange={(e) => set("notes", e.target.value)} rows={3} /></CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Attachments</CardTitle></CardHeader>
+        <CardContent>
+          <InvoiceAttachments
+            invoiceId={id}
+            pending={pendingFiles}
+            onAddPending={(files) => setPendingFiles((s) => [...s, ...Array.from(files).map((f) => ({
+              id: `${f.name}-${f.size}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              file_name: f.name,
+              type: f.type.startsWith("image/") ? "photo" : "document",
+              previewUrl: f.type.startsWith("image/") ? URL.createObjectURL(f) : "",
+              file: f,
+            }))])}
+            onRemovePending={(pid) => setPendingFiles((s) => s.filter((p) => p.id !== pid))}
+          />
+        </CardContent>
       </Card>
 
       {!isNew && canSeeProfit && (
