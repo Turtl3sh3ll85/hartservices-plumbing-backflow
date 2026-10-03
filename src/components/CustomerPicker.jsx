@@ -1,113 +1,109 @@
-import { useMemo, useState } from "react";
-import { Search, ChevronsUpDown, Check } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { Input } from "@/components/ui/input";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
+import React, { useState } from 'react';
 
-function CustomerLine({ c, selected }) {
-  const hasCompany = !!(c.company && c.company.trim());
+export default function CustomerSelector() {
+  // Form fields
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  
+  // Missing Email Popup State
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [tempContact, setTempContact] = useState(null);
+  const [manualEmail, setManualEmail] = useState('');
+
+  const handleOpenContacts = async () => {
+    // 1. Check if the device/browser supports the Contact Picker API
+    const isSupported = 'contacts' in navigator && 'ContactsManager' in window;
+    
+    if (!isSupported) {
+      alert('Your browser or device does not support the Contact Picker API.');
+      return;
+    }
+
+    try {
+      // 2. Open the native Google/Device Contacts screen
+      const props = ['name', 'email', 'tel'];
+      const opts = { multiple: false };
+      const contacts = await navigator.contacts.select(props, opts);
+      
+      if (contacts.length > 0) {
+        const selected = contacts[0];
+        
+        // The API returns arrays for each property, so we grab the first item
+        const name = selected.name ? selected.name[0] : '';
+        const phone = selected.tel ? selected.tel[0] : '';
+        const email = selected.email ? selected.email[0] : '';
+
+        // 3. Conditional Logic: Does this contact have an email?
+        if (!email) {
+          // No email found: Save data temporarily and show the popup modal
+          setTempContact({ name, phone });
+          setShowEmailModal(true);
+        } else {
+          // Email exists: Populate all fields immediately
+          setCustomerName(name);
+          setCustomerPhone(phone);
+          setCustomerEmail(email);
+        }
+      }
+    } catch (error) {
+      console.error('Error selecting contact:', error);
+    }
+  };
+
+  const handleManualEmailSubmit = () => {
+    // Save the manually typed email alongside the pulled contact data
+    setCustomerName(tempContact.name);
+    setCustomerPhone(tempContact.phone);
+    setCustomerEmail(manualEmail);
+    
+    // Close the popup and reset
+    setShowEmailModal(false);
+    setTempContact(null);
+    setManualEmail('');
+  };
+
   return (
-    <div className="flex items-start gap-2 w-full">
-      <Check className={cn("w-4 h-4 mt-0.5 shrink-0", selected ? "text-primary" : "opacity-0")} />
-      <div className="min-w-0 flex-1">
-        {hasCompany && <div className="text-sm font-semibold leading-tight truncate">{c.company}</div>}
-        <div className={cn("text-sm leading-tight truncate", hasCompany ? "font-normal text-muted-foreground" : "font-semibold")}>{c.name}</div>
-        <div className="text-xs text-muted-foreground truncate flex flex-wrap gap-x-2">
-          {c.email && <span>{c.email}</span>}
-          {c.phone && <span>{c.phone}</span>}
-        </div>
+    <div className="p-4 space-y-4">
+      {/* Contact Picker Button */}
+      <button 
+        onClick={handleOpenContacts}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        Select Customer from Contacts
+      </button>
+
+      {/* Populated Data Display (Your Form Fields) */}
+      <div className="flex flex-col gap-2 mt-4">
+        <input type="text" value={customerName} readOnly placeholder="Name" className="border p-2"/>
+        <input type="text" value={customerPhone} readOnly placeholder="Phone" className="border p-2"/>
+        <input type="text" value={customerEmail} readOnly placeholder="Email" className="border p-2"/>
       </div>
-    </div>
-  );
-}
 
-export default function CustomerPicker({ customers, value, onChange }) {
-  const isMobile = useIsMobile();
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const selected = customers.find((c) => c.id === value);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return customers;
-    return customers.filter((c) =>
-      [c.name, c.company, c.email, c.phone].filter(Boolean).some((f) => f.toLowerCase().includes(q))
-    );
-  }, [customers, query]);
-
-  const trigger = (
-    <button
-      type="button"
-      className="flex-1 min-h-9 h-auto flex items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-1.5 text-left text-sm hover:bg-accent"
-    >
-      {selected ? (
-        <div className="min-w-0 flex-1 py-1">
-          <CustomerLine c={selected} selected={false} />
+      {/* Missing Email Popup Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 p-6 rounded-lg w-full max-w-sm border border-zinc-700">
+            <h3 className="text-white text-lg font-bold mb-2">Missing Email</h3>
+            <p className="text-zinc-400 mb-4 text-sm">
+              We pulled {tempContact?.name}'s info, but they don't have an email saved in your phone. Please enter one below.
+            </p>
+            <input 
+              type="email" 
+              value={manualEmail} 
+              onChange={(e) => setManualEmail(e.target.value)}
+              placeholder="customer@example.com"
+              className="w-full border border-zinc-700 bg-zinc-800 text-white p-2 rounded mb-4"
+            />
+            <button 
+              onClick={handleManualEmailSubmit}
+              className="w-full bg-blue-600 text-white py-2 rounded font-semibold"
+            >
+              Save & Continue
+            </button>
+          </div>
         </div>
-      ) : (
-        <span className="text-muted-foreground">Select customer…</span>
       )}
-      <ChevronsUpDown className="w-4 h-4 shrink-0 opacity-50" />
-    </button>
-  );
-
-  const searchInput = (
-    <div className="flex items-center border-b px-3">
-      <Search className="w-4 h-4 mr-2 shrink-0 opacity-50" />
-      <Input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search customers…"
-        className="h-9 border-0 focus-visible:ring-0 px-0"
-      />
     </div>
-  );
-
-  const resultsList = (onPick) => (
-    <div className="max-h-72 overflow-y-auto p-1">
-      {filtered.length === 0 && (
-        <div className="py-6 text-center text-sm text-muted-foreground">No customers found.</div>
-      )}
-      {filtered.map((c) => (
-        <button
-          key={c.id}
-          type="button"
-          onClick={() => { onPick(c.id); setOpen(false); setQuery(""); }}
-          className={cn(
-            "w-full text-left rounded-md px-2 py-2 hover:bg-accent transition-colors",
-            c.id === value && "bg-accent/60"
-          )}
-        >
-          <CustomerLine c={c} selected={c.id === value} />
-        </button>
-      ))}
-    </div>
-  );
-
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-        <DrawerContent className="max-h-[80vh]">
-          <DrawerHeader className="text-left">
-            <DrawerTitle>Select customer</DrawerTitle>
-          </DrawerHeader>
-          {searchInput}
-          {resultsList(onChange)}
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] min-w-72 p-0" align="start">
-        {searchInput}
-        {resultsList(onChange)}
-      </PopoverContent>
-    </Popover>
   );
 }
