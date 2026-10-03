@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { UserPlus, Mail, X } from "lucide-react";
+import { UserPlus, Mail, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import GoogleContactsDialog from "@/components/GoogleContactsDialog"; // Using your existing component!
+import { useToast } from "@/components/ui/use-toast";
+import { base44 } from "@/api/base44Client";
+import GoogleContactsDialog from "@/components/GoogleContactsDialog";
 
 export default function CustomerSelector({ onContactSaved }) {
+  const { toast } = useToast();
   const [isGooglePickerOpen, setIsGooglePickerOpen] = useState(false);
   
   // Selected Contact State
@@ -15,20 +18,19 @@ export default function CustomerSelector({ onContactSaved }) {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [tempContact, setTempContact] = useState(null);
   const [manualEmail, setManualEmail] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Triggered when a contact is selected from your GoogleContactsDialog
   const handleGoogleContactPick = (contact) => {
     const name = contact.name || "";
     const phone = contact.phone || "";
     const email = contact.email || "";
 
     if (!email) {
-      // No email found: Save data temporarily and show the popup modal
-      setTempContact({ name, phone });
+      // Store the FULL contact object so we have its Google ID for the update call later
+      setTempContact({ ...contact, name, phone });
       setShowEmailModal(true);
     } else {
-      // Email exists: Finalize selection immediately
-      finalizeContact({ name, phone, email });
+      finalizeContact({ ...contact, name, phone, email });
     }
   };
 
@@ -37,15 +39,40 @@ export default function CustomerSelector({ onContactSaved }) {
     if (onContactSaved) onContactSaved(contactData);
   };
 
-  const handleManualEmailSubmit = (e) => {
+  const handleManualEmailSubmit = async (e) => {
     e.preventDefault();
+    const emailStr = manualEmail.trim();
+    if (!emailStr) return;
+
+    setIsUpdating(true);
+
+    try {
+      // 1. Push the new email back to Google Contacts via your backend
+      await base44.functions.invoke("updateGoogleContact", {
+        contact_id: tempContact.id || tempContact.resourceName, 
+        email: emailStr
+      });
+      toast({ title: "Google Contact updated with new email!" });
+    } catch (err) {
+      console.error("Failed to update Google Contact:", err);
+      toast({ 
+        title: "Google Sync Failed", 
+        description: "Email was saved locally, but we couldn't push it to Google. Check your workspace permissions.", 
+        variant: "destructive" 
+      });
+    }
+
+    // 2. Finalize the local selection
     finalizeContact({
-      name: tempContact.name,
-      phone: tempContact.phone,
-      email: manualEmail
+      ...tempContact,
+      email: emailStr
     });
     
-    // Close the popup and reset
+    setIsUpdating(false);
+    closeEmailModal();
+  };
+
+  const closeEmailModal = () => {
     setShowEmailModal(false);
     setTempContact(null);
     setManualEmail("");
@@ -53,14 +80,12 @@ export default function CustomerSelector({ onContactSaved }) {
 
   return (
     <div className="space-y-4">
-      {/* If no contact is selected, show the import button */}
       {!selectedContact ? (
         <Button onClick={() => setIsGooglePickerOpen(true)} variant="outline" className="w-full sm:w-auto">
           <UserPlus className="w-4 h-4 mr-2" />
           Import from Google Contacts
         </Button>
       ) : (
-        /* If a contact IS selected, show a clean read-only display instead of 3 text boxes */
         <div className="flex items-center justify-between p-3 border rounded-md bg-card">
           <div className="min-w-0 flex-1">
             <div className="font-medium truncate">{selectedContact.name || "Unknown Name"}</div>
@@ -81,24 +106,26 @@ export default function CustomerSelector({ onContactSaved }) {
         </div>
       )}
 
-      {/* Your existing Google Contacts Integration */}
       <GoogleContactsDialog 
         open={isGooglePickerOpen} 
         onOpenChange={setIsGooglePickerOpen} 
         onPick={handleGoogleContactPick} 
       />
 
-      {/* Missing Email Popup Modal */}
-      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
-        <DialogContent className="max-w-sm">
+      <Dialog open={showEmailModal}>
+        <DialogContent 
+          className="max-w-sm"
+          onInteractOutside={(e) => e.preventDefault()} 
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
-              Missing Email
+              Email Required
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            We pulled <strong className="text-foreground">{tempContact?.name}</strong>'s info from Google Contacts, but they don't have an email saved. Please enter one below.
+            <strong className="text-foreground">{tempContact?.name}</strong> is missing an email address. Enter one below to update their Google Contact profile and proceed.
           </p>
           <form onSubmit={handleManualEmailSubmit} className="space-y-4 mt-2">
             <Input 
@@ -108,13 +135,15 @@ export default function CustomerSelector({ onContactSaved }) {
               placeholder="customer@example.com"
               required
               autoFocus
+              disabled={isUpdating}
             />
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setShowEmailModal(false)}>
-                Cancel
+              <Button type="button" variant="ghost" onClick={closeEmailModal} disabled={isUpdating}>
+                Cancel Import
               </Button>
-              <Button type="submit">
-                Save & Continue
+              <Button type="submit" disabled={!manualEmail.trim() || isUpdating}>
+                {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Save to Google & Continue
               </Button>
             </DialogFooter>
           </form>
