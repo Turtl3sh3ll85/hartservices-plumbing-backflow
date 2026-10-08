@@ -101,8 +101,8 @@ export default function MyDocuments() {
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-8">
         <div>
-          <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">Your invoices and estimates.</p>
+          <h1 className="font-heading text-2xl md:text-3xl font-semibold tracking-tight">Customer Portal</h1>
+          <p className="text-muted-foreground text-sm mt-1">Click to view your invoices and estimates.</p>
         </div>
 
         {isLoading ? (
